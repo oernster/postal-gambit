@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Postal Gambit: correspondence chess over your own email</title>
+    <meta name="description"
+          content="A free, open-source desktop app for playing correspondence chess by email. It keeps your games, enforces the rules and turns each move into a ready-to-send email in your own mail client. No server, no account, no engines."/>
+    <link rel="canonical" href="https://oernster.github.io/postal-gambit/"/>
+    <meta name="robots" content="index, follow"/>
+    <meta name="author" content="Oliver Ernster"/>
+    <meta name="theme-color" content="#1b1e26"/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:site_name" content="Postal Gambit"/>
+    <meta property="og:url" content="https://oernster.github.io/postal-gambit/"/>
+    <meta property="og:title" content="Postal Gambit: correspondence chess over your own email"/>
+    <meta property="og:description"
+          content="Slow, thoughtful chess with a friend by email, the way postal chess used to work. Your mail client is the transport; the app keeps the games and enforces the rules."/>
+    <meta property="og:image" content="https://oernster.github.io/postal-gambit/icon.png"/>
+    <meta property="og:locale" content="en_GB"/>
+    <link rel="icon" type="image/png" href="icon.png"/>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Postal Gambit",
+        "operatingSystem": "Windows",
+        "applicationCategory": "GameApplication",
+        "applicationSubCategory": "Correspondence chess",
+        "description": "A local-first desktop app for correspondence chess by email. It keeps your games, enforces the rules and turns each move into a ready-to-send email in your own mail client. It never touches the network itself.",
+        "url": "https://oernster.github.io/postal-gambit/",
+        "downloadUrl": "https://github.com/oernster/postal-gambit/releases",
+        "softwareHelp": "https://github.com/oernster/postal-gambit",
+        "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+        "image": "https://oernster.github.io/postal-gambit/icon.png",
+        "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+        "author": {"@type": "Person", "name": "Oliver Ernster", "url": "https://github.com/oernster"}
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {"@type": "Question", "name": "Does my opponent need the app?",
+             "acceptedAnswer": {"@type": "Answer", "text": "No. Every email is readable text: a short note, an ASCII board and the game record. An opponent without the app can reply with a plain move like Nf6 and it imports fine."}},
+            {"@type": "Question", "name": "What email account do I need?",
+             "acceptedAnswer": {"@type": "Answer", "text": "Any account you already use. Postal Gambit never sends anything itself: it opens a pre-filled draft in your own mail client or copies the email to your clipboard, and you press send."}},
+            {"@type": "Question", "name": "What happens if an email gets lost?",
+             "acceptedAnswer": {"@type": "Answer", "text": "Nothing is corrupted. Every email carries the entire game state, so the next one that arrives catches you up. If the two sides ever disagree, the divergence is detected and reported, never silently resolved."}},
+            {"@type": "Question", "name": "Is there engine analysis?",
+             "acceptedAnswer": {"@type": "Answer", "text": "No, deliberately. Postal Gambit ships no engine and never will; no machines is the point of correspondence chess between people."}},
+            {"@type": "Question", "name": "Where do my games live?",
+             "acceptedAnswer": {"@type": "Answer", "text": "In plain JSON files under your home directory, one per game. No server, no account, no cloud."}},
+            {"@type": "Question", "name": "Is it really offline?",
+             "acceptedAnswer": {"@type": "Answer", "text": "The app contains no network code at all; the test suite structurally forbids network imports. The only thing that touches the internet is your own mail client sending your email."}}
+        ]
+    }
+    </script>
+    <link rel="stylesheet" href="site.css"/>
+</head>
+<body>
+<div class="wrap">
+    <header class="site">
+        <div class="logo">
+            <img src="icon.png" alt="Postal Gambit"/>
+            <span>Postal Gambit</span>
+        </div>
+        <nav class="nav">
+            <a href="#how">How it works</a>
+            <a href="#features">Features</a>
+            <a href="#faq">FAQ</a>
+            <a href="https://github.com/oernster/postal-gambit">GitHub</a>
+            <a href="https://github.com/oernster/postal-gambit/releases">Download</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <img class="mark" src="icon.png" alt="Postal Gambit icon"/>
+        <span class="eyebrow">Chess by email, the way postal chess used to work</span>
+        <h1>Correspondence chess over your own email</h1>
+        <p class="tagline">
+            Postal Gambit is a local-first desktop app that keeps your games, enforces the rules and
+            turns each move into a ready-to-send email in whatever mail client you already use. It
+            never touches the network itself: your email is the board between you and your friend.
+        </p>
+        <p class="switch">Slow, thoughtful chess with a real person. One move a day is a fine pace.</p>
+        <div class="cta">
+            <a class="btn primary" href="https://github.com/oernster/postal-gambit/releases">Download for Windows</a>
+            <a class="btn" href="#how">See how it works</a>
+        </div>
+        <div class="cue"><b>Free and GPL-3.0</b> &nbsp;·&nbsp; No server &nbsp;·&nbsp; No account
+            &nbsp;·&nbsp; No engines</div>
+        <div class="platforms">Windows installer today; Flatpak and DMG build scripts for Linux and
+            macOS ship in the repo.</div>
+    </section>
+
+    <section class="shot">
+        <div class="shot-frame">
+            <!-- SCREENSHOT: drop the image at docs/screenshot.png and replace this
+                 .shot-placeholder div with:
+                 <img src="screenshot.png" alt="Postal Gambit: the game list, the board mid-game and the move history panel."/> -->
+            <div class="shot-placeholder">Screenshot coming shortly.</div>
+        </div>
+        <p class="shot-cap">The game list, the board and the move history, in the dark theme.</p>
+    </section>
+
+    <section class="section" id="how">
+        <h2>How a game flows</h2>
+        <p class="lead">No importer, no matchmaking, no lobby. You and a friend, moving at your own
+            pace, with your own email in between.</p>
+        <div class="steps">
+            <div class="step">
+                <span class="n">1</span>
+                <h3>Make your move</h3>
+                <p>Click your piece, click its square. The board enforces every rule of chess: legality,
+                    check, mate, stalemate and all the draw rules, including the fifty-move rule and
+                    threefold repetition.</p>
+            </div>
+            <div class="step">
+                <span class="n">2</span>
+                <h3>Send the email</h3>
+                <p>Postal Gambit writes the whole email for you: a short note, an ASCII board diagram
+                    and the game record. One button opens it as a draft in your own mail client; another
+                    copies it to your clipboard for webmail. You press send.</p>
+            </div>
+            <div class="step">
+                <span class="n">3</span>
+                <h3>Import the reply</h3>
+                <p>When the reply lands, click its one-click import link, or paste the email text into
+                    the app. Even a bare move like Nf6 from an opponent without the app imports fine.
+                    The board updates and it is your move again.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="email">
+        <h2>The email is the protocol</h2>
+        <p class="lead">Every message a game sends is readable by a human first and a program second.
+            This is roughly what your opponent receives.</p>
+        <div class="sample">
+            <pre>
+Postal Gambit: oliver (White) vs jane (Black)
+
+<b>Move 1 (White): e4</b>
+Your move.
+
+  a b c d e f g h
+8 r n b q k b n r 8
+7 p p p p p p p p 7
+  ...
+
+-----BEGIN POSTAL GAMBIT v1-----
+Action: move
+[the complete game record]
+-----END POSTAL GAMBIT-----
+
+Import this move with one click:
+<b>[Open this move in Postal Gambit]</b></pre>
+        </div>
+        <p class="shot-cap">The block carries the entire game state, so a lost email never corrupts a
+            game. The wire format is versioned and documented in the repo.</p>
+    </section>
+
+    <section class="section" id="features">
+        <h2>What is included</h2>
+        <p class="lead">Everything a long-running set of postal games needs, nothing a chess website
+            has.</p>
+        <div class="grid">
+            <div class="card">
+                <div class="ico">♟️</div>
+                <h3>Full rules enforcement</h3>
+                <p>Legality, check, mate, stalemate and every draw rule. Promotion, castling and en
+                    passant all handled. You cannot send an illegal move and neither can your
+                    opponent.</p>
+            </div>
+            <div class="card">
+                <div class="ico">📬</div>
+                <h3>One-click import</h3>
+                <p>Every outbound email carries a link that opens the app with the move prefilled, with
+                    the same validation as a paste. The move data travels in the link itself and is
+                    never uploaded anywhere.</p>
+            </div>
+            <div class="card">
+                <div class="ico">🗂️</div>
+                <h3>Any number of games</h3>
+                <p>The list shows whose move it is in each game, with humanised names and full move
+                    history. Multi-select for bulk resign, draw acceptance, delete or re-send, each
+                    confirmed before anything destructive happens.</p>
+            </div>
+            <div class="card">
+                <div class="ico">🤝</div>
+                <h3>Invitations, draws, resignation</h3>
+                <p>Starting a game, offering a draw, accepting one and resigning all travel over the
+                    same email format, so the whole game happens in one thread.</p>
+            </div>
+            <div class="card">
+                <div class="ico">🌗</div>
+                <h3>Dark and light themes</h3>
+                <p>A calm dark theme and a classic light board, toggled from the View menu and
+                    remembered between runs.</p>
+            </div>
+            <div class="card">
+                <div class="ico">⌨️</div>
+                <h3>Keyboard-first</h3>
+                <p>The whole app drives from the keyboard: a visible focus ring, arrow keys on the
+                    board, Enter to select and drop.</p>
+            </div>
+            <div class="card">
+                <div class="ico">🔒</div>
+                <h3>Private by construction</h3>
+                <p>No accounts, no server, no telemetry and no network code at all; the test suite
+                    structurally forbids network imports. Games are plain JSON files in your home
+                    directory.</p>
+            </div>
+            <div class="card">
+                <div class="ico">🚫</div>
+                <h3>No machines</h3>
+                <p>No engine, no analysis, no hints, ever. The product is chess between people; "no
+                    machines" is scope, not a missing feature.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="faq">
+        <h2>Questions a chess player actually asks</h2>
+        <p class="lead">Answered plainly. Where the answer is no, we say so.</p>
+        <div class="qa">
+            <div class="item">
+                <p class="q">Does my opponent need the app?</p>
+                <p class="a">No. Every email is readable text. An opponent without the app can reply
+                    with a plain move like Nf6 and it imports fine; they just miss the conveniences.</p>
+            </div>
+            <div class="item">
+                <p class="q">What email account do I need?</p>
+                <p class="a">Any account you already use. Postal Gambit never sends anything itself: it
+                    opens a pre-filled draft in your own mail client or copies the email to your
+                    clipboard, and you press send.</p>
+            </div>
+            <div class="item">
+                <p class="q">What happens if an email gets lost?</p>
+                <p class="a">Nothing is corrupted. Every email carries the entire game state, so the
+                    next one that arrives catches you up. If the two sides ever disagree, the divergence
+                    is detected and reported, never silently resolved.</p>
+            </div>
+            <div class="item">
+                <p class="q">Can it stop my opponent cheating?</p>
+                <p class="a">No, and nothing can. Correspondence chess has always been played on trust.
+                    What Postal Gambit guarantees is that every move is legal; whether a human chose it
+                    is between you and your friend.</p>
+            </div>
+            <div class="item">
+                <p class="q">Where do my games live?</p>
+                <p class="a">In plain JSON files under your home directory, one per game, portable and
+                    inspectable. Delete the folder and they are gone; copy it and they are backed
+                    up.</p>
+            </div>
+            <div class="item">
+                <p class="q">Is it really offline?</p>
+                <p class="a">The app contains no network code at all; the test suite structurally
+                    forbids network imports. The only thing that touches the internet is your own mail
+                    client sending your email.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="built">
+        <h2>Built to be trusted</h2>
+        <p class="lead">A small app with a strict engineering bar, because a years-long game deserves
+            software that will not lose it.</p>
+        <div class="grid">
+            <div class="card">
+                <div class="ico">✅</div>
+                <h3>Tested to the last line</h3>
+                <p>The core logic carries a 100% test-coverage gate. The build fails if a single
+                    untested line lands.</p>
+            </div>
+            <div class="card">
+                <div class="ico">🧱</div>
+                <h3>Architecture that holds</h3>
+                <p>A clean layered core whose boundaries are enforced by automated structural tests,
+                    including the rule that no network code can ever creep in.</p>
+            </div>
+            <div class="card">
+                <div class="ico">📜</div>
+                <h3>A versioned wire format</h3>
+                <p>The email format is specified, versioned and frozen once released, with conformance
+                    tests mirroring the spec section by section. Your games outlive any one version of
+                    the app.</p>
+            </div>
+            <div class="card">
+                <div class="ico">🪶</div>
+                <h3>Open and forkable</h3>
+                <p>GPL-3.0 with the full source on GitHub. If it ever stalls, anyone can read it, fork
+                    it or carry it on. Your games are plain files either way.</p>
+            </div>
+        </div>
+        <div class="stack">
+            <span class="chip">Python and PySide6</span>
+            <span class="chip">python-chess rules core</span>
+            <span class="chip">Local JSON, no database</span>
+            <span class="chip">No network code</span>
+            <span class="chip">GPL-3.0</span>
+        </div>
+    </section>
+
+    <section class="section" id="promise">
+        <h2>A quiet promise</h2>
+        <p class="lead">Some things Postal Gambit will not do, on purpose.</p>
+        <ul class="promise-list">
+            <li><b>No engines.</b> Not optional, not later. Chess between people.</li>
+            <li><b>No server.</b> Your games live on your machine and travel in your email.</li>
+            <li><b>No account.</b> There is nothing to sign up for and nothing to be locked out of.</li>
+            <li><b>No telemetry.</b> The app cannot phone home; it has no network code to do it
+                with.</li>
+        </ul>
+    </section>
+
+    <section class="close">
+        <h2>Find a friend. Play a long game.</h2>
+        <p>Download it, add your name, start a game and send the invitation. The next move might take
+            a day and that is the point.</p>
+        <div class="cta">
+            <a class="btn primary" href="https://github.com/oernster/postal-gambit/releases">Download for Windows</a>
+            <a class="btn" href="https://github.com/oernster/postal-gambit">Source on GitHub</a>
+        </div>
+    </section>
+
+    <footer class="site">
+        <span>Postal Gambit by Oliver Ernster. Released under GPL-3.0; author attribution must be
+            retained in all copies and derivative works.</span>
+        <span>
+            <a href="https://github.com/oernster/postal-gambit">GitHub</a>
+            &nbsp;·&nbsp;
+            <a href="https://github.com/oernster/postal-gambit/releases">Releases</a>
+        </span>
+    </footer>
+</div>
+</body>
+</html>
