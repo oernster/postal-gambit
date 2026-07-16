@@ -176,7 +176,9 @@ class MainWindow(QMainWindow):
         self.game_list.clear()
         for record in records:
             label = labels[record.meta.game_id.value]
-            item = QListWidgetItem(f"{label}  ({self._state_of(record)})")
+            # Two lines per game: the label, then its state. One line
+            # truncated in the list's width (the state vanished first).
+            item = QListWidgetItem(f"{label}\n{self._state_of(record)}")
             item.setData(Qt.ItemDataRole.UserRole, record.meta.game_id.value)
             self.game_list.addItem(item)
             if target is not None and record.meta.game_id == target:
