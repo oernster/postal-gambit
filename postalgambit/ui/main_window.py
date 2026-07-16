@@ -1,0 +1,388 @@
+"""The main window: game list, board and the correspondence actions."""
+
+from __future__ import annotations
+
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QMainWindow,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
+
+from postalgambit.application.export_service import ExportService
+from postalgambit.application.game_service import GameService
+from postalgambit.application.import_service import ImportService
+from postalgambit.application.move_service import MoveService
+from postalgambit.application.ports import SettingsStore
+from postalgambit.domain.errors import PostalGambitError
+from postalgambit.domain.game import Colour, GameId, GameRecord
+from postalgambit.domain.wire import WireAction, WireMessage
+from postalgambit.ui.board_widget import BOARD_SIZE, FILES, BoardWidget
+from postalgambit.ui.dialogs.about import LicenceDialog
+from postalgambit.ui.dialogs.export_dialog import ExportDialog
+from postalgambit.ui.dialogs.forms import (
+    IdentityDialog,
+    NewGameDialog,
+    PromotionDialog,
+)
+from postalgambit.ui.dialogs.import_dialog import ImportDialog
+from postalgambit.ui.icons import find_assets_dir, get_app_icon_path
+from postalgambit.ui.keyboard_nav import KeyboardNavigator, NeutralStartWidget
+from postalgambit.ui.menus import build_menus
+from postalgambit.version import APP_NAME
+
+_LIST_MIN_WIDTH = 260
+_LAST_RANKS = ("8", "1")
+
+
+class MainWindow(QMainWindow):
+    def __init__(
+        self,
+        game_service: GameService,
+        move_service: MoveService,
+        import_service: ImportService,
+        export_service: ExportService,
+        settings_store: SettingsStore,
+    ) -> None:
+        super().__init__()
+        self._games = game_service
+        self._moves = move_service
+        self._imports = import_service
+        self._exports = export_service
+        self._settings = settings_store
+        self._selected_id: GameId | None = None
+        self._started = False
+        self.setWindowTitle(APP_NAME)
+        icon_path = get_app_icon_path()
+        if icon_path is not None:
+            self.setWindowIcon(QIcon(str(icon_path)))
+        self._neutral_start = NeutralStartWidget(self)
+        self._build_widgets()
+        self._menus = build_menus(self)
+        self._build_navigator()
+        self.refresh_games()
+
+    # Construction -------------------------------------------------------
+
+    def _build_widgets(self) -> None:
+        central = QWidget()
+        layout = QHBoxLayout(central)
+        left = QVBoxLayout()
+        heading = QLabel("Games")
+        heading.setObjectName("Heading")
+        left.addWidget(heading)
+        self.game_list = QListWidget()
+        self.game_list.setMinimumWidth(_LIST_MIN_WIDTH)
+        self.game_list.currentItemChanged.connect(self._on_selection)
+        left.addWidget(self.game_list, stretch=1)
+        self.new_button = QPushButton("New game")
+        self.new_button.setObjectName("Primary")
+        self.new_button.clicked.connect(self._new_game)
+        self.import_button = QPushButton("Import a move")
+        self.import_button.clicked.connect(self._import_move)
+        self.delete_button = QPushButton("Delete game")
+        self.delete_button.setObjectName("Danger")
+        self.delete_button.clicked.connect(self._delete_game)
+        for button in (self.new_button, self.import_button, self.delete_button):
+            left.addWidget(button)
+        layout.addLayout(left)
+        right = QVBoxLayout()
+        self.board = BoardWidget(self._legal_targets)
+        self.board.moveRequested.connect(self._on_move_requested)
+        right.addWidget(self.board)
+        self.turn_label = QLabel("")
+        right.addWidget(self.turn_label)
+        actions = QHBoxLayout()
+        self.offer_draw_box = QCheckBox("Offer a draw with this move")
+        self.resend_button = QPushButton("Re-send last email")
+        self.resend_button.clicked.connect(self._resend_last)
+        self.accept_draw_button = QPushButton("Accept draw")
+        self.accept_draw_button.clicked.connect(self._accept_draw)
+        self.resign_button = QPushButton("Resign")
+        self.resign_button.setObjectName("Danger")
+        self.resign_button.clicked.connect(self._resign)
+        actions.addWidget(self.offer_draw_box)
+        actions.addWidget(self.resend_button)
+        actions.addWidget(self.accept_draw_button)
+        actions.addWidget(self.resign_button)
+        actions.addStretch()
+        right.addLayout(actions)
+        layout.addLayout(right, stretch=1)
+        self.setCentralWidget(central)
+
+    def _build_navigator(self) -> None:
+        self._navigator = KeyboardNavigator(
+            window=self,
+            menubar=self.menuBar(),
+            menu_actions=tuple(menu.menuAction() for menu in self._menus),
+            widget_stops=(
+                self.game_list,
+                self.new_button,
+                self.import_button,
+                self.delete_button,
+                self.board,
+                self.offer_draw_box,
+                self.resend_button,
+                self.accept_draw_button,
+                self.resign_button,
+            ),
+            board=self.board,
+        )
+
+    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+        super().showEvent(event)
+        if not self._started:
+            self._started = True
+            self._neutral_start.setFocus()
+
+    # State --------------------------------------------------------------
+
+    def refresh_games(self, keep: GameId | None = None) -> None:
+        target = keep or self._selected_id
+        self.game_list.blockSignals(True)
+        self.game_list.clear()
+        for record in self._games.list_games():
+            item = QListWidgetItem(self._list_label(record))
+            item.setData(Qt.ItemDataRole.UserRole, record.meta.game_id.value)
+            self.game_list.addItem(item)
+            if target is not None and record.meta.game_id == target:
+                self.game_list.setCurrentItem(item)
+        self.game_list.blockSignals(False)
+        if self.game_list.currentItem() is None and self.game_list.count():
+            self.game_list.setCurrentRow(0)
+        else:
+            self._show_selected()
+
+    def _list_label(self, record: GameRecord) -> str:
+        meta = record.meta
+        status = self._moves.status(meta.game_id)
+        if status.is_over:
+            state = status.description
+        elif self._moves.is_my_turn(record):
+            state = "your move"
+        else:
+            state = "waiting"
+        return (
+            f"{meta.white.name} vs {meta.black.name}"
+            f"  [{meta.game_id.short}]  ({state})"
+        )
+
+    def _selected_record(self) -> GameRecord | None:
+        item = self.game_list.currentItem()
+        if item is None:
+            return None
+        return self._games.get(GameId(item.data(Qt.ItemDataRole.UserRole)))
+
+    def _on_selection(self, *_args) -> None:
+        self._show_selected()
+
+    def _show_selected(self) -> None:
+        record = self._selected_record()
+        if record is None:
+            self._selected_id = None
+            self.board.clear_board()
+            self.turn_label.setText("No game selected.")
+            self._set_actions_enabled(None)
+            return
+        self._selected_id = record.meta.game_id
+        my_turn = self._moves.is_my_turn(record)
+        self.board.set_position(
+            self._moves.board(record.meta.game_id),
+            record.meta.my_colour,
+            interactive=my_turn,
+        )
+        self.turn_label.setText(self._status_text(record, my_turn))
+        self._set_actions_enabled(record)
+
+    def _status_text(self, record: GameRecord, my_turn: bool) -> str:
+        status = self._moves.status(record.meta.game_id)
+        if status.is_over:
+            return f"Game over: {status.description}."
+        parts = ["Your move." if my_turn else "Waiting for your opponent."]
+        if record.meta.draw_offer_open:
+            parts.append("A draw offer is open; you may accept it.")
+        return " ".join(parts)
+
+    def _set_actions_enabled(self, record: GameRecord | None) -> None:
+        if record is None:
+            for widget in (
+                self.offer_draw_box,
+                self.resend_button,
+                self.accept_draw_button,
+                self.resign_button,
+                self.delete_button,
+            ):
+                widget.setEnabled(False)
+            return
+        over = self._moves.status(record.meta.game_id).is_over
+        my_turn = self._moves.is_my_turn(record)
+        self.delete_button.setEnabled(True)
+        self.resend_button.setEnabled(True)
+        self.offer_draw_box.setEnabled(my_turn)
+        self.resign_button.setEnabled(not over)
+        self.accept_draw_button.setEnabled(not over and record.meta.draw_offer_open)
+
+    # Actions ------------------------------------------------------------
+
+    def _legal_targets(self, source: str) -> tuple[str, ...]:
+        if self._selected_id is None:
+            return ()
+        return self._moves.legal_targets(self._selected_id, source)
+
+    def _on_move_requested(self, source: str, target: str) -> None:
+        if self._selected_id is None:
+            return
+        promotion = None
+        if self._is_promotion(source, target):
+            dialog = PromotionDialog(self)
+            if not dialog.exec():
+                return
+            promotion = dialog.letter
+        try:
+            record, message, applied = self._moves.my_move(
+                self._selected_id,
+                source,
+                target,
+                promotion=promotion,
+                offer_draw=self.offer_draw_box.isChecked(),
+            )
+        except PostalGambitError as error:
+            QMessageBox.warning(self, "Move rejected", str(error))
+            return
+        self.offer_draw_box.setChecked(False)
+        self.refresh_games()
+        ExportDialog(self._exports.build_email(record, message, applied), self).exec()
+
+    def _is_promotion(self, source: str, target: str) -> bool:
+        if self._selected_id is None or target[1] not in _LAST_RANKS:
+            return False
+        view = self._moves.board(self._selected_id)
+        index = (BOARD_SIZE - int(source[1])) * BOARD_SIZE + FILES.index(source[0])
+        return view.squares[index] in ("P", "p")
+
+    def _new_game(self) -> None:
+        dialog = NewGameDialog(self)
+        if not dialog.exec():
+            return
+        name = dialog.opponent_name.text().strip()
+        email = dialog.opponent_email.text().strip()
+        if not name:
+            QMessageBox.warning(self, "New game", "An opponent name is needed.")
+            return
+        try:
+            record = self._games.create_game(name, email, dialog.my_colour)
+        except PostalGambitError as error:
+            QMessageBox.warning(self, "New game", str(error))
+            return
+        self.refresh_games(keep=record.meta.game_id)
+        if record.meta.my_colour is Colour.BLACK:
+            message = WireMessage(action=WireAction.INVITE, pgn=record.pgn)
+            ExportDialog(self._exports.build_email(record, message), self).exec()
+
+    def _import_move(self) -> None:
+        candidates = tuple(
+            record
+            for record in self._games.list_games()
+            if not self._moves.status(record.meta.game_id).is_over
+            and not self._moves.is_my_turn(record)
+        )
+        dialog = ImportDialog(
+            run_import=self._imports.import_text,
+            create_new_game=lambda outcome, email: self._games.create_from_wire(
+                outcome.message, email
+            ),
+            candidate_games=candidates,
+            parent=self,
+        )
+        dialog.exec()
+        self.refresh_games()
+
+    def _resend_last(self) -> None:
+        record = self._selected_record()
+        if record is None:
+            return
+        message = WireMessage(action=WireAction.MOVE, pgn=record.pgn)
+        try:
+            draft = self._exports.build_email(record, message)
+        except PostalGambitError as error:
+            QMessageBox.warning(self, "Re-send", str(error))
+            return
+        ExportDialog(draft, self).exec()
+
+    def _resign(self) -> None:
+        record = self._selected_record()
+        if record is None:
+            return
+        confirmed = QMessageBox.question(
+            self,
+            "Resign",
+            f"Resign the game against {record.meta.opponent.name} "
+            f"[{record.meta.game_id.short}]? Your opponent wins.",
+        )
+        if confirmed != QMessageBox.StandardButton.Yes:
+            return
+        try:
+            updated, message = self._games.resign(record.meta.game_id)
+        except PostalGambitError as error:
+            QMessageBox.warning(self, "Resign", str(error))
+            return
+        self.refresh_games()
+        ExportDialog(self._exports.build_email(updated, message), self).exec()
+
+    def _accept_draw(self) -> None:
+        record = self._selected_record()
+        if record is None:
+            return
+        confirmed = QMessageBox.question(
+            self,
+            "Accept draw",
+            f"Accept the draw offered by {record.meta.opponent.name} "
+            f"[{record.meta.game_id.short}]? The game ends 1/2-1/2.",
+        )
+        if confirmed != QMessageBox.StandardButton.Yes:
+            return
+        try:
+            updated, message = self._games.accept_draw(record.meta.game_id)
+        except PostalGambitError as error:
+            QMessageBox.warning(self, "Accept draw", str(error))
+            return
+        self.refresh_games()
+        ExportDialog(self._exports.build_email(updated, message), self).exec()
+
+    def _delete_game(self) -> None:
+        record = self._selected_record()
+        if record is None:
+            return
+        confirmed = QMessageBox.question(
+            self,
+            "Delete game",
+            f"Delete the game against {record.meta.opponent.name} "
+            f"[{record.meta.game_id.short}]? The stored game file and its "
+            "history are removed.",
+        )
+        if confirmed != QMessageBox.StandardButton.Yes:
+            return
+        self._games.delete(record.meta.game_id)
+        self._selected_id = None
+        self.refresh_games()
+
+    def _edit_identity(self) -> None:
+        dialog = IdentityDialog(self._settings.load(), self)
+        if dialog.exec():
+            self._settings.save(dialog.identity)
+
+    def _show_licence(self) -> None:
+        assets = find_assets_dir()
+        licence = None
+        if assets is not None:
+            candidate = assets.parent / "LICENSE"
+            licence = candidate if candidate.is_file() else None
+        LicenceDialog("Licence (GPL-3.0)", licence, self).exec()

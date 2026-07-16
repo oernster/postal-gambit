@@ -5,8 +5,9 @@ desktop app that keeps your games, enforces the rules and turns each move
 into a ready-to-send email in whatever mail client you already use. It
 never touches the network itself.
 
-Status: design phase. The architecture and wire format are specified
-(`ARCHITECTURE.md`, `WIRE_FORMAT.md`); implementation follows.
+Status: implemented and gated (166 tests, 100% coverage outside the UI
+layer). The architecture and wire format are specified in
+`ARCHITECTURE.md` and `WIRE_FORMAT.md`.
 
 ## Who it is for
 
@@ -48,8 +49,6 @@ Status: design phase. The architecture and wire format are specified
 | Packaging | Nuitka plus bespoke installer (Windows), Flatpak, DMG |
 
 ## Install and run
-
-Implementation pending. The intended developer loop:
 
 ```
 pip install -r requirements.txt -r requirements-dev.txt

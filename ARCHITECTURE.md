@@ -5,9 +5,9 @@ local-first PySide6 desktop app that manages games, enforces the rules of
 chess, renders outbound moves as ready-to-send emails and imports inbound
 moves from pasted text. It contains no networking of any kind.
 
-Status: design complete, implementation pending. Each invariant below names
-the structural test that will enforce it; those tests are written with the
-first code, before feature work.
+Status: implemented. Each invariant below names the structural test that
+enforces it; the whole suite (unit, integration, wire-format conformance
+and structural) gates at 100% coverage outside the UI layer.
 
 ## Invariants
 
@@ -83,7 +83,10 @@ postal-gambit/
 ### Domain
 
 Frozen dataclasses (`frozen=True, slots=True`, tuples for collections).
-`GameRecord` holds `GameMeta` plus the PGN text. The wire codec is pure
+`GameRecord` holds `GameMeta` plus the PGN text. One piece of protocol
+state lives beside the PGN rather than in it: `draw_offer_open` on
+`GameMeta`, because a draw offer is wire-protocol state that PGN cannot
+carry; everything chess-derivable stays derived. The wire codec is pure
 string work (render a `WireMessage` to a block, parse text back to one) so
 it lives in the domain: it is the protocol contract and must be testable
 with zero machinery. The codec parses structure only; chess legality is not

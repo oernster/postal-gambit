@@ -4,6 +4,7 @@ Reads the repo-root master (postal-gambit.png, square RGBA) and emits every
 platform asset into assets/: loose PNGs for each size, the canonical badge
 PNG, a multi-frame Windows .ico and a macOS .icns.
 """
+
 from __future__ import annotations
 
 from pathlib import Path

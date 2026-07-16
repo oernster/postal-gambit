@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "postal-gambit"
+description = "Correspondence chess over your own email client"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "GPL-3.0-only" }
+authors = [{ name = "Oliver Ernster" }]
+dynamic = ["version"]
+
+[tool.setuptools]
+packages = ["postalgambit"]
+
+[tool.setuptools.dynamic]
+version = { file = "VERSION" }
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=postalgambit --cov-fail-under=100 --cov-report=term-missing"
+
+[tool.coverage.run]
+omit = [
+    "postalgambit/ui/*",
+    "postalgambit/version.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "\\.\\.\\.",
+]
