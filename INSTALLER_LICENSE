@@ -1,0 +1,18 @@
+Postal Gambit Setup: installer notice
+
+This setup program installs Postal Gambit for the current user only. It
+writes the application files to the per-user Programs directory, registers
+an uninstall entry under the current user's registry hive and can create
+Desktop and Start Menu shortcuts. It never requires or requests
+administrator rights and makes no machine-wide changes.
+
+The installer is provided "as is", without warranty of any kind, express or
+implied, including but not limited to the warranties of merchantability,
+fitness for a particular purpose and noninfringement. In no event shall the
+author be liable for any claim, damages or other liability arising from the
+use of this installer.
+
+The application it installs, Postal Gambit, is licensed under the GNU
+General Public License version 3.0; see the Licence button for the full
+text. Uninstalling removes the application files, shortcuts and registry
+entries; your games and settings are kept unless you choose to remove them.

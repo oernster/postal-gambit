@@ -7,7 +7,15 @@ import sys
 
 from tests.structural.scan import REPO_ROOT
 
-_CHECK_TARGETS = ("postalgambit", "tests", "main.py", "generate_icons.py")
+_CHECK_TARGETS = (
+    "postalgambit",
+    "tests",
+    "main.py",
+    "generate_icons.py",
+    "buildexe.py",
+    "buildinstaller.py",
+    "installer",
+)
 
 
 def _run(*args: str) -> subprocess.CompletedProcess:

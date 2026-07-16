@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Postal Gambit build outputs
+dist-installer/
+dist-installer.build/
+installer/payload/
+main.build/
+main.dist/
+main.onefile-build/
