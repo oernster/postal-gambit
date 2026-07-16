@@ -199,7 +199,8 @@ QPushButton:enabled:hover {{
 }}
 QPushButton#LicenceButton {{
     background: {_SURFACE}; color: {_TEXT};
-    padding: 8px 16px; border-radius: 16px; font-weight: 600;
+    padding: 10px 18px; border-radius: 19px; font-size: 14px;
+    font-weight: 600;
 }}
 QPushButton#PrimaryAction {{
     background: {_ACCENT}; color: {_ACCENT_TEXT};
@@ -965,18 +966,22 @@ class InstallerWindow(QWidget):
             badge.setPixmap(icon.pixmap(QSize(_ICON_PX, _ICON_PX)))
             header.addWidget(badge)
 
-        # The title and version share a text baseline. Aligning the version
-        # to the row bottom would sink it to the floor of a row whose height
-        # the icon sets, so both labels are added with AlignBaseline instead.
+        # The version sits in a small muted line directly under the title,
+        # so the header row itself holds only vertically centred blocks and
+        # nothing needs baseline tricks against the icon or the buttons.
         title = QLabel(f"{APP_DISPLAY_NAME} Setup")
         title.setObjectName("HeaderTitle")
-        header.addWidget(title, alignment=Qt.AlignmentFlag.AlignBaseline)
+        title_block = QVBoxLayout()
+        title_block.setSpacing(0)
+        title_block.setContentsMargins(0, 0, 0, 0)
+        title_block.addWidget(title)
 
         version = _app_version()
         if version:
             version_label = QLabel(f"v{version}")
             version_label.setObjectName("HeaderVersion")
-            header.addWidget(version_label, alignment=Qt.AlignmentFlag.AlignBaseline)
+            title_block.addWidget(version_label)
+        header.addLayout(title_block)
 
         header.addStretch()
 
