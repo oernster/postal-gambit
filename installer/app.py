@@ -911,18 +911,18 @@ class InstallerWindow(QWidget):
             badge.setPixmap(icon.pixmap(QSize(_ICON_PX, _ICON_PX)))
             header.addWidget(badge)
 
+        # The title and version share a text baseline. Aligning the version
+        # to the row bottom would sink it to the floor of a row whose height
+        # the icon sets, so both labels are added with AlignBaseline instead.
         title = QLabel(f"{APP_DISPLAY_NAME} Setup")
         title.setObjectName("HeaderTitle")
-        header.addWidget(title)
+        header.addWidget(title, alignment=Qt.AlignmentFlag.AlignBaseline)
 
         version = _app_version()
         if version:
             version_label = QLabel(f"v{version}")
             version_label.setObjectName("HeaderVersion")
-            version_label.setAlignment(
-                Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignLeft
-            )
-            header.addWidget(version_label)
+            header.addWidget(version_label, alignment=Qt.AlignmentFlag.AlignBaseline)
 
         header.addStretch()
 
