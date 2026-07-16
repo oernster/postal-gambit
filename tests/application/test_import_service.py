@@ -242,6 +242,36 @@ class TestEndingImports:
             import_service.import_text(block)
 
 
+class TestAppLinkImport:
+    def test_clicked_link_applies_the_move(
+        self,
+        game_service: GameService,
+        move_service: MoveService,
+        import_service: ImportService,
+    ) -> None:
+        from postalgambit.domain.applink import encode_import_link
+
+        record = sent_e4(game_service, move_service)
+        block = opponent_reply(record.pgn, "e5")
+        outcome = import_service.import_text(encode_import_link(block))
+        assert outcome.kind is ImportKind.APPLIED
+        assert RULES.moves(outcome.record.pgn) == ("e4", "e5")
+
+    def test_link_import_still_detects_divergence(
+        self,
+        game_service: GameService,
+        move_service: MoveService,
+        import_service: ImportService,
+    ) -> None:
+        from postalgambit.domain.applink import encode_import_link
+
+        record = sent_e4(game_service, move_service)
+        link = encode_import_link(opponent_reply(record.pgn, "e5"))
+        import_service.import_text(link)
+        with pytest.raises(DivergenceError):
+            import_service.import_text(link)
+
+
 class TestBareSanFallback:
     def test_without_a_chosen_game_asks_for_one(
         self, import_service: ImportService

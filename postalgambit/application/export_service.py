@@ -7,11 +7,13 @@ from urllib.parse import quote
 
 from postalgambit.application.dto import EmailDraft, MoveApplied
 from postalgambit.application.ports import RulesEngine
+from postalgambit.domain.applink import encode_import_link
 from postalgambit.domain.game import Colour, GameRecord
 from postalgambit.domain.subject import build_subject
 from postalgambit.domain.wire import WireAction, WireMessage, render_block
 
 MAILTO_URI_MAX = 6000
+LINK_LEAD_IN = "With Postal Gambit installed, one click imports this move:"
 FOOTER = "Sent with Postal Gambit: https://github.com/oernster/postal-gambit"
 
 _COLOUR_LABELS = {Colour.WHITE: "White", Colour.BLACK: "Black"}
@@ -84,7 +86,9 @@ class ExportService:
         ]
         lines.extend(self._narrative(meta.me.name, message, applied))
         lines.extend(["", self.rules.ascii_board(message.pgn), ""])
-        lines.append(render_block(message).rstrip("\n"))
+        block = render_block(message).rstrip("\n")
+        lines.append(block)
+        lines.extend(["", LINK_LEAD_IN, encode_import_link(block)])
         lines.extend(["", FOOTER, ""])
         return "\n".join(lines)
 

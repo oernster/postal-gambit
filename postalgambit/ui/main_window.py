@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon, QPixmap
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
@@ -22,6 +22,7 @@ from postalgambit.application.game_service import GameService
 from postalgambit.application.import_service import ImportService
 from postalgambit.application.move_service import MoveService
 from postalgambit.application.ports import SettingsStore
+from postalgambit.domain.applink import decode_import_link
 from postalgambit.domain.errors import PostalGambitError
 from postalgambit.domain.game import Colour, GameId, GameRecord
 from postalgambit.domain.wire import WireAction, WireMessage
@@ -35,20 +36,14 @@ from postalgambit.ui.dialogs.forms import (
     PromotionDialog,
 )
 from postalgambit.ui.dialogs.import_dialog import ImportDialog
-from postalgambit.ui.icons import (
-    find_assets_dir,
-    get_app_icon_path,
-    get_badge_png_path,
-)
+from postalgambit.ui.icons import find_assets_dir, get_app_icon_path
 from postalgambit.ui.keyboard_nav import KeyboardNavigator, NeutralStartWidget
 from postalgambit.ui.labels import game_labels
 from postalgambit.ui.menus import build_menus
+from postalgambit.ui.side_panel import SidePanel
 from postalgambit.version import APP_NAME
 
 _LIST_MIN_WIDTH = 260
-_MOVES_MIN_WIDTH = 190
-_BADGE_PX = 160
-_PLIES_PER_ROW = 2
 _LAST_RANKS = ("8", "1")
 
 
@@ -109,7 +104,7 @@ class MainWindow(QMainWindow):
         self.new_button.setObjectName("Primary")
         self.new_button.clicked.connect(self._new_game)
         self.import_button = QPushButton("Import a move")
-        self.import_button.clicked.connect(self._import_move)
+        self.import_button.clicked.connect(lambda: self._import_move())
         self.delete_button = QPushButton("Delete game")
         self.delete_button.setObjectName("Danger")
         self.delete_button.clicked.connect(self._delete_game)
@@ -138,45 +133,9 @@ class MainWindow(QMainWindow):
         actions.addStretch()
         right.addLayout(actions)
         layout.addLayout(right)
-        layout.addLayout(self._build_side_panel(), stretch=1)
+        self.side_panel = SidePanel()
+        layout.addWidget(self.side_panel, stretch=1)
         self.setCentralWidget(central)
-
-    def _build_side_panel(self) -> QVBoxLayout:
-        """The right-hand panel: the app badge above the move history."""
-        panel = QVBoxLayout()
-        badge_path = get_badge_png_path()
-        if badge_path is not None:
-            badge = QLabel()
-            badge.setPixmap(
-                QPixmap(str(badge_path)).scaled(
-                    _BADGE_PX,
-                    _BADGE_PX,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation,
-                )
-            )
-            badge.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-            panel.addWidget(badge)
-        moves_heading = QLabel("Moves")
-        moves_heading.setObjectName("Heading")
-        panel.addWidget(moves_heading)
-        self.move_list = QListWidget()
-        self.move_list.setMinimumWidth(_MOVES_MIN_WIDTH)
-        panel.addWidget(self.move_list, stretch=1)
-        return panel
-
-    def _refresh_move_list(self) -> None:
-        """Show the selected game's mainline as numbered move pairs."""
-        self.move_list.clear()
-        if self._selected_id is None:
-            return
-        sans = self._moves.moves(self._selected_id)
-        for index in range(0, len(sans), _PLIES_PER_ROW):
-            number = index // _PLIES_PER_ROW + 1
-            white = sans[index]
-            black = sans[index + 1] if index + 1 < len(sans) else ""
-            self.move_list.addItem(f"{number}. {white}  {black}".rstrip())
-        self.move_list.scrollToBottom()
 
     def _build_navigator(self) -> None:
         self._navigator = KeyboardNavigator(
@@ -189,7 +148,7 @@ class MainWindow(QMainWindow):
                 self.import_button,
                 self.delete_button,
                 self.board,
-                self.move_list,
+                self.side_panel.move_list,
                 self.offer_draw_box,
                 self.resend_button,
                 self.accept_draw_button,
@@ -253,7 +212,7 @@ class MainWindow(QMainWindow):
         if record is None:
             self._selected_id = None
             self.board.clear_board()
-            self.move_list.clear()
+            self.side_panel.clear_moves()
             self.turn_label.setText("No game selected.")
             self._set_actions_enabled(None)
             return
@@ -265,7 +224,7 @@ class MainWindow(QMainWindow):
             interactive=my_turn,
         )
         self.turn_label.setText(self._status_text(record, my_turn))
-        self._refresh_move_list()
+        self.side_panel.show_moves(self._moves.moves(record.meta.game_id))
         self._set_actions_enabled(record)
 
     def _status_text(self, record: GameRecord, my_turn: bool) -> str:
@@ -344,7 +303,7 @@ class MainWindow(QMainWindow):
             message = WireMessage(action=WireAction.INVITE, pgn=record.pgn)
             ExportDialog(self._exports.build_email(record, message), self).exec()
 
-    def _import_move(self) -> None:
+    def _import_move(self, initial_text: str = "") -> None:
         candidates = tuple(
             record
             for record in self._games.list_games()
@@ -358,9 +317,30 @@ class MainWindow(QMainWindow):
             ),
             candidate_games=candidates,
             parent=self,
+            initial_text=initial_text,
         )
         dialog.exec()
         self.refresh_games()
+
+    def open_app_link(self, uri: str) -> None:
+        """Handle a clicked postalgambit: link: decode it and open the
+        import dialog prefilled with the block, so the same validation and
+        the same explicit Import click apply as for a paste."""
+        try:
+            block = decode_import_link(uri)
+        except PostalGambitError as error:
+            QMessageBox.warning(self, "Import link", str(error))
+            return
+        self._import_move(initial_text=block)
+
+    def handle_instance_payload(self, payload: str) -> None:
+        """A later launch forwarded its command line: reveal the window
+        and open any link it carried."""
+        self.show()
+        self.raise_()
+        self.activateWindow()
+        if payload:
+            self.open_app_link(payload)
 
     def _resend_last(self) -> None:
         self._actions.resend()

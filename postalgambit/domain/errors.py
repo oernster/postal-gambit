@@ -31,6 +31,18 @@ class MalformedBlockError(WireError):
     """The block was found but its structure is invalid."""
 
 
+class AppLinkError(PostalGambitError):
+    """A postalgambit: import link could not be understood."""
+
+
+class MalformedLinkError(AppLinkError):
+    """The link was recognised but its structure or payload is invalid."""
+
+
+class UnknownLinkVersionError(AppLinkError):
+    """The link declares a version this parser does not know."""
+
+
 class RulesError(PostalGambitError):
     """The rules engine rejected a position or a move."""
 

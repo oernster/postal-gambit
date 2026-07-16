@@ -12,6 +12,7 @@ from postalgambit.application.dto import (
     ImportOutcome,
 )
 from postalgambit.application.ports import Clock, GameStore, RulesEngine
+from postalgambit.domain.applink import decode_import_link, is_app_link
 from postalgambit.domain.errors import (
     BlockNotFoundError,
     DivergenceError,
@@ -31,6 +32,10 @@ class ImportService:
     def import_text(
         self, text: str, chosen_game_id: GameId | None = None
     ) -> ImportOutcome:
+        # A pasted or clicked postalgambit: link decodes to the wire block
+        # it carries, then follows exactly the same validation as a paste.
+        if is_app_link(text):
+            text = decode_import_link(text)
         try:
             message = parse_block(text)
         except BlockNotFoundError:

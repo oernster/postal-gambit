@@ -122,7 +122,23 @@ text, for example `Nf6` or `14... Nf6`. This is outside the wire format:
 the application accepts a bare SAN move on import as a convenience, applied
 to a game the user selects, validated by the same rules engine.
 
-## 8. Subject line convention (non-normative)
+## 8. The import link (non-normative)
+
+Below the block, the email body MAY carry a one-click import link:
+
+```
+postalgambit:import?v=1&d=<payload>
+```
+
+where the payload is the block itself, zlib-compressed then base64url
+encoded without padding. Clicking it launches the recipient's registered
+Postal Gambit, which decodes back to the block and runs exactly the
+validation of section 6; the link never bypasses any of it. Mail clients
+that strip unrecognised URI schemes lose only the shortcut: the block in
+the body remains the normative payload and the paste flow always works.
+An unknown `v` is rejected, never guessed at.
+
+## 9. Subject line convention (non-normative)
 
 `[Postal Gambit <short-id>] move <n>: <SAN>` for moves, with `invitation`,
 `draw accepted` or `resignation` in place of the move part where relevant.

@@ -18,7 +18,7 @@ def build_menus(window: MainWindow) -> tuple[QMenu, ...]:
     file_menu = window.menuBar().addMenu("&File")
     for label, slot in (
         ("&New game...", window._new_game),
-        ("&Import a move...", window._import_move),
+        ("&Import a move...", lambda: window._import_move()),
         ("&Re-send last email...", window._resend_last),
         ("&Delete game...", window._delete_game),
     ):

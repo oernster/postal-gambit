@@ -39,12 +39,29 @@ class TestMoveDraft:
         assert "Your move." in draft.body
         assert BEGIN_LINE in draft.body
         assert "  a b c d e f g h" in draft.body
+        assert "postalgambit:import?v=1&d=" in draft.body
         assert draft.body.rstrip().endswith(
             "Sent with Postal Gambit: https://github.com/oernster/postal-gambit"
         )
         assert draft.mailto_uri.startswith("mailto:jane@example.org?subject=")
         assert "%0D%0A" in draft.mailto_uri
         assert draft.mailto_ok is True
+
+    def test_body_link_decodes_back_to_the_body_block(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        from postalgambit.domain.applink import decode_import_link
+        from postalgambit.domain.wire import parse_block
+
+        record = new_game(game_service, Colour.WHITE)
+        updated, message, applied = move_service.my_move(
+            record.meta.game_id, "e2", "e4"
+        )
+        draft = export_service.build_email(updated, message, applied)
+        link_line = next(
+            line for line in draft.body.splitlines() if line.startswith("postalgambit:")
+        )
+        assert parse_block(decode_import_link(link_line)) == message
 
     def test_draw_offer_line(
         self, game_service: GameService, move_service: MoveService

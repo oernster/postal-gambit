@@ -37,6 +37,7 @@ class ImportDialog(NeutralDialog):
         create_new_game: NewGameCreator,
         candidate_games: tuple[GameRecord, ...],
         parent: QWidget | None = None,
+        initial_text: str = "",
     ) -> None:
         super().__init__(parent)
         self._run_import = run_import
@@ -47,6 +48,8 @@ class ImportDialog(NeutralDialog):
         layout.addWidget(QLabel(_PROMPT))
         self.text = QPlainTextEdit()
         self.text.setMinimumHeight(_BODY_MIN_HEIGHT)
+        if initial_text:
+            self.text.setPlainText(initial_text)
         layout.addWidget(self.text)
         chooser_row = QHBoxLayout()
         chooser_row.addWidget(QLabel("Game (for bare moves):"))

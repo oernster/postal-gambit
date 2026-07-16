@@ -28,6 +28,7 @@ from pathlib import Path
 
 # --- Project identity --------------------------------------------------------
 APP_DISPLAY_NAME = "Postal Gambit"
+LINK_SCHEME = "postalgambit"
 APP_BUNDLE_NAME = "Postal Gambit.app"
 APP_AUTHOR = "Oliver Ernster"
 BUNDLE_ID = "uk.codecrafter.PostalGambit"
@@ -124,6 +125,9 @@ def build_app_bundle(version: str) -> Path:
         f"--jobs={jobs}",
         f"--macos-app-name={APP_DISPLAY_NAME}",
         f"--macos-app-version={version}",
+        # Register the postalgambit: URI scheme in the bundle's Info.plist
+        # so clicked import links open the app (needs a recent Nuitka).
+        f"--macos-app-protocol={LINK_SCHEME}",
         f"--output-dir={DIST_DIR}",
         f"--include-data-dir={ASSETS_DIR}=assets",
         f"--include-data-file={VERSION_FILE}=VERSION",

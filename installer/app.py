@@ -104,6 +104,12 @@ _EXE_SUFFIX = ".exe"
 # "Apps & features" with a working Uninstall button.
 _UNINSTALL_KEY = r"Software\Microsoft\Windows\CurrentVersion\Uninstall\PostalGambit"
 
+# The postalgambit: URI scheme: clicking an import link in an email launches
+# the installed app with the link as its argument.
+_URL_SCHEME = "postalgambit"
+_URL_CLASS_KEY = r"Software\Classes" + "\\" + _URL_SCHEME
+_URL_CLASS_DESCRIPTION = "URL:Postal Gambit Link"
+
 # Per-user Run key for launching the app at Windows sign-in (no admin needed).
 _RUN_SUBKEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
 _RUN_VALUE = "PostalGambit"
@@ -383,6 +389,51 @@ def _write_uninstall_entry(install_dir: Path, uninstaller: Path, version: str) -
             )
 
 
+def _register_url_scheme(install_dir: Path) -> None:
+    """Register the postalgambit: URI scheme for the current user, so a
+    clicked import link launches the installed app."""
+    import winreg
+
+    exe = install_dir / _EXE_NAME
+    icon = install_dir / _SHORTCUT_ICON_FILE_NAME
+    entries = (
+        (_URL_CLASS_KEY, "", _URL_CLASS_DESCRIPTION),
+        (_URL_CLASS_KEY, "URL Protocol", ""),
+        (_URL_CLASS_KEY + r"\DefaultIcon", "", f'"{icon}",0'),
+        (_URL_CLASS_KEY + r"\shell\open\command", "", f'"{exe}" "%1"'),
+    )
+    for key_path, name, value in entries:
+        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, key_path) as handle:
+            winreg.SetValueEx(handle, name, 0, winreg.REG_SZ, value)
+
+
+def _delete_url_scheme() -> None:
+    """Remove the postalgambit: URI registration (best effort)."""
+    import winreg
+
+    def delete_tree(path: str) -> None:
+        try:
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, path) as handle:
+                subkeys = []
+                index = 0
+                while True:
+                    try:
+                        subkeys.append(winreg.EnumKey(handle, index))
+                    except OSError:
+                        break
+                    index += 1
+        except OSError:
+            return
+        for subkey in subkeys:
+            delete_tree(path + "\\" + subkey)
+        try:
+            winreg.DeleteKey(winreg.HKEY_CURRENT_USER, path)
+        except OSError:
+            return
+
+    delete_tree(_URL_CLASS_KEY)
+
+
 def _delete_uninstall_entry() -> None:
     """Remove the HKCU Uninstall registration (best effort)."""
     import winreg
@@ -641,6 +692,7 @@ def install(target: Path, *, desktop: bool, start_menu: bool, autostart: bool) -
     exe_path = _deploy_files(target)
     uninstaller = _copy_uninstaller(target)
     _write_uninstall_entry(target, uninstaller, _app_version() or "0.0.0")
+    _register_url_scheme(target)
     _apply_shortcuts(exe_path, desktop=desktop, start_menu=start_menu)
     _set_autostart(autostart, exe_path)
     return exe_path
@@ -656,6 +708,7 @@ def repair(install_dir: Path) -> Path:
     exe_path = _deploy_files(install_dir)
     uninstaller = _copy_uninstaller(install_dir)
     _write_uninstall_entry(install_dir, uninstaller, _app_version() or "0.0.0")
+    _register_url_scheme(install_dir)
     _apply_shortcuts(exe_path, desktop=True, start_menu=True)
     return exe_path
 
@@ -667,6 +720,7 @@ def uninstall(*, remove_settings: bool) -> None:
     _remove_shortcut(_start_menu_link())
     _remove_autostart()
     _delete_uninstall_entry()
+    _delete_url_scheme()
     _delete_toast_identity()
     if remove_settings:
         shutil.rmtree(_state_dir(), ignore_errors=True)

@@ -101,11 +101,12 @@ cat > "${PACKAGING_DIR}/${APP_ID}.desktop" <<DESKTOP
 Type=Application
 Name=${APP_NAME}
 Comment=${APP_SUMMARY}
-Exec=${APP_CMD}
+Exec=${APP_CMD} %u
 Icon=${APP_ID}
 Terminal=false
 Categories=Game;BoardGame;Qt;
 Keywords=chess;correspondence;email;pgn;
+MimeType=x-scheme-handler/postalgambit;
 DESKTOP
 
 cat > "${PACKAGING_DIR}/${APP_ID}.metainfo.xml" <<METAINFO
