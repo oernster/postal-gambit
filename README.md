@@ -1,4 +1,4 @@
-# Postal Gambit
+# <img width="64" height="64" alt="postal-gambit" src="https://github.com/user-attachments/assets/fe4f922c-2ce0-445a-80d7-ab78516c1523" /> Postal Gambit
 
 Correspondence chess over your own email. Postal Gambit is a local-first
 desktop app that keeps your games, enforces the rules and turns each move
