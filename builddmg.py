@@ -19,7 +19,6 @@ the master PNG), so no image conversion happens here.
 from __future__ import annotations
 
 import os
-import platform
 import plistlib
 import shutil
 import subprocess
@@ -213,11 +212,10 @@ def sign_bundle(app_path: Path, entitlements: Path) -> None:
     run(["codesign", "--verify", "--deep", "--strict", app_path], check=True)
 
 
-def create_dmg(app_path: Path, version: str) -> Path:
+def create_dmg(app_path: Path) -> Path:
     """Wrap the signed .app in a DMG; return the DMG path."""
     section("Creating the DMG")
-    arch = platform.machine()
-    dmg_path = PROJECT_ROOT / f"{DMG_BASENAME}-{version}-macos-{arch}.dmg"
+    dmg_path = PROJECT_ROOT / f"{DMG_BASENAME}.dmg"
     # create-dmg refuses to overwrite; clear any DMG left from a prior run
     # (the root is not wiped between builds the way DIST_DIR is).
     dmg_path.unlink(missing_ok=True)
@@ -253,7 +251,49 @@ def create_dmg(app_path: Path, version: str) -> Path:
     if result.returncode not in CREATE_DMG_OK_CODES:
         raise SystemExit(f"[builddmg] create-dmg failed (exit {result.returncode}).")
     shutil.rmtree(staging, ignore_errors=True)
+    set_dmg_file_icon(dmg_path)
     return dmg_path
+
+
+def set_dmg_file_icon(dmg_path: Path) -> None:
+    """Give the .dmg file its own Finder icon (the app icon).
+
+    create-dmg's --volicon only skins the mounted volume; the downloaded
+    .dmg file shows a generic disk-image icon unless a custom icon resource
+    is attached to the file itself. This attaches it via the Xcode CLT tools
+    (already required for codesign). Best-effort: the icon lives in the file's
+    resource fork, independent of the DMG's code signature, so if a tool is
+    missing the build continues with the volume icon still applied.
+    """
+    if not ICNS_FILE.exists() or not shutil.which("xcrun"):
+        print("[builddmg] WARNING: cannot set .dmg file icon; volume icon only.")
+        return
+    section("Setting the DMG file icon")
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            icon_copy = Path(tmp) / "icon.icns"
+            rsrc = Path(tmp) / "icon.rsrc"
+            shutil.copyfile(ICNS_FILE, icon_copy)
+            run(
+                ["sips", "-i", str(icon_copy)],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            with rsrc.open("wb") as fh:
+                run(
+                    ["xcrun", "DeRez", "-only", "icns", str(icon_copy)],
+                    check=True,
+                    stdout=fh,
+                )
+            run(["xcrun", "Rez", "-append", str(rsrc), "-o", str(dmg_path)], check=True)
+            run(["xcrun", "SetFile", "-a", "C", str(dmg_path)], check=True)
+        print(f"  applied {ICNS_FILE.name} as the .dmg file icon")
+    except (subprocess.CalledProcessError, OSError) as exc:
+        print(
+            f"[builddmg] WARNING: could not set .dmg file icon ({exc}); "
+            "volume icon still applied."
+        )
 
 
 def sign_and_notarize_dmg(dmg_path: Path) -> None:
@@ -312,7 +352,7 @@ def main() -> int:
         strip_object_files(app_path)
         register_url_scheme(app_path)
         sign_bundle(app_path, entitlements)
-        dmg_path = create_dmg(app_path, version)
+        dmg_path = create_dmg(app_path)
         sign_and_notarize_dmg(dmg_path)
     finally:
         entitlements.unlink(missing_ok=True)
