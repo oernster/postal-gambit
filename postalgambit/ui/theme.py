@@ -40,6 +40,10 @@ QWidget {{
 QMenuBar {{
     background: {tokens["panel_bg"]};
 }}
+QMenuBar::item {{
+    background: transparent;
+    padding: 4px 10px;
+}}
 QMenuBar::item:selected {{
     background: {tokens["accent"]};
     color: {tokens["accent_text"]};
@@ -48,9 +52,18 @@ QMenu {{
     background: {tokens["panel_bg"]};
     border: 1px solid {tokens["border"]};
 }}
+QMenu::item {{
+    background: transparent;
+    padding: 5px 28px 5px 14px;
+}}
 QMenu::item:selected {{
     background: {tokens["accent"]};
     color: {tokens["accent_text"]};
+}}
+QMenu::separator {{
+    height: 1px;
+    background: {tokens["border"]};
+    margin: 4px 8px;
 }}
 QListWidget, QPlainTextEdit, QTextBrowser, QLineEdit, QComboBox {{
     background: {tokens["panel_bg"]};
