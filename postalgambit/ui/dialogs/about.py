@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 from PySide6.QtCore import Qt
@@ -15,8 +16,8 @@ from postalgambit.version import APP_AUTHOR, APP_NAME, APP_TAGLINE, __version__
 _ICON_PX = 96
 _DIALOG_MIN_WIDTH = 540
 _BODY_MIN_HEIGHT = 320
-_LICENCE_MIN_WIDTH = 680
-_LICENCE_MIN_HEIGHT = 520
+_LICENCE_HEIGHT = 520
+_LICENCE_MAX_WIDTH = 900
 _LICENCE_FALLBACK = "Licence text not found. See the repository LICENSE file."
 
 _CREDITS = (
@@ -74,13 +75,26 @@ class LicenceDialog(NeutralDialog):
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle(title)
-        self.setMinimumSize(_LICENCE_MIN_WIDTH, _LICENCE_MIN_HEIGHT)
         layout = QVBoxLayout(self)
         body = QTextBrowser()
-        body.setLineWrapMode(QTextBrowser.LineWrapMode.WidgetWidth)
+        # Licence texts arrive hard-wrapped, so no soft wrap; the dialog
+        # contracts to the document's own ideal width instead of a
+        # hardcoded minimum.
+        body.setLineWrapMode(QTextBrowser.LineWrapMode.NoWrap)
         if path is not None and path.is_file():
             body.setPlainText(path.read_text(encoding="utf-8"))
         else:
             body.setPlainText(_LICENCE_FALLBACK)
         layout.addWidget(body)
         layout.addLayout(close_row(self))
+        self.resize(self._fitted_width(body, layout), _LICENCE_HEIGHT)
+
+    def _fitted_width(self, body: QTextBrowser, layout: QVBoxLayout) -> int:
+        document_width = math.ceil(body.document().idealWidth())
+        chrome = (
+            body.verticalScrollBar().sizeHint().width()
+            + 2 * body.frameWidth()
+            + layout.contentsMargins().left()
+            + layout.contentsMargins().right()
+        )
+        return min(document_width + chrome, _LICENCE_MAX_WIDTH)
