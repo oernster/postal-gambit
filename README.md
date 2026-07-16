@@ -5,9 +5,19 @@ desktop app that keeps your games, enforces the rules and turns each move
 into a ready-to-send email in whatever mail client you already use. It
 never touches the network itself.
 
-Status: implemented and gated (166 tests, 100% coverage outside the UI
-layer). The architecture and wire format are specified in
-`ARCHITECTURE.md` and `WIRE_FORMAT.md`.
+Status: implemented and gated (188 tests, 100% coverage outside the UI
+layer). Version 0.2.0.
+
+## Documentation
+
+- [ARCHITECTURE.md](ARCHITECTURE.md): layers, invariants, execution flows
+  and the design-decision record.
+- [WIRE_FORMAT.md](WIRE_FORMAT.md): the versioned email wire format that
+  carries moves, invitations, draw offers and resignations.
+- [TESTING.md](TESTING.md): the coverage gate, the no-mocks policy and the
+  structural test suite.
+- [DEVELOPMENT-README.md](DEVELOPMENT-README.md): building the installer
+  and packages on Windows, Linux and macOS.
 
 ## Who it is for
 
@@ -22,7 +32,7 @@ layer). The architecture and wire format are specified in
 - Anyone wanting engine analysis. Postal Gambit ships none, deliberately;
   "no machines" is the point.
 - Webmail-only users without any mail client are still fine via the
-  clipboard flow, but there is no in-app sending and never will be.
+  clipboard flow; there is no in-app sending and never will be.
 
 ## What it does
 
@@ -30,11 +40,19 @@ layer). The architecture and wire format are specified in
 - Full rules enforcement including all draw rules, via python-chess.
 - Export your move as a pre-filled email draft (`mailto:`) or to the
   clipboard: readable preamble, ASCII board, then a delimited PGN block
-  that carries the entire game state (see `WIRE_FORMAT.md`).
+  that carries the entire game state (see
+  [WIRE_FORMAT.md](WIRE_FORMAT.md)).
 - Import the opponent's reply by pasting the email text, or a `.pgn` file.
   Divergence is detected and reported, never silently resolved.
+- One-click import: every outbound email carries an https link that works
+  in any mail client; a static page bounces it to the installed app with
+  the move prefilled, routed to the running instance when there is one.
 - Invitations, draw offers, draw acceptance and resignation over the same
   format.
+- Bulk actions across a multi-selection of games: resign, accept draws,
+  delete and re-send, each with eligibility filtering and confirmation.
+- Move history panel, humanised game names and a full keyboard focus ring.
+- Dark and light themes (View menu), persisted between runs.
 
 ## Stack
 
@@ -45,7 +63,7 @@ layer). The architecture and wire format are specified in
 | Chess rules | python-chess, quarantined behind a port |
 | Storage | One JSON file per game, local, atomic writes |
 | Transport | Your mail client (`mailto:` or clipboard); no network code |
-| Tests | pytest, 100% coverage gate outside the UI layer |
+| Tests | pytest via `pytest -v --cov`, 100% gate outside the UI layer |
 | Packaging | Nuitka plus bespoke installer (Windows), Flatpak, DMG |
 
 ## Install and run
@@ -58,8 +76,10 @@ python main.py
 ## Test
 
 ```
-pytest
+pytest -v --cov
 ```
+
+See [TESTING.md](TESTING.md) for the gate, the layout and the policy.
 
 ## Build
 
@@ -68,6 +88,10 @@ python buildexe.py
 python buildinstaller.py
 ```
 
+Windows, Linux and macOS packaging are documented in
+[DEVELOPMENT-README.md](DEVELOPMENT-README.md).
+
 ## Licence
 
-GPL-3.0. See `LICENSE`.
+GPL-3.0. See [LICENSE](LICENSE). The bundled installer carries its own
+as-is notice in [INSTALLER_LICENSE](INSTALLER_LICENSE).

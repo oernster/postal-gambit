@@ -37,7 +37,8 @@ and structural) gates at 100% coverage outside the UI layer.
    `WIRE_FORMAT.md`.
 7. **One composition root** at `main.py`; constructor injection everywhere;
    no module-level singletons, no service locators. Enforced by
-   `tests/structural/test_composition_root.py`.
+   `tests/structural/test_layer_boundaries.py`
+   (`test_main_is_the_only_composition_root`).
 8. **Modules stay at or below 400 lines.** Enforced by
    `tests/structural/test_module_size.py`.
 9. **The version lives in `VERSION` only.** Runtime reads it through
@@ -55,12 +56,17 @@ postal-gambit/
     version.py                reads VERSION, 0.0.0-dev fallback
     domain/
       game.py                 GameId, Player, GameMeta, GameRecord
+      identity.py             Identity: the user's own name and email
       wire.py                 WireMessage, WireAction, render/parse codec
+      applink.py              postalgambit: link codec (zlib, base64url)
       subject.py              subject-line builder
+      pgn_tags.py             PGN tag roster helpers
+      errors.py               typed exception hierarchy
     application/
       ports.py                RulesEngine, GameStore, SettingsStore, Clock,
                               IdGenerator (Protocols)
-      dto.py                  BoardView, MoveResult, ImportOutcome
+      dto.py                  GameStatus, BoardView, MoveApplied,
+                              ImportOutcome, EmailDraft
       game_service.py         create, list, resign, offer/accept draw
       move_service.py         apply my move via RulesEngine
       export_service.py       WireMessage -> email body, subject, mailto URI
@@ -68,16 +74,22 @@ postal-gambit/
     infrastructure/
       rules_pychess.py        RulesEngine adapter over python-chess
       store_json.py           one JSON file per game under the data dir
-      settings_json.py        identity (my name, my email), preferences
+      settings_json.py        identity plus preferences (persisted theme)
       clock.py, ids.py        SystemClock, Uuid4Generator
     ui/
-      main_window.py          menu bar, game list, board, status
+      main_window.py          menu bar, game list, board, status, theme apply
+      menus.py                File, Game, View (theme toggle) and Help menus
       actions.py              selection-aware bulk flows (resign, draw,
                               delete, re-send) with per-game export dialogs
-      board_widget.py         QGraphicsView board, drag or click-click moves
-      dialogs/                new game wizard, import, export preview, about
+      board_widget.py         QGraphicsView board, click-click moves, rounded
+                              corners, theme tokens injected at runtime
+      side_panel.py           app badge above the numbered move history
+      labels.py               humanised game names (date, time, short id)
+      launch.py               single-instance server plus app-link forwarding
       keyboard_nav.py         explicit focus ring (the Fulcrum model)
-      theme.py                semantic dark/light token dicts
+      icons.py                bundled asset resolution across dev and builds
+      dialogs/                new game, import, export preview, about, licence
+      theme.py                semantic dark/light token dicts and stylesheet
   tests/                      mirrors the package, plus tests/structural/
   assets/                     generated icon set (generate_icons.py)
 ```
@@ -124,12 +136,24 @@ Escape cancels a pending selection. Board orientation puts the user's
 colour at the bottom. Every destructive action (delete game, overwrite on
 divergent import) gets a modal confirmation naming the target.
 
+Two themes (dark and light) share one semantic token set in `theme.py`.
+The View menu toggles them; the choice persists through the settings
+store; `main_window._apply_theme` restyles the application and hands the
+token dict to the board, which repaints from injected tokens rather than
+reading module state. The board's outer corners are rounded by a clip item
+in the scene, so the squares stay square inside a rounded silhouette.
+
+`launch.py` gives the app single-instance behaviour over a `QLocalServer`
+(newline-framed, server-close acknowledged): a second launch forwards its
+command line to the running window and exits. The same channel carries
+clicked `postalgambit:` links.
+
 ## Execution flows
 
 **New game**: wizard collects opponent name, email and my colour. The
 service mints a GameID, builds the PGN tag roster from settings identity,
 persists, then offers an invitation export (Action `invite`) when the
-opponent moves first, or goes straight to the board when I do.
+opponent moves first; otherwise it goes straight to the board.
 
 **My move**: board interaction produces source and target squares. The
 rules engine validates and returns SAN plus the updated PGN. The record is
@@ -153,6 +177,20 @@ the board. Unknown GameID offers game creation (that is the invite path).
 No block found falls back to bare-SAN parsing against a user-chosen game.
 Divergence is reported and never auto-resolved.
 
+**Import link**: every outbound email also carries an https link (the
+block compressed with zlib and encoded base64url in the URL fragment,
+codec in `domain/applink.py`), because mail clients auto-link https where
+they leave a custom scheme inert. The link opens a static page
+(`docs/open/`, served by GitHub Pages) that rebuilds the
+`postalgambit:` URI locally, auto-attempts the launch and shows a
+high-contrast Open button; a fragment is never sent to any server. The
+launcher forwards the URI to a running instance when there is one; the
+window decodes it and opens the import dialog prefilled with the block,
+so exactly the same validation and the same explicit Import click apply
+as for a paste. Either link form pastes into the import dialog too. The
+URI scheme is registered per user by the Windows installer, the Flatpak
+manifest and the macOS bundle.
+
 ## Design decisions
 
 | Decision | Choice | Rationale | Rejected |
@@ -169,16 +207,17 @@ Divergence is reported and never auto-resolved.
 | Game identity | uuid4 in a `GameID` PGN tag | The `.pgn` file alone stays a complete routable record; short form for humans | ID in block header only; deriving identity from players plus date |
 | Engine assistance | None, ever | The product is human correspondence chess; "no machines" is scope, not just a default | Optional analysis mode |
 | i18n | Deferred; strings centralised from day one | Not core to v1; centralising early keeps the JSON-locale pattern cheap to adopt later | Qt Linguist |
+| Theming | Semantic colour tokens, dark and light dicts, runtime toggle persisted in settings | Widget code never names a colour, so a theme is one dict; the board takes tokens by injection | Qt palettes; per-widget styling |
 
 ## Quality enforcement
 
-- pytest with `--cov-fail-under=100` scoped to `postalgambit/domain`,
-  `postalgambit/application` and `postalgambit/infrastructure`; `ui/`,
-  `version.py` and `main.py` are omitted via `.coveragerc`. No mock
-  libraries: hand-written fakes implement the ports (an in-memory
-  `GameStore`, a scripted `Clock`, a fixed `IdGenerator`). The
-  python-chess adapter is tested against the real library, which is pure
-  computation and needs no test doubles.
+- pytest with `--cov-fail-under=100` over the `postalgambit` package with
+  `ui/` and `version.py` omitted (coverage source and omit list live in
+  `pyproject.toml`, so `pytest -v --cov` and plain `pytest` measure the
+  same thing). No mock libraries: hand-written fakes implement the ports
+  (an in-memory `GameStore`, a scripted `Clock`, a fixed `IdGenerator`).
+  The python-chess adapter is tested against the real library, which is
+  pure computation and needs no test doubles. See `TESTING.md`.
 - Structural tests as listed under Invariants: layering by AST scan, domain
   purity, no-network, module size, composition-root whitelist, style.
 - Wire-format conformance tests mirror `WIRE_FORMAT.md` section by section,
@@ -187,10 +226,12 @@ Divergence is reported and never auto-resolved.
 
 ## Delivery
 
-Standard pipeline when implementation lands: `buildexe.py` (Nuitka,
-standalone, PE metadata, `assets/postal-gambit.ico`), `buildinstaller.py`
-with the themed bespoke per-user installer, `build_flatpak.sh` and
-`builddmg.py` for Linux and macOS. App id `uk.codecrafter.PostalGambit`.
-The icon set is already generated from the repo-root master by
-`generate_icons.py`. Version stamping follows the `VERSION` single-source
-rule.
+Implemented: `buildexe.py` (Nuitka, standalone, PE metadata,
+`assets/postal-gambit.ico`) builds straight into the installer payload;
+`buildinstaller.py` zips the payload and wraps the themed bespoke
+per-user installer as `dist-installer/PostalGambitSetup.exe`;
+`build_flatpak.sh` and `builddmg.py` cover Linux and macOS. App id
+`uk.codecrafter.PostalGambit`. All three register the `postalgambit:` URI
+scheme. The icon set is generated from the repo-root master by
+`generate_icons.py`. The version lives in `VERSION` only. Build steps per
+platform are in `DEVELOPMENT-README.md`.
