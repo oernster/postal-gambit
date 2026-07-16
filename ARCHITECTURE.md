@@ -134,8 +134,12 @@ rules engine validates and returns SAN plus the updated PGN. The record is
 persisted, then the export dialog shows the exact email (subject and body,
 preamble, block, footer) with two buttons: "Open in mail client" (a
 `mailto:` URI launched through `QDesktopServices.openUrl`) and "Copy email
-to clipboard". The mailto body is percent-encoded UTF-8 with CRLF line
-breaks; if the encoded URI exceeds `MAILTO_URI_MAX` (a named constant,
+to clipboard". On Windows the mailto URI is launched with `os.startfile`
+(the ShellExecute path, which honours the per-user MAILTO default) rather
+than Qt's openUrl, whose Windows mail branch consults the legacy
+`Software\Clients\Mail` registry and can resurrect a stale Outlook entry;
+other platforms use `QDesktopServices.openUrl`. The mailto body is
+percent-encoded UTF-8 with CRLF line breaks; if the encoded URI exceeds `MAILTO_URI_MAX` (a named constant,
 around 6000 characters) the dialog steers to the clipboard path, since some
 client and shell combinations truncate long URIs.
 

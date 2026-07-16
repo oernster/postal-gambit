@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import os
+import sys
+
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QDesktopServices, QGuiApplication
 from PySide6.QtWidgets import (
@@ -56,6 +59,14 @@ class ExportDialog(NeutralDialog):
             self.note.setText(_TOO_LONG_NOTE)
 
     def _open_mail_client(self) -> None:
+        # On Windows, Qt's openUrl has a special mail branch that resolves the LEGACY
+        # default-mail-client registry (Software\Clients\Mail), where a stale Outlook
+        # entry can linger, instead of the per-user MAILTO choice from Settings >
+        # Default apps. os.startfile drives the same ShellExecute path a clicked link
+        # uses, which honours the user's actual choice.
+        if sys.platform == "win32":
+            os.startfile(self._draft.mailto_uri)
+            return
         QDesktopServices.openUrl(QUrl(self._draft.mailto_uri))
 
     def _copy(self) -> None:
