@@ -59,9 +59,12 @@ class TestMoveDraft:
         )
         draft = export_service.build_email(updated, message, applied)
         link_line = next(
-            line for line in draft.body.splitlines() if line.startswith(WEB_LINK_BASE)
+            line for line in draft.body.splitlines() if WEB_LINK_BASE in line
         )
-        assert parse_block(decode_import_link(link_line)) == message
+        # The link travels as a markdown-style labelled line: [label](url).
+        assert link_line.startswith("[") and link_line.endswith(")")
+        url = link_line[link_line.index("(") + 1 : -1]
+        assert parse_block(decode_import_link(url)) == message
 
     def test_draw_offer_line(
         self, game_service: GameService, move_service: MoveService

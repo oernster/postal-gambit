@@ -14,6 +14,7 @@ from postalgambit.domain.wire import WireAction, WireMessage, render_block
 
 MAILTO_URI_MAX = 6000
 LINK_LEAD_IN = "Import this move with one click:"
+LINK_LABEL = "♞ Open this move in Postal Gambit"
 FOOTER = "Sent with Postal Gambit: https://github.com/oernster/postal-gambit"
 
 _COLOUR_LABELS = {Colour.WHITE: "White", Colour.BLACK: "Black"}
@@ -88,7 +89,12 @@ class ExportService:
         lines.extend(["", self.rules.ascii_board(message.pgn), ""])
         block = render_block(message).rstrip("\n")
         lines.append(block)
-        lines.extend(["", LINK_LEAD_IN, encode_web_import_link(block)])
+        # A markdown-style labelled link on its own line: clients that
+        # understand the convention (PigeonPost renders it as a button)
+        # show the short label; anywhere else the URL is still visible
+        # and auto-linked, and the block above remains the real payload.
+        link = f"[{LINK_LABEL}]({encode_web_import_link(block)})"
+        lines.extend(["", LINK_LEAD_IN, link])
         lines.extend(["", FOOTER, ""])
         return "\n".join(lines)
 
