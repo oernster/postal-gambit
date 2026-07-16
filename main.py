@@ -24,7 +24,7 @@ from postalgambit.ui.theme import build_qss
 from postalgambit.version import APP_NAME
 
 DATA_DIR_NAME = ".postal-gambit"
-WINDOW_START_WIDTH = 980
+WINDOW_START_WIDTH = 1150
 WINDOW_START_HEIGHT = 640
 
 

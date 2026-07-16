@@ -21,6 +21,14 @@ class TestQueries:
         assert view.turn is Colour.WHITE
         assert move_service.status(record.meta.game_id).is_over is False
 
+    def test_moves_lists_the_mainline(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        record = new_game(game_service, Colour.WHITE)
+        assert move_service.moves(record.meta.game_id) == ()
+        move_service.my_move(record.meta.game_id, "e2", "e4")
+        assert move_service.moves(record.meta.game_id) == ("e4",)
+
     def test_is_my_turn(
         self, game_service: GameService, move_service: MoveService
     ) -> None:

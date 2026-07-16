@@ -23,6 +23,10 @@ class MoveService:
     def status(self, game_id: GameId) -> GameStatus:
         return self.rules.status(self.store.load(game_id).pgn)
 
+    def moves(self, game_id: GameId) -> tuple[str, ...]:
+        """The game's mainline as SAN strings, for the move-history panel."""
+        return self.rules.moves(self.store.load(game_id).pgn)
+
     def is_my_turn(self, record: GameRecord) -> bool:
         if self.rules.status(record.pgn).is_over:
             return False

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
@@ -35,13 +35,20 @@ from postalgambit.ui.dialogs.forms import (
     PromotionDialog,
 )
 from postalgambit.ui.dialogs.import_dialog import ImportDialog
-from postalgambit.ui.icons import find_assets_dir, get_app_icon_path
+from postalgambit.ui.icons import (
+    find_assets_dir,
+    get_app_icon_path,
+    get_badge_png_path,
+)
 from postalgambit.ui.keyboard_nav import KeyboardNavigator, NeutralStartWidget
 from postalgambit.ui.labels import game_labels
 from postalgambit.ui.menus import build_menus
 from postalgambit.version import APP_NAME
 
 _LIST_MIN_WIDTH = 260
+_MOVES_MIN_WIDTH = 190
+_BADGE_PX = 160
+_PLIES_PER_ROW = 2
 _LAST_RANKS = ("8", "1")
 
 
@@ -130,8 +137,46 @@ class MainWindow(QMainWindow):
         actions.addWidget(self.resign_button)
         actions.addStretch()
         right.addLayout(actions)
-        layout.addLayout(right, stretch=1)
+        layout.addLayout(right)
+        layout.addLayout(self._build_side_panel(), stretch=1)
         self.setCentralWidget(central)
+
+    def _build_side_panel(self) -> QVBoxLayout:
+        """The right-hand panel: the app badge above the move history."""
+        panel = QVBoxLayout()
+        badge_path = get_badge_png_path()
+        if badge_path is not None:
+            badge = QLabel()
+            badge.setPixmap(
+                QPixmap(str(badge_path)).scaled(
+                    _BADGE_PX,
+                    _BADGE_PX,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+            )
+            badge.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+            panel.addWidget(badge)
+        moves_heading = QLabel("Moves")
+        moves_heading.setObjectName("Heading")
+        panel.addWidget(moves_heading)
+        self.move_list = QListWidget()
+        self.move_list.setMinimumWidth(_MOVES_MIN_WIDTH)
+        panel.addWidget(self.move_list, stretch=1)
+        return panel
+
+    def _refresh_move_list(self) -> None:
+        """Show the selected game's mainline as numbered move pairs."""
+        self.move_list.clear()
+        if self._selected_id is None:
+            return
+        sans = self._moves.moves(self._selected_id)
+        for index in range(0, len(sans), _PLIES_PER_ROW):
+            number = index // _PLIES_PER_ROW + 1
+            white = sans[index]
+            black = sans[index + 1] if index + 1 < len(sans) else ""
+            self.move_list.addItem(f"{number}. {white}  {black}".rstrip())
+        self.move_list.scrollToBottom()
 
     def _build_navigator(self) -> None:
         self._navigator = KeyboardNavigator(
@@ -144,6 +189,7 @@ class MainWindow(QMainWindow):
                 self.import_button,
                 self.delete_button,
                 self.board,
+                self.move_list,
                 self.offer_draw_box,
                 self.resend_button,
                 self.accept_draw_button,
@@ -207,6 +253,7 @@ class MainWindow(QMainWindow):
         if record is None:
             self._selected_id = None
             self.board.clear_board()
+            self.move_list.clear()
             self.turn_label.setText("No game selected.")
             self._set_actions_enabled(None)
             return
@@ -218,6 +265,7 @@ class MainWindow(QMainWindow):
             interactive=my_turn,
         )
         self.turn_label.setText(self._status_text(record, my_turn))
+        self._refresh_move_list()
         self._set_actions_enabled(record)
 
     def _status_text(self, record: GameRecord, my_turn: bool) -> str:
