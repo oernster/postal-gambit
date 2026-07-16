@@ -240,3 +240,5 @@ packaging/
 *.flatpak
 uk.codecrafter.PostalGambit.yml
 dist-macos/
+# The final DMG is written to the repo root by builddmg.py
+*.dmg

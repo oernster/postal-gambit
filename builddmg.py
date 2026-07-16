@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import os
 import platform
+import plistlib
 import shutil
 import subprocess
 import sys
@@ -125,9 +126,9 @@ def build_app_bundle(version: str) -> Path:
         f"--jobs={jobs}",
         f"--macos-app-name={APP_DISPLAY_NAME}",
         f"--macos-app-version={version}",
-        # Register the postalgambit: URI scheme in the bundle's Info.plist
-        # so clicked import links open the app (needs a recent Nuitka).
-        f"--macos-app-protocol={LINK_SCHEME}",
+        # The postalgambit: URI scheme is registered afterwards by patching
+        # Info.plist directly (register_url_scheme); Nuitka has no option for
+        # CFBundleURLTypes.
         f"--output-dir={DIST_DIR}",
         f"--include-data-dir={ASSETS_DIR}=assets",
         f"--include-data-file={VERSION_FILE}=VERSION",
@@ -169,6 +170,29 @@ def strip_object_files(app_path: Path) -> None:
     print(f"  removed {removed} object files")
 
 
+def register_url_scheme(app_path: Path) -> None:
+    """Add the postalgambit: URI scheme to the bundle's Info.plist.
+
+    Clicked import links (postalgambit://...) only reach the app if the
+    bundle advertises the scheme via CFBundleURLTypes. Nuitka has no option
+    for this, so patch the plist directly. Must run before codesign, since
+    editing Info.plist after signing invalidates the signature.
+    """
+    section("Registering the URL scheme")
+    plist_path = app_path / "Contents" / "Info.plist"
+    with plist_path.open("rb") as fh:
+        info = plistlib.load(fh)
+    info["CFBundleURLTypes"] = [
+        {
+            "CFBundleURLName": BUNDLE_ID,
+            "CFBundleURLSchemes": [LINK_SCHEME],
+        }
+    ]
+    with plist_path.open("wb") as fh:
+        plistlib.dump(info, fh)
+    print(f"  registered {LINK_SCHEME}:// in {plist_path.name}")
+
+
 def sign_bundle(app_path: Path, entitlements: Path) -> None:
     section("Codesigning the bundle")
     run(
@@ -193,7 +217,10 @@ def create_dmg(app_path: Path, version: str) -> Path:
     """Wrap the signed .app in a DMG; return the DMG path."""
     section("Creating the DMG")
     arch = platform.machine()
-    dmg_path = DIST_DIR / f"{DMG_BASENAME}-{version}-macos-{arch}.dmg"
+    dmg_path = PROJECT_ROOT / f"{DMG_BASENAME}-{version}-macos-{arch}.dmg"
+    # create-dmg refuses to overwrite; clear any DMG left from a prior run
+    # (the root is not wiped between builds the way DIST_DIR is).
+    dmg_path.unlink(missing_ok=True)
     staging = DIST_DIR / "dmg-staging"
     if staging.exists():
         shutil.rmtree(staging, ignore_errors=True)
@@ -276,11 +303,14 @@ def main() -> int:
     version = read_version()
     print(f"[builddmg] Building {APP_DISPLAY_NAME} {version} DMG")
 
-    entitlements = Path(tempfile.mkstemp(suffix=".plist")[1])
+    entitlements_fd, entitlements_name = tempfile.mkstemp(suffix=".plist")
+    os.close(entitlements_fd)
+    entitlements = Path(entitlements_name)
     try:
         entitlements.write_text(ENTITLEMENTS_XML, encoding="utf-8")
         app_path = build_app_bundle(version)
         strip_object_files(app_path)
+        register_url_scheme(app_path)
         sign_bundle(app_path, entitlements)
         dmg_path = create_dmg(app_path, version)
         sign_and_notarize_dmg(dmg_path)
