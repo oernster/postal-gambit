@@ -217,6 +217,9 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# Nuitka diagnostics
+nuitka-crash-report.xml
+
 # Postal Gambit build outputs
 dist-installer/
 dist-installer.build/
