@@ -124,17 +124,28 @@ to a game the user selects, validated by the same rules engine.
 
 ## 8. The import link (non-normative)
 
-Below the block, the email body MAY carry a one-click import link:
+Below the block, the email body MAY carry a one-click import link. The
+canonical scheme form is
 
 ```
 postalgambit:import?v=1&d=<payload>
 ```
 
 where the payload is the block itself, zlib-compressed then base64url
-encoded without padding. Clicking it launches the recipient's registered
-Postal Gambit, which decodes back to the block and runs exactly the
-validation of section 6; the link never bypasses any of it. Mail clients
-that strip unrecognised URI schemes lose only the shortcut: the block in
+encoded without padding. Because mail clients only auto-link schemes they
+recognise, the form actually carried in emails is an https wrapper whose
+URL fragment holds the same query:
+
+```
+https://oernster.github.io/postal-gambit/open/#v=1&d=<payload>
+```
+
+The static page behind it rebuilds the scheme URI locally and hands it to
+the recipient's registered Postal Gambit; a URL fragment is never sent to
+any server, so the move data stays between the players. The app decodes
+back to the block and runs exactly the validation of section 6; the link
+never bypasses any of it. Either form pasted into the import dialog also
+works. Mail clients that strip links lose only the shortcut: the block in
 the body remains the normative payload and the paste flow always works.
 An unknown `v` is rejected, never guessed at.
 

@@ -5,9 +5,12 @@ from __future__ import annotations
 import pytest
 
 from postalgambit.domain.applink import (
+    WEB_LINK_BASE,
     decode_import_link,
     encode_import_link,
+    encode_web_import_link,
     is_app_link,
+    is_web_import_link,
 )
 from postalgambit.domain.errors import (
     MalformedLinkError,
@@ -32,6 +35,29 @@ class TestRoundTrip:
         block = render_block(WireMessage(WireAction.INVITE, PGN))
         link = encode_import_link(block)
         assert decode_import_link(f"  {link}\n") == block
+
+
+class TestWebLink:
+    def test_web_link_wraps_the_scheme_query_in_the_fragment(self) -> None:
+        block = render_block(WireMessage(WireAction.MOVE, PGN))
+        link = encode_web_import_link(block)
+        assert link.startswith(f"{WEB_LINK_BASE}#v=1&d=")
+
+    def test_block_round_trips_through_the_web_link(self) -> None:
+        block = render_block(WireMessage(WireAction.MOVE, PGN, offer_draw=True))
+        assert decode_import_link(encode_web_import_link(block)) == block
+
+    def test_detects_web_links_case_insensitively(self) -> None:
+        block = render_block(WireMessage(WireAction.MOVE, PGN))
+        link = encode_web_import_link(block)
+        assert is_web_import_link(f"  {link.upper()} ")
+        assert not is_web_import_link("https://example.org/#v=1&d=x")
+
+    def test_web_link_without_fragment_is_rejected(self) -> None:
+        with pytest.raises(MalformedLinkError):
+            decode_import_link(WEB_LINK_BASE)
+        with pytest.raises(MalformedLinkError):
+            decode_import_link(f"{WEB_LINK_BASE}#")
 
 
 class TestIsAppLink:

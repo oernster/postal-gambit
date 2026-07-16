@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Postal Gambit: open this move</title>
+<link rel="icon" type="image/png" href="../icon.png">
+<style>
+  :root {
+    --background: #1b1e26;
+    --surface: #232733;
+    --border: #39404f;
+    --text: #e6e9f0;
+    --muted: #9aa3b5;
+    --accent: #3d7bd9;
+    --button: #f0b944;
+    --button-hover: #f6c95f;
+    --button-text: #1b1e26;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--background);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px 44px;
+    max-width: 460px;
+    text-align: center;
+  }
+  .card img { width: 96px; height: 96px; }
+  h1 { font-size: 26px; margin: 14px 0 6px; color: var(--accent); }
+  p { font-size: 15px; line-height: 1.5; margin: 10px 0; }
+  .muted { color: var(--muted); font-size: 13px; }
+  a.button {
+    display: inline-block;
+    margin: 22px 0 8px;
+    padding: 15px 36px;
+    border-radius: 28px;
+    background: var(--button);
+    color: var(--button-text);
+    font-size: 17px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  a.button:hover { background: var(--button-hover); }
+  a { color: var(--accent); }
+  #missing { display: none; }
+</style>
+</head>
+<body>
+<main class="card">
+  <img src="../icon.png" alt="Postal Gambit">
+  <h1>Postal Gambit</h1>
+  <div id="ready">
+    <p>Your opponent sent you a chess move.</p>
+    <a class="button" id="open" href="#">&#9822; Open in Postal Gambit</a>
+    <p class="muted">The move opens in the app for checking and import.
+    Nothing is uploaded anywhere; the move data never leaves this page.</p>
+    <p class="muted">Nothing happened? Postal Gambit may not be installed:
+    <a href="https://github.com/oernster/postal-gambit/releases">get it
+    here</a>, or paste the game block from the email into
+    File &gt; Import a move.</p>
+  </div>
+  <div id="missing">
+    <p>This link is missing its move data.</p>
+    <p class="muted">Go back to the email and paste the game block into
+    Postal Gambit instead (File &gt; Import a move).</p>
+  </div>
+</main>
+<script>
+(function () {
+  var fragment = window.location.hash.replace(/^#/, "");
+  var valid = /^v=\d+&d=[A-Za-z0-9_\-%]+$/.test(fragment);
+  if (!valid) {
+    document.getElementById("ready").style.display = "none";
+    document.getElementById("missing").style.display = "block";
+    return;
+  }
+  var uri = "postalgambit:import?" + fragment;
+  var button = document.getElementById("open");
+  button.setAttribute("href", uri);
+  window.setTimeout(function () { window.location.href = uri; }, 400);
+})();
+</script>
+</body>
+</html>
