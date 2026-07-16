@@ -73,6 +73,12 @@ class SettingsStore(Protocol):
 
     def save(self, identity: Identity) -> None: ...
 
+    def load_theme(self) -> str:
+        """The persisted theme name, or an empty string when unset."""
+        ...
+
+    def save_theme(self, theme: str) -> None: ...
+
 
 class Clock(Protocol):
     def now(self) -> datetime:

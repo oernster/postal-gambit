@@ -5,6 +5,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
+    QApplication,
     QCheckBox,
     QHBoxLayout,
     QLabel,
@@ -41,6 +42,7 @@ from postalgambit.ui.keyboard_nav import KeyboardNavigator, NeutralStartWidget
 from postalgambit.ui.labels import game_labels
 from postalgambit.ui.menus import build_menus
 from postalgambit.ui.side_panel import SidePanel
+from postalgambit.ui.theme import DEFAULT_THEME, THEMES, build_qss
 from postalgambit.version import APP_NAME
 
 _LIST_MIN_WIDTH = 260
@@ -80,6 +82,7 @@ class MainWindow(QMainWindow):
         )
         self._menus = build_menus(self)
         self._build_navigator()
+        self._apply_theme(self._settings.load_theme(), persist=False)
         self.refresh_games()
 
     # Construction -------------------------------------------------------
@@ -355,6 +358,20 @@ class MainWindow(QMainWindow):
         self._actions.delete()
         self._selected_id = None
         self.refresh_games()
+
+    def _set_theme(self, name: str) -> None:
+        self._apply_theme(name)
+
+    def _apply_theme(self, name: str, persist: bool = True) -> None:
+        if name not in THEMES:
+            name = DEFAULT_THEME
+        tokens = THEMES[name]
+        QApplication.instance().setStyleSheet(build_qss(tokens))
+        self.board.set_tokens(tokens)
+        for theme_name, action in self.theme_actions.items():
+            action.setChecked(theme_name == name)
+        if persist:
+            self._settings.save_theme(name)
 
     def _edit_identity(self) -> None:
         dialog = IdentityDialog(self._settings.load(), self)

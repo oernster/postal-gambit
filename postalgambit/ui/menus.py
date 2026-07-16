@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QActionGroup
 from PySide6.QtWidgets import QMenu
 
 from postalgambit.ui.dialogs.about import AboutDialog
@@ -40,6 +40,17 @@ def build_menus(window: MainWindow) -> tuple[QMenu, ...]:
         action.triggered.connect(slot)
         game_menu.addAction(action)
 
+    view_menu = window.menuBar().addMenu("&View")
+    theme_group = QActionGroup(window)
+    window.theme_actions = {}
+    for name, label in (("dark", "🌙 &Dark theme"), ("light", "☀️ &Light theme")):
+        action = QAction(label, window)
+        action.setCheckable(True)
+        theme_group.addAction(action)
+        action.triggered.connect(lambda _=False, n=name: window._set_theme(n))
+        view_menu.addAction(action)
+        window.theme_actions[name] = action
+
     help_menu = window.menuBar().addMenu("&Help")
     licence_action = QAction("&Licence (GPL-3.0)", window)
     licence_action.triggered.connect(window._show_licence)
@@ -47,4 +58,4 @@ def build_menus(window: MainWindow) -> tuple[QMenu, ...]:
     about_action.triggered.connect(lambda: AboutDialog(window).exec())
     help_menu.addAction(licence_action)
     help_menu.addAction(about_action)
-    return (file_menu, game_menu, help_menu)
+    return (file_menu, game_menu, view_menu, help_menu)

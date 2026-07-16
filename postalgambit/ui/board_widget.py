@@ -15,18 +15,24 @@ from __future__ import annotations
 from typing import Callable
 
 from PySide6.QtCore import QRectF, Qt, Signal
-from PySide6.QtGui import QBrush, QColor, QFont, QKeyEvent, QPen
-from PySide6.QtWidgets import QGraphicsScene, QGraphicsView
+from PySide6.QtGui import QBrush, QColor, QFont, QKeyEvent, QPainterPath, QPen
+from PySide6.QtWidgets import (
+    QGraphicsItem,
+    QGraphicsPathItem,
+    QGraphicsScene,
+    QGraphicsView,
+)
 
 from postalgambit.application.dto import BoardView
 from postalgambit.domain.game import Colour
-from postalgambit.ui.theme import TOKENS
+from postalgambit.ui.theme import DARK
 
 BOARD_SIZE = 8
 SQUARE_PX = 64
 GLYPH_POINT_SIZE = 34
 CURSOR_PEN_WIDTH = 3
 TARGET_DOT_RATIO = 0.28
+CORNER_RADIUS_PX = 12
 FILES = "abcdefgh"
 
 PIECE_GLYPHS = {
@@ -53,6 +59,8 @@ class BoardWidget(QGraphicsView):
     def __init__(self, targets_provider: TargetsProvider) -> None:
         super().__init__()
         self._targets_provider = targets_provider
+        self._tokens = DARK
+        self._clip: QGraphicsPathItem | None = None
         self._view: BoardView | None = None
         self._orientation = Colour.WHITE
         self._interactive = False
@@ -82,7 +90,13 @@ class BoardWidget(QGraphicsView):
         self._interactive = False
         self._selected = None
         self._targets = ()
+        self._clip = None
         self._scene.clear()
+
+    def set_tokens(self, tokens: dict[str, str]) -> None:
+        """Adopt a theme's colour tokens and repaint."""
+        self._tokens = tokens
+        self._redraw()
 
     # Geometry -----------------------------------------------------------
 
@@ -109,8 +123,10 @@ class BoardWidget(QGraphicsView):
 
     def _redraw(self) -> None:
         self._scene.clear()
+        self._clip = None
         if self._view is None:
             return
+        self._clip = self._build_clip()
         for row in range(BOARD_SIZE):
             for column in range(BOARD_SIZE):
                 name = self._square_name(column, row)
@@ -118,12 +134,27 @@ class BoardWidget(QGraphicsView):
         if self.hasFocus():
             self._paint_cursor()
 
+    def _build_clip(self) -> QGraphicsPathItem:
+        """A rounded-rect root item; children are clipped to its shape, so
+        the board's outer corners are rounded while squares stay square."""
+        side = BOARD_SIZE * SQUARE_PX
+        path = QPainterPath()
+        path.addRoundedRect(0, 0, side, side, CORNER_RADIUS_PX, CORNER_RADIUS_PX)
+        clip = QGraphicsPathItem(path)
+        clip.setPen(QPen(Qt.PenStyle.NoPen))
+        clip.setFlag(QGraphicsItem.GraphicsItemFlag.ItemClipsChildrenToShape)
+        self._scene.addItem(clip)
+        return clip
+
     def _paint_square(self, name: str, is_light: bool) -> None:
         rect = self._square_rect(name)
-        fill = TOKENS["square_light"] if is_light else TOKENS["square_dark"]
+        fill = self._tokens["square_light"] if is_light else self._tokens["square_dark"]
         if name == self._selected:
-            fill = TOKENS["square_selected"]
-        self._scene.addRect(rect, QPen(Qt.PenStyle.NoPen), QBrush(QColor(fill)))
+            fill = self._tokens["square_selected"]
+        square = self._scene.addRect(
+            rect, QPen(Qt.PenStyle.NoPen), QBrush(QColor(fill))
+        )
+        square.setParentItem(self._clip)
         if name in self._targets:
             dot = rect.adjusted(
                 SQUARE_PX * (1 - TARGET_DOT_RATIO) / 2,
@@ -131,17 +162,22 @@ class BoardWidget(QGraphicsView):
                 -SQUARE_PX * (1 - TARGET_DOT_RATIO) / 2,
                 -SQUARE_PX * (1 - TARGET_DOT_RATIO) / 2,
             )
-            self._scene.addEllipse(
+            marker = self._scene.addEllipse(
                 dot,
                 QPen(Qt.PenStyle.NoPen),
-                QBrush(QColor(TOKENS["square_target"])),
+                QBrush(QColor(self._tokens["square_target"])),
             )
+            marker.setParentItem(self._clip)
         piece = self._view.squares[self._square_index(name)]
         if piece:
             glyph = self._scene.addSimpleText(
                 PIECE_GLYPHS[piece], QFont("Segoe UI Symbol", GLYPH_POINT_SIZE)
             )
-            glyph.setBrush(QBrush(QColor("#f5f5f5" if piece.isupper() else "#1a1a1a")))
+            fill_token = "piece_light" if piece.isupper() else "piece_dark"
+            glyph.setBrush(QBrush(QColor(self._tokens[fill_token])))
+            if piece.isupper():
+                glyph.setPen(QPen(QColor(self._tokens["piece_dark"])))
+            glyph.setParentItem(self._clip)
             bounds = glyph.boundingRect()
             glyph.setPos(
                 rect.x() + (SQUARE_PX - bounds.width()) / 2,
@@ -150,9 +186,10 @@ class BoardWidget(QGraphicsView):
 
     def _paint_cursor(self) -> None:
         rect = self._square_rect(self._cursor_square).adjusted(2, 2, -2, -2)
-        pen = QPen(QColor(TOKENS["square_cursor"]))
+        pen = QPen(QColor(self._tokens["square_cursor"]))
         pen.setWidth(CURSOR_PEN_WIDTH)
-        self._scene.addRect(rect, pen, QBrush(Qt.BrushStyle.NoBrush))
+        ring = self._scene.addRect(rect, pen, QBrush(Qt.BrushStyle.NoBrush))
+        ring.setParentItem(self._clip)
 
     # Interaction --------------------------------------------------------
 
