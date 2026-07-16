@@ -305,7 +305,11 @@ class MainWindow(QMainWindow):
             return
         self.refresh_games(keep=record.meta.game_id)
         if record.meta.my_colour is Colour.BLACK:
-            message = WireMessage(action=WireAction.INVITE, pgn=record.pgn)
+            message = WireMessage(
+                action=WireAction.INVITE,
+                pgn=record.pgn,
+                from_email=record.meta.me.email,
+            )
             ExportDialog(self._exports.build_email(record, message), self).exec()
 
     def _import_move(self, initial_text: str = "") -> None:

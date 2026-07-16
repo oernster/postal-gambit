@@ -72,6 +72,13 @@ class TestMyMove:
         assert message.pgn == updated.pgn
         assert game_service.get(record.meta.game_id).pgn == updated.pgn
 
+    def test_message_carries_my_reply_address(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        record = new_game(game_service, Colour.WHITE)
+        _, message, _ = move_service.my_move(record.meta.game_id, "e2", "e4")
+        assert message.from_email == "o@example.org"
+
     def test_my_move_clears_a_standing_draw_offer(
         self, game_service: GameService, move_service: MoveService
     ) -> None:

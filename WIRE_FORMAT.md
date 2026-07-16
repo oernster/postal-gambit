@@ -30,6 +30,7 @@ An outbound email is composed of three parts. Only the second is normative.
 ```
 -----BEGIN POSTAL GAMBIT v1-----
 Action: move
+From: oliver@example.org
 Offer: draw
 
 [Event "Postal Gambit correspondence game"]
@@ -63,6 +64,7 @@ corrupts state, the latest message always suffices.
 | Header | Values | Required | Meaning |
 |---|---|---|---|
 | `Action` | `invite`, `move`, `draw-accept`, `resign` | yes | What this message does |
+| `From` | an email address | no | The sender's reply address |
 | `Offer` | `draw` | no | A draw offer accompanying a move |
 
 - `invite`: proposes a new game. The PGN movetext MAY be empty (`*` only)
@@ -75,6 +77,16 @@ corrupts state, the latest message always suffices.
   non-sender) and a `[Termination "resignation"]` tag SHOULD be present.
 - `Offer: draw` is only meaningful with `Action: move`, mirroring
   over-the-board practice where a draw is offered together with a move.
+- `From` carries the sender's own email address so that the recipient's
+  application can create a game from an `invite` or first `move` without
+  asking the user to type the opponent's address; the one-click import
+  link carries only the block, so without this header the address exists
+  nowhere in the payload. Senders SHOULD include it whenever the address
+  is known. Receivers MUST treat it as a convenience default only, shown
+  to the user before any game is created, never as an authenticated
+  identity: the block travels in ordinary email and anyone can write any
+  address here. Blocks from version 1 senders predating this header
+  simply lack it and receivers fall back to asking the user.
 
 Unknown headers MUST be ignored (forward compatibility). Unknown `Action`
 values MUST cause rejection with an explanation to the user.

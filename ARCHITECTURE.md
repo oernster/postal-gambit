@@ -173,9 +173,13 @@ client and shell combinations truncate long URIs.
 opens a `.pgn` file). The codec finds and parses the block per
 `WIRE_FORMAT.md`; the import service routes by GameID, replays the PGN,
 verifies the strict-prefix rule and turn consistency, persists and updates
-the board. Unknown GameID offers game creation (that is the invite path).
-No block found falls back to bare-SAN parsing against a user-chosen game.
-Divergence is reported and never auto-resolved.
+the board. Unknown GameID offers game creation (that is the invite path):
+the opponent's address comes from the block's optional `From` header,
+shown in the confirmation before the game is created, and the app asks
+for it only when the header is absent (an older sender or hand-typed
+text). The header is a convenience default, never an authenticated
+identity. No block found falls back to bare-SAN parsing against a
+user-chosen game. Divergence is reported and never auto-resolved.
 
 **Import link**: every outbound email also carries an https link (the
 block compressed with zlib and encoded base64url in the URL fragment,

@@ -24,6 +24,7 @@ BEGIN_LINE = f"-----BEGIN POSTAL GAMBIT v{WIRE_VERSION}-----"
 END_LINE = "-----END POSTAL GAMBIT-----"
 
 ACTION_HEADER = "Action"
+FROM_HEADER = "From"
 OFFER_HEADER = "Offer"
 OFFER_DRAW_VALUE = "draw"
 
@@ -51,10 +52,17 @@ class WireMessage:
     action: WireAction
     pgn: str
     offer_draw: bool = False
+    # The sender's email address, so the recipient's application can create
+    # a game from an invite or first move without asking the user to type
+    # the opponent's address. Optional: blank when the sender has not
+    # configured one, and absent from blocks sent by older versions.
+    from_email: str = ""
 
 
 def render_block(message: WireMessage) -> str:
     lines = [BEGIN_LINE, f"{ACTION_HEADER}: {message.action.value}"]
+    if message.from_email:
+        lines.append(f"{FROM_HEADER}: {message.from_email}")
     if message.offer_draw:
         lines.append(f"{OFFER_HEADER}: {OFFER_DRAW_VALUE}")
     lines.append("")
@@ -125,7 +133,12 @@ def _build_message(headers: dict[str, str], pgn: str) -> WireMessage:
         action is WireAction.MOVE
         and headers.get(OFFER_HEADER.lower(), "").lower() == OFFER_DRAW_VALUE
     )
-    return WireMessage(action=action, pgn=pgn, offer_draw=offer_draw)
+    return WireMessage(
+        action=action,
+        pgn=pgn,
+        offer_draw=offer_draw,
+        from_email=headers.get(FROM_HEADER.lower(), ""),
+    )
 
 
 def extract_san(text: str) -> str | None:

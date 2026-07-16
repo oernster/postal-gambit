@@ -163,6 +163,28 @@ class TestUnknownGame:
         assert outcome.message is not None
         assert outcome.record is None
 
+    def test_unknown_move_message_carries_the_senders_address(
+        self,
+        game_service: GameService,
+        move_service: MoveService,
+        import_service: ImportService,
+    ) -> None:
+        """The From header survives the whole import path, so a game created
+        from a one-click link needs no typed opponent address."""
+        record = sent_e4(game_service, move_service)
+        reply_pgn = RULES.apply_san(record.pgn, "e5").new_pgn
+        block = render_block(
+            WireMessage(
+                action=WireAction.MOVE,
+                pgn=reply_pgn,
+                from_email="jane@example.org",
+            )
+        )
+        game_service.delete(record.meta.game_id)
+        outcome = import_service.import_text(block)
+        assert outcome.kind is ImportKind.NEW_GAME
+        assert outcome.message.from_email == "jane@example.org"
+
     def test_unknown_resign_message_is_divergence(
         self,
         game_service: GameService,

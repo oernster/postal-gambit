@@ -92,22 +92,40 @@ class ImportDialog(NeutralDialog):
         self.accept()
 
     def _offer_new_game(self, outcome: ImportOutcome) -> None:
-        confirmed = QMessageBox.question(
-            self,
-            "New game",
-            "This message belongs to a game that is not on file yet. " "Create it?",
-        )
+        # The block's From header carries the sender's address, so a game
+        # arriving through the one-click link or a paste is created without
+        # asking. The prompt survives only as the fallback for blocks from
+        # older versions or hand-typed text, which carry no address.
+        sender_email = self._sender_email(outcome)
+        question = "This message belongs to a game that is not on file yet. Create it?"
+        if sender_email:
+            question += f"\n\nReplies will go to {sender_email}."
+        confirmed = QMessageBox.question(self, "New game", question)
         if confirmed != QMessageBox.StandardButton.Yes:
             return
-        email, entered = QInputDialog.getText(
-            self, "Opponent email", "Your opponent's email address:"
-        )
-        if not entered:
+        email = sender_email or self._ask_opponent_email()
+        if email is None:
             return
         try:
-            record = self._create_new_game(outcome, email.strip())
+            record = self._create_new_game(outcome, email)
         except PostalGambitError as error:
             QMessageBox.warning(self, "Import failed", str(error))
             return
         self.result_label.setText(f"Created from the message: {game_label(record)}.")
         self.accept()
+
+    @staticmethod
+    def _sender_email(outcome: ImportOutcome) -> str:
+        """The message's From address, blank unless it looks like one."""
+        if outcome.message is None:
+            return ""
+        candidate = outcome.message.from_email.strip()
+        return candidate if "@" in candidate else ""
+
+    def _ask_opponent_email(self) -> str | None:
+        email, entered = QInputDialog.getText(
+            self, "Opponent email", "Your opponent's email address:"
+        )
+        if not entered:
+            return None
+        return email.strip()

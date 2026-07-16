@@ -78,6 +78,13 @@ class TestResign:
         updated, _ = game_service.resign(record.meta.game_id)
         assert RULES.status(updated.pgn).result == "1-0"
 
+    def test_resign_message_carries_my_reply_address(
+        self, game_service: GameService
+    ) -> None:
+        record = new_game(game_service, Colour.WHITE)
+        _, message = game_service.resign(record.meta.game_id)
+        assert message.from_email == "o@example.org"
+
     def test_resigning_a_finished_game_is_rejected(
         self, game_service: GameService
     ) -> None:
@@ -99,6 +106,7 @@ class TestAcceptDraw:
         updated, message = game_service.accept_draw(record.meta.game_id)
         assert RULES.status(updated.pgn).description == "agreed draw"
         assert message.action is WireAction.DRAW_ACCEPT
+        assert message.from_email == "o@example.org"
 
     def test_accept_without_offer_is_rejected(self, game_service: GameService) -> None:
         record = new_game(game_service)

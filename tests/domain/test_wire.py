@@ -57,11 +57,29 @@ class TestRender:
         parsed = parse_block(render_block(WireMessage(action, PGN)))
         assert parsed == WireMessage(action, PGN)
 
+    def test_from_header_rides_with_the_message(self) -> None:
+        block = render_block(
+            WireMessage(WireAction.MOVE, PGN, from_email="oliver@example.org")
+        )
+        assert "From: oliver@example.org" in block.splitlines()
+
+    def test_from_header_is_omitted_when_blank(self) -> None:
+        block = render_block(WireMessage(WireAction.MOVE, PGN))
+        assert not any(line.startswith("From:") for line in block.splitlines())
+
 
 class TestParse:
     def test_round_trip_with_offer(self) -> None:
         message = WireMessage(WireAction.MOVE, PGN, offer_draw=True)
         assert parse_block(render_block(message)) == message
+
+    def test_round_trip_with_from_address(self) -> None:
+        message = WireMessage(WireAction.INVITE, PGN, from_email="jane@example.org")
+        assert parse_block(render_block(message)) == message
+
+    def test_missing_from_header_parses_blank(self) -> None:
+        text = f"{BEGIN_LINE}\nAction: move\n\n{PGN}\n{END_LINE}"
+        assert parse_block(text).from_email == ""
 
     def test_block_embedded_in_full_email_body(self) -> None:
         body = (

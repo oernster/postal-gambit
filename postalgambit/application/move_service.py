@@ -55,6 +55,9 @@ class MoveService:
         updated = record.with_pgn(applied.new_pgn, self.clock.now())
         self.store.save(updated)
         message = WireMessage(
-            action=WireAction.MOVE, pgn=applied.new_pgn, offer_draw=offer_draw
+            action=WireAction.MOVE,
+            pgn=applied.new_pgn,
+            offer_draw=offer_draw,
+            from_email=record.meta.me.email,
         )
         return updated, message, applied

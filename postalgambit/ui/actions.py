@@ -140,7 +140,11 @@ class GameActions:
             return
         skipped = []
         for record in records:
-            message = WireMessage(action=WireAction.MOVE, pgn=record.pgn)
+            message = WireMessage(
+                action=WireAction.MOVE,
+                pgn=record.pgn,
+                from_email=record.meta.me.email,
+            )
             try:
                 draft = self._exports.build_email(record, message)
             except PostalGambitError:

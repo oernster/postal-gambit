@@ -111,7 +111,9 @@ class GameService:
         pgn = self.rules.with_result(record.pgn, result, TERMINATION_RESIGNATION)
         updated = record.with_pgn(pgn, self.clock.now())
         self.store.save(updated)
-        return updated, WireMessage(action=WireAction.RESIGN, pgn=pgn)
+        return updated, WireMessage(
+            action=WireAction.RESIGN, pgn=pgn, from_email=record.meta.me.email
+        )
 
     def accept_draw(self, game_id: GameId) -> tuple[GameRecord, WireMessage]:
         record = self.store.load(game_id)
@@ -121,7 +123,9 @@ class GameService:
         pgn = self.rules.with_result(record.pgn, RESULT_DRAW, TERMINATION_AGREED_DRAW)
         updated = record.with_pgn(pgn, self.clock.now())
         self.store.save(updated)
-        return updated, WireMessage(action=WireAction.DRAW_ACCEPT, pgn=pgn)
+        return updated, WireMessage(
+            action=WireAction.DRAW_ACCEPT, pgn=pgn, from_email=record.meta.me.email
+        )
 
     def _require_in_progress(self, record: GameRecord) -> None:
         if self.rules.status(record.pgn).is_over:
