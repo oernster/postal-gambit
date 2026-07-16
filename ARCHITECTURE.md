@@ -72,6 +72,8 @@ postal-gambit/
       clock.py, ids.py        SystemClock, Uuid4Generator
     ui/
       main_window.py          menu bar, game list, board, status
+      actions.py              selection-aware bulk flows (resign, draw,
+                              delete, re-send) with per-game export dialogs
       board_widget.py         QGraphicsView board, drag or click-click moves
       dialogs/                new game wizard, import, export preview, about
       keyboard_nav.py         explicit focus ring (the Fulcrum model)

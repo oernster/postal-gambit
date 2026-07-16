@@ -25,6 +25,7 @@ from postalgambit.application.ports import SettingsStore
 from postalgambit.domain.errors import PostalGambitError
 from postalgambit.domain.game import Colour, GameId, GameRecord
 from postalgambit.domain.wire import WireAction, WireMessage
+from postalgambit.ui.actions import GameActions
 from postalgambit.ui.board_widget import BOARD_SIZE, FILES, BoardWidget
 from postalgambit.ui.dialogs.about import LicenceDialog
 from postalgambit.ui.dialogs.export_dialog import ExportDialog
@@ -66,6 +67,14 @@ class MainWindow(QMainWindow):
             self.setWindowIcon(QIcon(str(icon_path)))
         self._neutral_start = NeutralStartWidget(self)
         self._build_widgets()
+        self._actions = GameActions(
+            parent=self,
+            games=self._games,
+            moves=self._moves,
+            exports=self._exports,
+            selection=self._selected_records,
+            refresh=self.refresh_games,
+        )
         self._menus = build_menus(self)
         self._build_navigator()
         self.refresh_games()
@@ -81,7 +90,12 @@ class MainWindow(QMainWindow):
         left.addWidget(heading)
         self.game_list = QListWidget()
         self.game_list.setMinimumWidth(_LIST_MIN_WIDTH)
+        # Extended selection: the CURRENT item drives the board while the
+        # full selection drives the bulk actions (resign, accept draw,
+        # delete, re-send apply to every selected game they fit).
+        self.game_list.setSelectionMode(QListWidget.SelectionMode.ExtendedSelection)
         self.game_list.currentItemChanged.connect(self._on_selection)
+        self.game_list.itemSelectionChanged.connect(self._on_selection)
         left.addWidget(self.game_list, stretch=1)
         self.new_button = QPushButton("New game")
         self.new_button.setObjectName("Primary")
@@ -181,6 +195,12 @@ class MainWindow(QMainWindow):
             return None
         return self._games.get(GameId(item.data(Qt.ItemDataRole.UserRole)))
 
+    def _selected_records(self) -> tuple[GameRecord, ...]:
+        return tuple(
+            self._games.get(GameId(item.data(Qt.ItemDataRole.UserRole)))
+            for item in self.game_list.selectedItems()
+        )
+
     def _on_selection(self, *_args) -> None:
         self._show_selected()
 
@@ -212,23 +232,14 @@ class MainWindow(QMainWindow):
         return " ".join(parts)
 
     def _set_actions_enabled(self, record: GameRecord | None) -> None:
-        if record is None:
-            for widget in (
-                self.offer_draw_box,
-                self.resend_button,
-                self.accept_draw_button,
-                self.resign_button,
-                self.delete_button,
-            ):
-                widget.setEnabled(False)
-            return
-        over = self._moves.status(record.meta.game_id).is_over
-        my_turn = self._moves.is_my_turn(record)
-        self.delete_button.setEnabled(True)
-        self.resend_button.setEnabled(True)
-        self.offer_draw_box.setEnabled(my_turn)
-        self.resign_button.setEnabled(not over)
-        self.accept_draw_button.setEnabled(not over and record.meta.draw_offer_open)
+        selected = self._selected_records()
+        self.delete_button.setEnabled(bool(selected))
+        self.resend_button.setEnabled(bool(selected))
+        self.resign_button.setEnabled(bool(self._actions.resignable()))
+        self.accept_draw_button.setEnabled(bool(self._actions.draw_acceptable()))
+        self.offer_draw_box.setEnabled(
+            record is not None and self._moves.is_my_turn(record)
+        )
 
     # Actions ------------------------------------------------------------
 
@@ -306,71 +317,16 @@ class MainWindow(QMainWindow):
         self.refresh_games()
 
     def _resend_last(self) -> None:
-        record = self._selected_record()
-        if record is None:
-            return
-        message = WireMessage(action=WireAction.MOVE, pgn=record.pgn)
-        try:
-            draft = self._exports.build_email(record, message)
-        except PostalGambitError as error:
-            QMessageBox.warning(self, "Re-send", str(error))
-            return
-        ExportDialog(draft, self).exec()
+        self._actions.resend()
 
     def _resign(self) -> None:
-        record = self._selected_record()
-        if record is None:
-            return
-        confirmed = QMessageBox.question(
-            self,
-            "Resign",
-            f"Resign the game against {record.meta.opponent.name} "
-            f"[{record.meta.game_id.short}]? Your opponent wins.",
-        )
-        if confirmed != QMessageBox.StandardButton.Yes:
-            return
-        try:
-            updated, message = self._games.resign(record.meta.game_id)
-        except PostalGambitError as error:
-            QMessageBox.warning(self, "Resign", str(error))
-            return
-        self.refresh_games()
-        ExportDialog(self._exports.build_email(updated, message), self).exec()
+        self._actions.resign()
 
     def _accept_draw(self) -> None:
-        record = self._selected_record()
-        if record is None:
-            return
-        confirmed = QMessageBox.question(
-            self,
-            "Accept draw",
-            f"Accept the draw offered by {record.meta.opponent.name} "
-            f"[{record.meta.game_id.short}]? The game ends 1/2-1/2.",
-        )
-        if confirmed != QMessageBox.StandardButton.Yes:
-            return
-        try:
-            updated, message = self._games.accept_draw(record.meta.game_id)
-        except PostalGambitError as error:
-            QMessageBox.warning(self, "Accept draw", str(error))
-            return
-        self.refresh_games()
-        ExportDialog(self._exports.build_email(updated, message), self).exec()
+        self._actions.accept_draw()
 
     def _delete_game(self) -> None:
-        record = self._selected_record()
-        if record is None:
-            return
-        confirmed = QMessageBox.question(
-            self,
-            "Delete game",
-            f"Delete the game against {record.meta.opponent.name} "
-            f"[{record.meta.game_id.short}]? The stored game file and its "
-            "history are removed.",
-        )
-        if confirmed != QMessageBox.StandardButton.Yes:
-            return
-        self._games.delete(record.meta.game_id)
+        self._actions.delete()
         self._selected_id = None
         self.refresh_games()
 
