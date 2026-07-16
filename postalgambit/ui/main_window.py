@@ -37,6 +37,7 @@ from postalgambit.ui.dialogs.forms import (
 from postalgambit.ui.dialogs.import_dialog import ImportDialog
 from postalgambit.ui.icons import find_assets_dir, get_app_icon_path
 from postalgambit.ui.keyboard_nav import KeyboardNavigator, NeutralStartWidget
+from postalgambit.ui.labels import game_labels
 from postalgambit.ui.menus import build_menus
 from postalgambit.version import APP_NAME
 
@@ -161,10 +162,13 @@ class MainWindow(QMainWindow):
 
     def refresh_games(self, keep: GameId | None = None) -> None:
         target = keep or self._selected_id
+        records = self._games.list_games()
+        labels = game_labels(records)
         self.game_list.blockSignals(True)
         self.game_list.clear()
-        for record in self._games.list_games():
-            item = QListWidgetItem(self._list_label(record))
+        for record in records:
+            label = labels[record.meta.game_id.value]
+            item = QListWidgetItem(f"{label}  ({self._state_of(record)})")
             item.setData(Qt.ItemDataRole.UserRole, record.meta.game_id.value)
             self.game_list.addItem(item)
             if target is not None and record.meta.game_id == target:
@@ -175,19 +179,13 @@ class MainWindow(QMainWindow):
         else:
             self._show_selected()
 
-    def _list_label(self, record: GameRecord) -> str:
-        meta = record.meta
-        status = self._moves.status(meta.game_id)
+    def _state_of(self, record: GameRecord) -> str:
+        status = self._moves.status(record.meta.game_id)
         if status.is_over:
-            state = status.description
-        elif self._moves.is_my_turn(record):
-            state = "your move"
-        else:
-            state = "waiting"
-        return (
-            f"{meta.white.name} vs {meta.black.name}"
-            f"  [{meta.game_id.short}]  ({state})"
-        )
+            return status.description
+        if self._moves.is_my_turn(record):
+            return "your move"
+        return "waiting"
 
     def _selected_record(self) -> GameRecord | None:
         item = self.game_list.currentItem()

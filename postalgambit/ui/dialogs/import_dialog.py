@@ -20,6 +20,7 @@ from postalgambit.application.dto import ImportKind, ImportOutcome
 from postalgambit.domain.errors import PostalGambitError
 from postalgambit.domain.game import GameId, GameRecord
 from postalgambit.ui.dialogs.neutral_dialog import NeutralDialog, close_row
+from postalgambit.ui.labels import game_label, game_labels
 
 _DIALOG_MIN_WIDTH = 640
 _BODY_MIN_HEIGHT = 300
@@ -51,10 +52,10 @@ class ImportDialog(NeutralDialog):
         chooser_row.addWidget(QLabel("Game (for bare moves):"))
         self.game_choice = QComboBox()
         self.game_choice.addItem("Detect from the pasted text", None)
+        labels = game_labels(candidate_games)
         for record in candidate_games:
             meta = record.meta
-            label = f"{meta.game_id.short}: {meta.white.name} vs {meta.black.name}"
-            self.game_choice.addItem(label, meta.game_id)
+            self.game_choice.addItem(labels[meta.game_id.value], meta.game_id)
         chooser_row.addWidget(self.game_choice, stretch=1)
         layout.addLayout(chooser_row)
         self.result_label = QLabel("")
@@ -105,7 +106,5 @@ class ImportDialog(NeutralDialog):
         except PostalGambitError as error:
             QMessageBox.warning(self, "Import failed", str(error))
             return
-        self.result_label.setText(
-            f"Game {record.meta.game_id.short} created from the message."
-        )
+        self.result_label.setText(f"Created from the message: {game_label(record)}.")
         self.accept()

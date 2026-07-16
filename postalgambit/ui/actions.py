@@ -20,6 +20,7 @@ from postalgambit.domain.errors import PostalGambitError
 from postalgambit.domain.game import GameRecord
 from postalgambit.domain.wire import WireAction, WireMessage
 from postalgambit.ui.dialogs.export_dialog import ExportDialog
+from postalgambit.ui.labels import game_labels
 
 _MAX_NAMED_GAMES = 6
 
@@ -33,10 +34,8 @@ def plural(count: int, noun: str) -> str:
 
 def describe_games(records: tuple[GameRecord, ...]) -> str:
     """A short, explicit listing of the games an action will touch."""
-    lines = [
-        f"{r.meta.white.name} vs {r.meta.black.name} [{r.meta.game_id.short}]"
-        for r in records[:_MAX_NAMED_GAMES]
-    ]
+    labels = game_labels(records)
+    lines = [labels[r.meta.game_id.value] for r in records[:_MAX_NAMED_GAMES]]
     overflow = len(records) - _MAX_NAMED_GAMES
     if overflow > 0:
         lines.append(f"and {plural(overflow, 'more game')}")
