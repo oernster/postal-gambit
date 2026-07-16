@@ -14,6 +14,7 @@ _CHECK_TARGETS = (
     "generate_icons.py",
     "buildexe.py",
     "buildinstaller.py",
+    "builddmg.py",
     "installer",
 )
 

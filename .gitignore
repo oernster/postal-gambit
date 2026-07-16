@@ -224,3 +224,13 @@ installer/payload/
 main.build/
 main.dist/
 main.onefile-build/
+
+# Flatpak and macOS build outputs
+.flatpak-build/
+.flatpak-repo/
+.flatpak-builder/
+.flatpak-wheels/
+packaging/
+*.flatpak
+uk.codecrafter.PostalGambit.yml
+dist-macos/
