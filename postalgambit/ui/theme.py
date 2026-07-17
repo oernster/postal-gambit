@@ -167,6 +167,8 @@ QCheckBox:enabled:focus {{
 }}
 QCheckBox:disabled {{
     border: 2px solid {tokens["danger"]};
+    color: {tokens["muted_text"]};
+    background: {tokens["panel_bg"]};
 }}
 QRadioButton:enabled:focus {{
     border: 1px solid {tokens["focus"]};
