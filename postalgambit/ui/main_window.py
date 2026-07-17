@@ -117,8 +117,13 @@ class MainWindow(QMainWindow):
         left.addWidget(self.game_list, stretch=1)
         layout.addLayout(left)
         right = QVBoxLayout()
-        # The in-game actions sit above the board, top middle, mirroring
-        # the game pills top left; the turn label stays under the board.
+        # The middle column reads top-down: the status line first (it is
+        # the column's headline and explains why actions are enabled),
+        # then the in-game actions, then the board. This mirrors the left
+        # column, which opens with its pills and the Games heading.
+        self.turn_label = QLabel("")
+        self.turn_label.setObjectName("Heading")
+        right.addWidget(self.turn_label)
         actions = QHBoxLayout()
         self.offer_draw_box = QCheckBox("Offer a draw with this move")
         self.resend_button = QPushButton("Re-send last email")
@@ -137,8 +142,6 @@ class MainWindow(QMainWindow):
         self.board = BoardWidget(self._legal_targets)
         self.board.moveRequested.connect(self._on_move_requested)
         right.addWidget(self.board)
-        self.turn_label = QLabel("")
-        right.addWidget(self.turn_label)
         layout.addLayout(right)
         self.side_panel = SidePanel()
         layout.addWidget(self.side_panel, stretch=1)
