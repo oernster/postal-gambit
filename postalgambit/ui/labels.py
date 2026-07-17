@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections import Counter
 
+from postalgambit.application.dto import GameStatus
 from postalgambit.domain.game import GameMeta, GameRecord
 
 
@@ -51,3 +52,13 @@ def game_labels(records: tuple[GameRecord, ...]) -> dict[str, str]:
 def game_label(record: GameRecord) -> str:
     """The label for one game shown on its own (no sibling disambiguation)."""
     return _date_label(record.meta)
+
+
+def status_text(status: GameStatus, my_turn: bool, draw_offer_open: bool) -> str:
+    """The headline over the board: whose move, offers, or how it ended."""
+    if status.is_over:
+        return f"Game over: {status.description}."
+    parts = ["Your move." if my_turn else "Waiting for your opponent."]
+    if draw_offer_open:
+        parts.append("A draw offer is open; you may accept it.")
+    return " ".join(parts)

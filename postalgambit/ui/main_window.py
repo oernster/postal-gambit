@@ -39,7 +39,7 @@ from postalgambit.ui.dialogs.forms import (
 from postalgambit.ui.dialogs.import_dialog import ImportDialog
 from postalgambit.ui.icons import find_assets_dir, get_app_icon_path
 from postalgambit.ui.keyboard_nav import KeyboardNavigator, NeutralStartWidget
-from postalgambit.ui.labels import game_labels
+from postalgambit.ui.labels import game_labels, status_text
 from postalgambit.ui.menus import build_menus
 from postalgambit.ui.side_panel import SidePanel
 from postalgambit.ui.theme import DEFAULT_THEME, THEMES, build_qss
@@ -133,6 +133,10 @@ class MainWindow(QMainWindow):
         self.resign_button = QPushButton("Resign")
         self.resign_button.setObjectName("Danger")
         self.resign_button.clicked.connect(self._resign)
+        # The checkbox rides in the button row, so its pill height is
+        # pinned to the buttons' own: its indicator gives it a different
+        # natural height and no fixed padding matches across fonts.
+        self.offer_draw_box.setFixedHeight(self.resend_button.sizeHint().height())
         actions.addWidget(self.offer_draw_box)
         actions.addWidget(self.resend_button)
         actions.addWidget(self.accept_draw_button)
@@ -235,18 +239,12 @@ class MainWindow(QMainWindow):
             record.meta.my_colour,
             interactive=my_turn,
         )
-        self.turn_label.setText(self._status_text(record, my_turn))
+        status = self._moves.status(record.meta.game_id)
+        self.turn_label.setText(
+            status_text(status, my_turn, record.meta.draw_offer_open)
+        )
         self.side_panel.show_moves(self._moves.moves(record.meta.game_id))
         self._set_actions_enabled(record)
-
-    def _status_text(self, record: GameRecord, my_turn: bool) -> str:
-        status = self._moves.status(record.meta.game_id)
-        if status.is_over:
-            return f"Game over: {status.description}."
-        parts = ["Your move." if my_turn else "Waiting for your opponent."]
-        if record.meta.draw_offer_open:
-            parts.append("A draw offer is open; you may accept it.")
-        return " ".join(parts)
 
     def _set_actions_enabled(self, record: GameRecord | None) -> None:
         selected = self._selected_records()

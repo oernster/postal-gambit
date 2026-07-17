@@ -157,11 +157,22 @@ QPushButton#Primary:disabled, QPushButton#Danger:disabled {{
     color: {tokens["muted_text"]};
     border: 2px solid {tokens["danger"]};
 }}
-QCheckBox:enabled:focus, QRadioButton:enabled:focus {{
+QCheckBox {{
+    border: 2px solid transparent;
+    border-radius: {_BUTTON_RADIUS_PX}px;
+    padding: 0px 12px;
+}}
+QCheckBox:enabled:focus {{
+    border: 2px solid {tokens["focus"]};
+}}
+QCheckBox:disabled {{
+    border: 2px solid {tokens["danger"]};
+}}
+QRadioButton:enabled:focus {{
     border: 1px solid {tokens["focus"]};
     border-radius: {_ITEM_RADIUS_PX}px;
 }}
-QCheckBox:disabled, QRadioButton:disabled {{
+QRadioButton:disabled {{
     border: 1px solid {tokens["danger"]};
     border-radius: {_ITEM_RADIUS_PX}px;
 }}
