@@ -25,7 +25,6 @@ from postalgambit.ui.launch import (
     SingleInstanceServer,
     forward_to_running_instance,
 )
-from postalgambit.ui.dead_hover import DeadHoverWatcher
 from postalgambit.ui.icons import get_app_icon_path
 from postalgambit.ui.main_window import MainWindow
 from postalgambit.ui.theme import build_qss
@@ -72,9 +71,6 @@ def main() -> int:
     app = LinkAwareApplication(sys.argv)
     app.setApplicationName(APP_NAME)
     app.setStyleSheet(build_qss())
-    # Paints the danger ring on a disabled control under the mouse; QSS
-    # alone cannot (its engine never matches :hover while disabled).
-    DeadHoverWatcher(app)
     icon_path = get_app_icon_path()
     if icon_path is not None:
         app.setWindowIcon(QIcon(str(icon_path)))
