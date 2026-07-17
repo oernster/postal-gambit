@@ -117,11 +117,8 @@ class MainWindow(QMainWindow):
         left.addWidget(self.game_list, stretch=1)
         layout.addLayout(left)
         right = QVBoxLayout()
-        self.board = BoardWidget(self._legal_targets)
-        self.board.moveRequested.connect(self._on_move_requested)
-        right.addWidget(self.board)
-        self.turn_label = QLabel("")
-        right.addWidget(self.turn_label)
+        # The in-game actions sit above the board, top middle, mirroring
+        # the game pills top left; the turn label stays under the board.
         actions = QHBoxLayout()
         self.offer_draw_box = QCheckBox("Offer a draw with this move")
         self.resend_button = QPushButton("Re-send last email")
@@ -137,6 +134,11 @@ class MainWindow(QMainWindow):
         actions.addWidget(self.resign_button)
         actions.addStretch()
         right.addLayout(actions)
+        self.board = BoardWidget(self._legal_targets)
+        self.board.moveRequested.connect(self._on_move_requested)
+        right.addWidget(self.board)
+        self.turn_label = QLabel("")
+        right.addWidget(self.turn_label)
         layout.addLayout(right)
         self.side_panel = SidePanel()
         layout.addWidget(self.side_panel, stretch=1)
@@ -152,12 +154,12 @@ class MainWindow(QMainWindow):
                 self.import_button,
                 self.delete_button,
                 self.game_list,
-                self.board,
-                self.side_panel.move_list,
                 self.offer_draw_box,
                 self.resend_button,
                 self.accept_draw_button,
                 self.resign_button,
+                self.board,
+                self.side_panel.move_list,
             ),
             board=self.board,
         )
