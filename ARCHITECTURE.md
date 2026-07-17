@@ -195,8 +195,13 @@ preamble, block, footer) with two buttons: "Open in mail client" (a
 to clipboard". On Windows the mailto URI is launched with `os.startfile`
 (the ShellExecute path, which honours the per-user MAILTO default) rather
 than Qt's openUrl, whose Windows mail branch consults the legacy
-`Software\Clients\Mail` registry and can resurrect a stale Outlook entry;
-other platforms use `QDesktopServices.openUrl`. The mailto body is
+`Software\Clients\Mail` registry and can resurrect a stale Outlook entry.
+On Linux the encoded URI goes verbatim to `xdg-open`, because Qt's openUrl
+re-serialises the URL from its parsed form on the way to the desktop
+portal, prettifying the percent-encoding (raw spaces, half-surviving
+escapes) so the compose window would be prefilled with mangled text;
+macOS uses `QDesktopServices.openUrl`, which passes the encoded form
+faithfully. The mailto body is
 percent-encoded UTF-8 with CRLF line breaks; if the encoded URI exceeds `MAILTO_URI_MAX` (a named constant,
 around 6000 characters) the dialog steers to the clipboard path, since some
 client and shell combinations truncate long URIs.

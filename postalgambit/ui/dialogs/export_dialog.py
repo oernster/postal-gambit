@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import subprocess
 import sys
 
 from PySide6.QtCore import QUrl
@@ -70,6 +71,19 @@ class ExportDialog(NeutralDialog):
         if sys.platform == "win32":
             os.startfile(self._draft.mailto_uri)
             return
+        # On Linux, Qt's openUrl re-serialises the URI from its parsed QUrl form on
+        # the way to the desktop portal, prettifying the percent-encoding (spaces
+        # come out raw, other escapes half-survive), and the mail client's compose
+        # window is prefilled with the mangled remains. Hand the exact encoded URI
+        # to xdg-open instead, so the handler receives it verbatim; openUrl stays
+        # as the fallback and as the macOS path, which passes the encoded form
+        # faithfully.
+        if sys.platform.startswith("linux"):
+            try:
+                subprocess.Popen(["xdg-open", self._draft.mailto_uri])
+                return
+            except OSError:
+                pass
         QDesktopServices.openUrl(QUrl(self._draft.mailto_uri))
 
     def _copy(self) -> None:
