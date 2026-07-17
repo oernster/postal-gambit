@@ -6,16 +6,9 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QApplication,
-    QCheckBox,
-    QHBoxLayout,
-    QLabel,
-    QListWidget,
     QListWidgetItem,
     QMainWindow,
     QMessageBox,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
 )
 
 from postalgambit.application.export_service import ExportService
@@ -28,7 +21,8 @@ from postalgambit.domain.errors import PostalGambitError
 from postalgambit.domain.game import Colour, GameId, GameRecord
 from postalgambit.domain.wire import WireAction, WireMessage
 from postalgambit.ui.actions import GameActions
-from postalgambit.ui.board_widget import BOARD_SIZE, FILES, BoardWidget
+from postalgambit.ui.board_widget import BOARD_SIZE, FILES
+from postalgambit.ui.central_layout import build_central
 from postalgambit.ui.dialogs.about import LicenceDialog
 from postalgambit.ui.dialogs.export_dialog import ExportDialog
 from postalgambit.ui.dialogs.forms import (
@@ -39,13 +33,16 @@ from postalgambit.ui.dialogs.forms import (
 from postalgambit.ui.dialogs.import_dialog import ImportDialog
 from postalgambit.ui.icons import find_assets_dir, get_app_icon_path
 from postalgambit.ui.keyboard_nav import KeyboardNavigator, NeutralStartWidget
-from postalgambit.ui.labels import game_labels, status_text
+from postalgambit.ui.labels import (
+    game_started,
+    game_title,
+    state_text,
+    status_text,
+)
 from postalgambit.ui.menus import build_menus
-from postalgambit.ui.side_panel import SidePanel
 from postalgambit.ui.theme import DEFAULT_THEME, THEMES, build_qss
 from postalgambit.version import APP_NAME
 
-_LIST_MIN_WIDTH = 260
 _LAST_RANKS = ("8", "1")
 
 
@@ -88,68 +85,28 @@ class MainWindow(QMainWindow):
     # Construction -------------------------------------------------------
 
     def _build_widgets(self) -> None:
-        central = QWidget()
-        layout = QHBoxLayout(central)
-        left = QVBoxLayout()
-        # The action pills sit above the Games heading so the primary
-        # actions read first, top-left, before the list they act on.
-        self.new_button = QPushButton("New game")
-        self.new_button.setObjectName("Primary")
+        widgets = build_central(self._legal_targets)
+        self.new_button = widgets.new_button
+        self.import_button = widgets.import_button
+        self.delete_button = widgets.delete_button
+        self.game_list = widgets.game_list
+        self.turn_label = widgets.turn_label
+        self.offer_draw_box = widgets.offer_draw_box
+        self.resend_button = widgets.resend_button
+        self.accept_draw_button = widgets.accept_draw_button
+        self.resign_button = widgets.resign_button
+        self.board = widgets.board
+        self.side_panel = widgets.side_panel
+        self.setCentralWidget(widgets.central)
         self.new_button.clicked.connect(self._new_game)
-        self.import_button = QPushButton("Import a move")
         self.import_button.clicked.connect(lambda: self._import_move())
-        self.delete_button = QPushButton("Delete game")
-        self.delete_button.setObjectName("Danger")
         self.delete_button.clicked.connect(self._delete_game)
-        for button in (self.new_button, self.import_button, self.delete_button):
-            left.addWidget(button)
-        heading = QLabel("Games")
-        heading.setObjectName("Heading")
-        left.addWidget(heading)
-        self.game_list = QListWidget()
-        self.game_list.setMinimumWidth(_LIST_MIN_WIDTH)
-        # Extended selection: the CURRENT item drives the board while the
-        # full selection drives the bulk actions (resign, accept draw,
-        # delete, re-send apply to every selected game they fit).
-        self.game_list.setSelectionMode(QListWidget.SelectionMode.ExtendedSelection)
         self.game_list.currentItemChanged.connect(self._on_selection)
         self.game_list.itemSelectionChanged.connect(self._on_selection)
-        left.addWidget(self.game_list, stretch=1)
-        layout.addLayout(left)
-        right = QVBoxLayout()
-        # The middle column reads top-down: the status line first (it is
-        # the column's headline and explains why actions are enabled),
-        # then the in-game actions, then the board. This mirrors the left
-        # column, which opens with its pills and the Games heading.
-        self.turn_label = QLabel("")
-        self.turn_label.setObjectName("Heading")
-        right.addWidget(self.turn_label)
-        actions = QHBoxLayout()
-        self.offer_draw_box = QCheckBox("Offer a draw with this move")
-        self.resend_button = QPushButton("Re-send last email")
         self.resend_button.clicked.connect(self._resend_last)
-        self.accept_draw_button = QPushButton("Accept draw")
         self.accept_draw_button.clicked.connect(self._accept_draw)
-        self.resign_button = QPushButton("Resign")
-        self.resign_button.setObjectName("Danger")
         self.resign_button.clicked.connect(self._resign)
-        # The checkbox rides in the button row, so its pill height is
-        # pinned to the buttons' own: its indicator gives it a different
-        # natural height and no fixed padding matches across fonts.
-        self.offer_draw_box.setFixedHeight(self.resend_button.sizeHint().height())
-        actions.addWidget(self.offer_draw_box)
-        actions.addWidget(self.resend_button)
-        actions.addWidget(self.accept_draw_button)
-        actions.addWidget(self.resign_button)
-        actions.addStretch()
-        right.addLayout(actions)
-        self.board = BoardWidget(self._legal_targets)
         self.board.moveRequested.connect(self._on_move_requested)
-        right.addWidget(self.board)
-        layout.addLayout(right)
-        self.side_panel = SidePanel()
-        layout.addWidget(self.side_panel, stretch=1)
-        self.setCentralWidget(central)
 
     def _build_navigator(self) -> None:
         self._navigator = KeyboardNavigator(
@@ -182,14 +139,19 @@ class MainWindow(QMainWindow):
     def refresh_games(self, keep: GameId | None = None) -> None:
         target = keep or self._selected_id
         records = self._games.list_games()
-        labels = game_labels(records)
         self.game_list.blockSignals(True)
         self.game_list.clear()
         for record in records:
-            label = labels[record.meta.game_id.value]
-            # Two lines per game: the label, then its state. One line
-            # truncated in the list's width (the state vanished first).
-            item = QListWidgetItem(f"{label}\n{self._state_of(record)}")
+            # Two lines per game: players plus id, then state plus date.
+            # One line truncated in the list's width; the date is the
+            # part that fits worst, so it rides the second line.
+            state = state_text(
+                self._moves.status(record.meta.game_id),
+                self._moves.is_my_turn(record),
+            )
+            item = QListWidgetItem(
+                f"{game_title(record)}\n{state} ({game_started(record)})"
+            )
             item.setData(Qt.ItemDataRole.UserRole, record.meta.game_id.value)
             self.game_list.addItem(item)
             if target is not None and record.meta.game_id == target:
@@ -199,14 +161,6 @@ class MainWindow(QMainWindow):
             self.game_list.setCurrentRow(0)
         else:
             self._show_selected()
-
-    def _state_of(self, record: GameRecord) -> str:
-        status = self._moves.status(record.meta.game_id)
-        if status.is_over:
-            return status.description
-        if self._moves.is_my_turn(record):
-            return "your move"
-        return "waiting"
 
     def _selected_record(self) -> GameRecord | None:
         item = self.game_list.currentItem()
@@ -228,11 +182,16 @@ class MainWindow(QMainWindow):
         if record is None:
             self._selected_id = None
             self.board.clear_board()
+            # An empty board is not a keyboard stop: it paints no cursor,
+            # so landing on it reads as focus vanishing (the ring skips
+            # disabled widgets, which this makes it).
+            self.board.setEnabled(False)
             self.side_panel.clear_moves()
             self.turn_label.setText("No game selected.")
             self._set_actions_enabled(None)
             return
         self._selected_id = record.meta.game_id
+        self.board.setEnabled(True)
         my_turn = self._moves.is_my_turn(record)
         self.board.set_position(
             self._moves.board(record.meta.game_id),

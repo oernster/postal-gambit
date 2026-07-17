@@ -13,18 +13,31 @@ from postalgambit.application.dto import GameStatus
 from postalgambit.domain.game import GameRecord
 
 
-def game_label(record: GameRecord) -> str:
+def game_title(record: GameRecord) -> str:
+    """The players and the short id, kept short enough for a list row."""
     meta = record.meta
-    started = meta.created_at.astimezone()
-    return (
-        f"{meta.white.name} vs {meta.black.name} [{meta.game_id.short}] "
-        f"(started {started.day} {started:%b %Y})"
-    )
+    return f"{meta.white.name} vs {meta.black.name} [{meta.game_id.short}]"
+
+
+def game_started(record: GameRecord) -> str:
+    started = record.meta.created_at.astimezone()
+    return f"started {started.day} {started:%b %Y}"
+
+
+def game_label(record: GameRecord) -> str:
+    return f"{game_title(record)} ({game_started(record)})"
 
 
 def game_labels(records: tuple[GameRecord, ...]) -> dict[str, str]:
     """The label per game id for a view of several games."""
     return {record.meta.game_id.value: game_label(record) for record in records}
+
+
+def state_text(status: GameStatus, my_turn: bool) -> str:
+    """The short state under a game row: outcome, your move or waiting."""
+    if status.is_over:
+        return status.description
+    return "your move" if my_turn else "waiting"
 
 
 def status_text(status: GameStatus, my_turn: bool, draw_offer_open: bool) -> str:
