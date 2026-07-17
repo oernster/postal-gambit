@@ -32,9 +32,10 @@ class NewGameDialog(NeutralDialog):
         form = QFormLayout()
         self.opponent_name = QLineEdit()
         self.opponent_email = QLineEdit()
+        # Neither colour starts checked: choosing a side is a decision the
+        # user must make, not a default they may overlook.
         self.play_white = QRadioButton("I play White (I move first)")
         self.play_black = QRadioButton("I play Black (they move first)")
-        self.play_white.setChecked(True)
         form.addRow("Opponent name:", self.opponent_name)
         form.addRow("Opponent email:", self.opponent_email)
         form.addRow(self.play_white)
@@ -46,6 +47,22 @@ class NewGameDialog(NeutralDialog):
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
+        # OK stays disabled (wearing the red inert ring) until the form is
+        # complete: a name, a plausible email and an explicit colour.
+        self._ok_button = buttons.button(QDialogButtonBox.StandardButton.Ok)
+        self.opponent_name.textChanged.connect(self._refresh_ok)
+        self.opponent_email.textChanged.connect(self._refresh_ok)
+        self.play_white.toggled.connect(self._refresh_ok)
+        self.play_black.toggled.connect(self._refresh_ok)
+        self._refresh_ok()
+
+    def _refresh_ok(self) -> None:
+        complete = (
+            bool(self.opponent_name.text().strip())
+            and "@" in self.opponent_email.text()
+            and (self.play_white.isChecked() or self.play_black.isChecked())
+        )
+        self._ok_button.setEnabled(complete)
 
     @property
     def my_colour(self) -> Colour:
