@@ -6,7 +6,7 @@ The whole suite runs with one command and one hard gate:
 pytest -v --cov
 ```
 
-188 tests. Coverage must be 100% over the measured surface or the run
+195 tests. Coverage must be 100% over the measured surface or the run
 fails (`--cov-fail-under=100`). The exit code is authoritative: 0 means
 every test passed and the gate was met. Coverage source and omissions are
 configured in `pyproject.toml`, so a bare `--cov`, the configured addopts

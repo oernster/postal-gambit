@@ -77,18 +77,24 @@ postal-gambit/
       settings_json.py        identity plus preferences (persisted theme)
       clock.py, ids.py        SystemClock, Uuid4Generator
     ui/
-      main_window.py          menu bar, game list, board, status, theme apply
+      main_window.py          state, selection, flows and signal wiring
+      central_layout.py       central-widget construction (pure arrangement,
+                              handed back unwired as a NamedTuple)
       menus.py                File, Game, View (theme toggle) and Help menus
       actions.py              selection-aware bulk flows (resign, draw,
                               delete, re-send) with per-game export dialogs
       board_widget.py         QGraphicsView board, click-click moves, rounded
                               corners, theme tokens injected at runtime
       side_panel.py           app badge above the numbered move history
-      labels.py               humanised game names (date, time, short id)
+      labels.py               game title with the bracketed short id, start
+                              date, row state and the status headline
       launch.py               single-instance server plus app-link forwarding
-      keyboard_nav.py         explicit focus ring (the Fulcrum model)
+      keyboard_nav.py         explicit focus ring (the Fulcrum model) plus
+                              Enter/Space activation and Space in menus
       icons.py                bundled asset resolution across dev and builds
-      dialogs/                new game, import, export preview, about, licence
+      dialogs/                new game, import, export preview, about,
+                              licence; all derive NeutralDialog (neutral
+                              start plus the shared dialog ring)
       theme.py                semantic dark/light token dicts and stylesheet
   tests/                      mirrors the package, plus tests/structural/
   assets/                     generated icon set (generate_icons.py)
@@ -129,12 +135,38 @@ appended to the PGN, persisted and handed to the export service.
 
 ### UI
 
-PySide6 widgets. The board is a `QGraphicsView` canvas stop inside the
-standard explicit focus ring: Tab/Right and Shift+Tab/Left step the ring,
-Up/Down move the square cursor inside the board, Enter selects and drops,
-Escape cancels a pending selection. Board orientation puts the user's
-colour at the bottom. Every destructive action (delete game, overwrite on
-divergent import) gets a modal confirmation naming the target.
+PySide6 widgets. The window reads left to right: the game pills (New
+game, Import a move, Delete game) sit top-left above the Games heading
+and list, so the primary actions read before the list they act on; the
+middle column opens with the status line styled as its heading ("Your
+move.", "No game selected."), then the in-game action row, then the
+board; the side panel carries the move history. Every game label shows
+the bracketed short GameID that the email subject prefix uses, so a list
+row and its email thread correlate at a glance.
+
+The board is a `QGraphicsView` canvas stop inside the standard explicit
+focus ring: Tab/Right and Shift+Tab/Left step the ring, Up/Down move the
+square cursor inside the board, Enter selects and drops, Escape cancels
+a pending selection. Board orientation puts the user's colour at the
+bottom. The ring follows the visual order exactly and skips dead stops,
+including the cleared board while no game is selected (it disables
+itself, so Tab never lands on a canvas painting no cursor). Enter and
+Space both activate every stop: the navigator clicks a focused button or
+checkbox on Return (Qt only wires that inside dialogs), triggers a
+highlighted menu item on Space and opens a highlighted menu bar title on
+Space (Qt's Windows styles do neither). Every dialog inherits the same
+model through `NeutralDialog`: a neutral start, Right/Left as ring
+aliases around Qt's focus chain, a closed dropdown opening on Down
+rather than silently changing value, text fields keeping caret arrows
+and releasing Tab, and Enter toggling a focused checkbox or radio
+instead of submitting the form. A disabled control wears a permanent
+danger-red ring over a muted panel fill (Qt's stylesheet engine cannot
+match `:disabled:hover`, and the permanent form is the wanted behaviour
+anyway); a control's fill always contrasts the surface it sits on, in
+both themes. Every destructive action (delete game, overwrite on
+divergent import) gets a modal confirmation naming the target, and the
+New game dialog's OK stays disabled until the form is complete (name,
+plausible email, an explicitly chosen colour).
 
 Two themes (dark and light) share one semantic token set in `theme.py`.
 The View menu toggles them; the choice persists through the settings
@@ -208,7 +240,8 @@ manifest and the macOS bundle.
 | Board diagram in email | ASCII letters, informational only | Survives proportional fonts and every client; Unicode chess glyphs render unevenly | Unicode glyph diagram; HTML mail |
 | Import posture | Liberal accept: any legal strict extension | Postel's law; recovers cleanly from a missed email | Exactly-one-ply rule (brittle) |
 | Draw and resign | Wire `Action` header plus PGN `Result`/`Termination` | Correspondence play genuinely needs both; maps cleanly onto standard PGN | Deferring them (would force out-of-band agreement) |
-| Game identity | uuid4 in a `GameID` PGN tag | The `.pgn` file alone stays a complete routable record; short form for humans | ID in block header only; deriving identity from players plus date |
+| Game identity | uuid4 in a `GameID` PGN tag | The `.pgn` file alone stays a complete routable record; the short form appears in every game label AND the email subject so threads and rows correlate | ID in block header only; deriving identity from players plus date |
+| Opponent address on import | Optional `From` wire header | A game created from a one-click link or paste needs no typed address; receivers ignore unknown headers so it is forward compatible within v1; shown before creation, a convenience default, never an authenticated identity | Asking the user to type the address every time; an address in the URL |
 | Engine assistance | None, ever | The product is human correspondence chess; "no machines" is scope, not just a default | Optional analysis mode |
 | i18n | Deferred; strings centralised from day one | Not core to v1; centralising early keeps the JSON-locale pattern cheap to adopt later | Qt Linguist |
 | Theming | Semantic colour tokens, dark and light dicts, runtime toggle persisted in settings | Widget code never names a colour, so a theme is one dict; the board takes tokens by injection | Qt palettes; per-widget styling |

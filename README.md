@@ -5,7 +5,7 @@ desktop app that keeps your games, enforces the rules and turns each move
 into a ready-to-send email in whatever mail client you already use. It
 never touches the network itself.
 
-Status: implemented and gated (188 tests, 100% coverage outside the UI
+Status: implemented and gated (195 tests, 100% coverage outside the UI
 layer). Version 0.2.0.
 
 ## Documentation
@@ -48,10 +48,16 @@ layer). Version 0.2.0.
   in any mail client; a static page bounces it to the installed app with
   the move prefilled, routed to the running instance when there is one.
 - Invitations, draw offers, draw acceptance and resignation over the same
-  format.
+  format. A game arriving as an invitation or first move is created with
+  the opponent's reply address taken from the message itself, so nothing
+  needs typing.
 - Bulk actions across a multi-selection of games: resign, accept draws,
   delete and re-send, each with eligibility filtering and confirmation.
-- Move history panel, humanised game names and a full keyboard focus ring.
+- Move history panel; game names carry the same short id as the email
+  subject, so a list row and its thread correlate at a glance.
+- A full keyboard focus ring everywhere including dialogs: Enter and
+  Space both activate, and a disabled control wears a red ring instead
+  of vanishing.
 - Dark and light themes (View menu), persisted between runs.
 
 ## Stack
