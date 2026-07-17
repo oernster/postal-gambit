@@ -8,6 +8,8 @@ never touches the network itself.
 Status: implemented and gated (195 tests, 100% coverage outside the UI
 layer). Version 0.2.0.
 
+Website: https://oernster.github.io/postal-gambit/
+
 ## Documentation
 
 - [ARCHITECTURE.md](ARCHITECTURE.md): layers, invariants, execution flows
