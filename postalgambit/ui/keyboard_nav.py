@@ -11,10 +11,18 @@ from __future__ import annotations
 
 from PySide6.QtCore import QEvent, QObject, Qt
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QApplication, QMenuBar, QWidget
+from PySide6.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QMenu,
+    QMenuBar,
+    QPushButton,
+    QWidget,
+)
 
 _FORWARD_KEYS = (Qt.Key.Key_Tab, Qt.Key.Key_Right)
 _BACK_KEYS = (Qt.Key.Key_Backtab, Qt.Key.Key_Left)
+_ACTIVATE_KEYS = (Qt.Key.Key_Return, Qt.Key.Key_Enter)
 
 
 class KeyboardNavigator(QObject):
@@ -52,7 +60,52 @@ class KeyboardNavigator(QObject):
         if key in _BACK_KEYS or (key == Qt.Key.Key_Tab and self._shift(event)):
             self._step(-1)
             return True
+        if key == Qt.Key.Key_Space:
+            return self._space_in_menus()
+        if key in _ACTIVATE_KEYS:
+            return self._activate_focused()
         return False
+
+    def _activate_focused(self) -> bool:
+        """Enter activates the focused stop, matching Space.
+
+        Qt only wires Return to buttons inside dialogs (autoDefault), so
+        outside one a focused button or checkbox would ignore Enter.
+        """
+        focused = QApplication.focusWidget()
+        if isinstance(focused, (QPushButton, QCheckBox)) and focused.isEnabled():
+            focused.click()
+            return True
+        return False
+
+    def _space_in_menus(self) -> bool:
+        """Space activates in menus, matching Enter.
+
+        Qt's Windows styles do not trigger a highlighted menu item on
+        Space (SH_Menu_SpaceActivatesItem is off), and a highlighted menu
+        bar title ignores Space entirely, so both are wired here.
+        """
+        popup = QApplication.activePopupWidget()
+        if isinstance(popup, QMenu):
+            action = popup.activeAction()
+            if action is not None and action.isEnabled() and action.menu() is None:
+                popup.close()
+                action.trigger()
+                return True
+            return False
+        if self._menubar.hasFocus():
+            active = self._menubar.activeAction()
+            if active is not None:
+                self._open_title_menu(active)
+                return True
+        return False
+
+    def _open_title_menu(self, action: QAction) -> None:
+        menu = action.menu()
+        if menu is None:
+            return
+        corner = self._menubar.actionGeometry(action).bottomLeft()
+        menu.popup(self._menubar.mapToGlobal(corner))
 
     def _shift(self, event) -> bool:
         return bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)

@@ -13,12 +13,14 @@ from __future__ import annotations
 from PySide6.QtCore import QEvent, QObject, Qt
 from PySide6.QtWidgets import (
     QApplication,
+    QCheckBox,
     QComboBox,
     QDialog,
     QHBoxLayout,
     QLineEdit,
     QPlainTextEdit,
     QPushButton,
+    QRadioButton,
     QTextEdit,
     QWidget,
 )
@@ -80,6 +82,14 @@ class _DialogRing(QObject):
             # a QTextEdit; QPlainTextEdit is its own hierarchy); the field
             # is left with Tab, never an arrow.
             return False
+        if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter) and isinstance(
+            focused, (QCheckBox, QRadioButton)
+        ):
+            # Enter activates the FOCUSED stop, matching Space. Left to
+            # Qt, Enter here would fire the dialog's default button and
+            # submit the form instead of toggling the focused control.
+            focused.click()
+            return True
         if key == Qt.Key.Key_Right:
             self._dialog.step_focus(forward=True)
             return True
