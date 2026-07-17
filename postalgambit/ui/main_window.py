@@ -91,6 +91,18 @@ class MainWindow(QMainWindow):
         central = QWidget()
         layout = QHBoxLayout(central)
         left = QVBoxLayout()
+        # The action pills sit above the Games heading so the primary
+        # actions read first, top-left, before the list they act on.
+        self.new_button = QPushButton("New game")
+        self.new_button.setObjectName("Primary")
+        self.new_button.clicked.connect(self._new_game)
+        self.import_button = QPushButton("Import a move")
+        self.import_button.clicked.connect(lambda: self._import_move())
+        self.delete_button = QPushButton("Delete game")
+        self.delete_button.setObjectName("Danger")
+        self.delete_button.clicked.connect(self._delete_game)
+        for button in (self.new_button, self.import_button, self.delete_button):
+            left.addWidget(button)
         heading = QLabel("Games")
         heading.setObjectName("Heading")
         left.addWidget(heading)
@@ -103,16 +115,6 @@ class MainWindow(QMainWindow):
         self.game_list.currentItemChanged.connect(self._on_selection)
         self.game_list.itemSelectionChanged.connect(self._on_selection)
         left.addWidget(self.game_list, stretch=1)
-        self.new_button = QPushButton("New game")
-        self.new_button.setObjectName("Primary")
-        self.new_button.clicked.connect(self._new_game)
-        self.import_button = QPushButton("Import a move")
-        self.import_button.clicked.connect(lambda: self._import_move())
-        self.delete_button = QPushButton("Delete game")
-        self.delete_button.setObjectName("Danger")
-        self.delete_button.clicked.connect(self._delete_game)
-        for button in (self.new_button, self.import_button, self.delete_button):
-            left.addWidget(button)
         layout.addLayout(left)
         right = QVBoxLayout()
         self.board = BoardWidget(self._legal_targets)
@@ -146,10 +148,10 @@ class MainWindow(QMainWindow):
             menubar=self.menuBar(),
             menu_actions=tuple(menu.menuAction() for menu in self._menus),
             widget_stops=(
-                self.game_list,
                 self.new_button,
                 self.import_button,
                 self.delete_button,
+                self.game_list,
                 self.board,
                 self.side_panel.move_list,
                 self.offer_draw_box,
