@@ -39,6 +39,9 @@ class ExportDialog(NeutralDialog):
         layout.addWidget(subject)
         body = QPlainTextEdit(draft.body)
         body.setReadOnly(True)
+        # Tab steps the ring out of the body; the arrows stay with it for
+        # scrolling, matching the scrollable-content stop contract.
+        body.setTabChangesFocus(True)
         body.setMinimumHeight(_BODY_MIN_HEIGHT)
         layout.addWidget(body)
         self.note = QLabel("")

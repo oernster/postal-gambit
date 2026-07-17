@@ -47,6 +47,9 @@ class ImportDialog(NeutralDialog):
         layout = QVBoxLayout(self)
         layout.addWidget(QLabel(_PROMPT))
         self.text = QPlainTextEdit()
+        # Tab leaves the paste box for the next stop (a pasted email never
+        # needs a literal tab typed); the arrows stay with the caret.
+        self.text.setTabChangesFocus(True)
         self.text.setMinimumHeight(_BODY_MIN_HEIGHT)
         if initial_text:
             self.text.setPlainText(initial_text)

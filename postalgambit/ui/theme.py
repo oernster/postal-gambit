@@ -151,7 +151,7 @@ QPushButton#Danger {{
 QPushButton#Danger:enabled:hover, QPushButton#Danger:enabled:focus {{
     border: 2px solid {tokens["focus"]};
 }}
-QCheckBox:enabled:focus {{
+QCheckBox:enabled:focus, QRadioButton:enabled:focus {{
     border: 1px solid {tokens["focus"]};
     border-radius: {_ITEM_RADIUS_PX}px;
 }}
