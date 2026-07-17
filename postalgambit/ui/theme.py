@@ -135,6 +135,9 @@ QPushButton:disabled {{
     color: {tokens["muted_text"]};
     background: {tokens["window_bg"]};
 }}
+QPushButton[deadHover="true"] {{
+    border: 2px solid {tokens["danger"]};
+}}
 QPushButton#Primary {{
     background: {tokens["accent"]};
     color: {tokens["accent_text"]};
@@ -151,9 +154,23 @@ QPushButton#Danger {{
 QPushButton#Danger:enabled:hover, QPushButton#Danger:enabled:focus {{
     border: 2px solid {tokens["focus"]};
 }}
+QPushButton#Primary:disabled, QPushButton#Danger:disabled {{
+    background: {tokens["window_bg"]};
+    color: {tokens["muted_text"]};
+}}
+QPushButton#Primary[deadHover="true"], QPushButton#Danger[deadHover="true"] {{
+    border: 2px solid {tokens["danger"]};
+}}
 QCheckBox:enabled:focus, QRadioButton:enabled:focus {{
     border: 1px solid {tokens["focus"]};
     border-radius: {_ITEM_RADIUS_PX}px;
+}}
+QCheckBox[deadHover="true"], QRadioButton[deadHover="true"] {{
+    border: 1px solid {tokens["danger"]};
+    border-radius: {_ITEM_RADIUS_PX}px;
+}}
+QComboBox[deadHover="true"] {{
+    border: 2px solid {tokens["danger"]};
 }}
 QCheckBox::indicator {{
     width: {_INDICATOR_PX}px;
