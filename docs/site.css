@@ -339,6 +339,61 @@ header.site {
     background: var(--bg-elev);
 }
 
+/* Download */
+.dl-version {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--brand);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 14px;
+}
+
+.downloads {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.dl-card {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.dl-card .ico { font-size: 30px; }
+.dl-card h3 { margin: 4px 0 0; font-size: 18px; }
+.dl-card .req { color: var(--text-dim); font-size: 13px; margin: 0; }
+.dl-card .btn { margin: 14px auto 4px; justify-content: center; }
+.dl-card .meta { color: var(--text-dim); font-size: 12.5px; min-height: 1.2em; margin: 0; }
+.dl-card .how { color: var(--text-dim); font-size: 13px; margin: 8px 0 0; }
+
+.dl-card code {
+    background: var(--bg-elev-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1px 6px;
+    font-size: 12px;
+    color: var(--text);
+}
+
+.dl-links {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 14px;
+    margin: 18px 0 0;
+}
+
+.dl-links a { color: var(--accent); text-decoration: none; }
+.dl-links a:hover { text-decoration: underline; }
+
 .close {
     text-align: center;
     padding: 48px 0;

@@ -71,7 +71,7 @@
             <a href="#features">Features</a>
             <a href="#faq">FAQ</a>
             <a href="https://github.com/oernster/postal-gambit">GitHub</a>
-            <a href="https://github.com/oernster/postal-gambit/releases">Download</a>
+            <a href="#download">Download</a>
         </nav>
     </header>
 
@@ -86,13 +86,12 @@
         </p>
         <p class="switch">Slow, thoughtful chess with a real person. One move a day is a fine pace.</p>
         <div class="cta">
-            <a class="btn primary" href="https://github.com/oernster/postal-gambit/releases">Download</a>
+            <a class="btn primary" href="#download">Download</a>
             <a class="btn" href="#how">See how it works</a>
         </div>
         <div class="cue"><b>Free and GPL-3.0</b> &nbsp;·&nbsp; No server &nbsp;·&nbsp; No account
             &nbsp;·&nbsp; No engines</div>
-        <div class="platforms">Runs on Windows, macOS and Linux. Windows has a ready-to-run installer;
-            macOS and Linux build from the DMG and Flatpak scripts in the repo.</div>
+        <div class="platforms">Free on Windows, macOS and Linux.</div>
     </section>
 
     <section class="shot">
@@ -319,12 +318,61 @@ Import this move with one click:
         </ul>
     </section>
 
+    <section class="section" id="download">
+        <span class="eyebrow">Get Postal Gambit</span>
+        <h2>Download Postal Gambit</h2>
+        <p class="lead">Pick your platform and you have the newest release. Free and GPL-3.0; local-first,
+            so your games and your email stay on your own machine.</p>
+        <span class="dl-version" id="dl-version">Latest release</span>
+        <div class="downloads">
+            <div class="dl-card">
+                <div class="ico">🪟</div>
+                <h3>Windows</h3>
+                <p class="req">Windows 10 or 11, 64-bit</p>
+                <a class="btn primary"
+                   href="https://github.com/oernster/postal-gambit/releases/latest/download/PostalGambitSetup.exe">Download
+                    for Windows</a>
+                <p class="meta" data-asset="PostalGambitSetup.exe">Setup program (.exe)</p>
+                <p class="how">Run the setup: it installs per-user, so no administrator rights are
+                    needed.</p>
+            </div>
+            <div class="dl-card">
+                <div class="ico">🍎</div>
+                <h3>macOS</h3>
+                <p class="req">Apple Silicon (M1 or later)</p>
+                <a class="btn primary"
+                   href="https://github.com/oernster/postal-gambit/releases/latest/download/postal-gambit.dmg">Download
+                    for macOS</a>
+                <p class="meta" data-asset="postal-gambit.dmg">Disk image (.dmg)</p>
+                <p class="how">Open the DMG and drag Postal Gambit into Applications.</p>
+            </div>
+            <div class="dl-card">
+                <div class="ico">🐧</div>
+                <h3>Linux</h3>
+                <p class="req">Any distribution with Flatpak</p>
+                <a class="btn primary"
+                   href="https://github.com/oernster/postal-gambit/releases/latest/download/postal-gambit.flatpak">Download
+                    for Linux</a>
+                <p class="meta" data-asset="postal-gambit.flatpak">Flatpak bundle (.flatpak)</p>
+                <p class="how">Install with <code>flatpak install --user postal-gambit.flatpak</code>.</p>
+            </div>
+        </div>
+        <p class="dl-links">
+            <a id="dl-whats-new" href="https://github.com/oernster/postal-gambit/releases/latest">What is
+                new in this release</a>
+            &nbsp;·&nbsp;
+            <a href="https://github.com/oernster/postal-gambit/releases">All releases</a>
+            &nbsp;·&nbsp;
+            <a href="https://github.com/oernster/postal-gambit">Source on GitHub</a>
+        </p>
+    </section>
+
     <section class="close">
         <h2>Find a friend. Play a long game.</h2>
         <p>Download it, add your name, start a game and send the invitation. The next move might take
             a day and that is the point.</p>
         <div class="cta">
-            <a class="btn primary" href="https://github.com/oernster/postal-gambit/releases">Download</a>
+            <a class="btn primary" href="#download">Download</a>
             <a class="btn" href="https://github.com/oernster/postal-gambit">Source on GitHub</a>
         </div>
     </section>
@@ -339,5 +387,39 @@ Import this move with one click:
         </span>
     </footer>
 </div>
+<script>
+    // The download buttons never go stale: each points at GitHub's releases/latest/download
+    // redirect, which always serves the newest release's asset (the asset names are version-free
+    // by design). This script only decorates the page with live details: the version chip, the
+    // release date and each installer's size, fetched from the GitHub API. If the call fails
+    // (offline, rate-limited, no release yet), the static text above stands on its own.
+    (function () {
+        var api = "https://api.github.com/repos/oernster/postal-gambit/releases/latest";
+        fetch(api).then(function (r) {
+            if (!r.ok) { throw new Error("release lookup failed"); }
+            return r.json();
+        }).then(function (rel) {
+            var version = (rel.tag_name || "").replace(/^v/, "");
+            if (version) {
+                var when = "";
+                if (rel.published_at) {
+                    when = " · " + new Date(rel.published_at).toLocaleDateString(undefined,
+                        {day: "numeric", month: "long", year: "numeric"});
+                }
+                document.getElementById("dl-version").textContent = "Version " + version + when;
+            }
+            if (rel.html_url) {
+                document.getElementById("dl-whats-new").href = rel.html_url;
+            }
+            (rel.assets || []).forEach(function (asset) {
+                var meta = document.querySelector('[data-asset="' + asset.name + '"]');
+                if (meta && asset.size) {
+                    var mb = (asset.size / (1024 * 1024)).toFixed(1);
+                    meta.textContent = meta.textContent + " · " + mb + " MB";
+                }
+            });
+        }).catch(function () { /* The static page already says everything essential. */ });
+    })();
+</script>
 </body>
 </html>
