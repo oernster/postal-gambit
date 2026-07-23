@@ -420,3 +420,12 @@ footer.site a { color: var(--text-dim); }
     .hero h1 { font-size: 34px; }
     .nav a { margin: 0 14px 0 0; }
 }
+
+.prose p {
+    color: var(--text-dim);
+    max-width: 720px;
+    margin: 0 0 18px;
+    font-size: 16px;
+}
+
+.prose p:last-child { margin-bottom: 0; }

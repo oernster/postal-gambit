@@ -74,6 +74,7 @@
         <nav class="nav">
             <a href="#how">How it works</a>
             <a href="#features">Features</a>
+            <a href="why.html">Why</a>
             <a href="#faq">FAQ</a>
             <a href="https://github.com/oernster/postal-gambit">GitHub</a>
             <a href="#download">Download</a>
@@ -385,9 +386,9 @@ Import this move with one click:
 <script>
     // The download buttons never go stale: each points at GitHub's releases/latest/download
     // redirect, which always serves the newest release's asset (the asset names are version-free
-    // by design). This script only decorates the page with live details: the version chip, the
-    // release date and each installer's size, fetched from the GitHub API. If the call fails
-    // (offline, rate-limited, no release yet), the static text above stands on its own.
+    // by design). This script only decorates the page with live details: the version chip and
+    // each installer's size, fetched from the GitHub API. If the call fails (offline,
+    // rate-limited, no release yet), the static text above stands on its own.
     (function () {
         var api = "https://api.github.com/repos/oernster/postal-gambit/releases/latest";
         fetch(api).then(function (r) {
@@ -396,12 +397,7 @@ Import this move with one click:
         }).then(function (rel) {
             var version = (rel.tag_name || "").replace(/^v/, "");
             if (version) {
-                var when = "";
-                if (rel.published_at) {
-                    when = " · " + new Date(rel.published_at).toLocaleDateString(undefined,
-                        {day: "numeric", month: "long", year: "numeric"});
-                }
-                document.getElementById("dl-version").textContent = "Version " + version + when;
+                document.getElementById("dl-version").textContent = "Version " + version;
             }
             if (rel.html_url) {
                 document.getElementById("dl-whats-new").href = rel.html_url;

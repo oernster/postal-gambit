@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Why Postal Gambit exists: the quiet game, given back</title>
+    <meta name="description"
+          content="Why Postal Gambit was built: online platforms replaced postal chess with ratings, clocks, engines and accounts. Postal Gambit does the bookkeeping software is for and refuses everything else; your own email is the board."/>
+    <link rel="canonical" href="https://ernster.dev/postal-gambit/why.html"/>
+    <meta name="robots" content="index, follow"/>
+    <meta name="author" content="Oliver Ernster"/>
+    <meta name="theme-color" content="#0e1a23"/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:site_name" content="Postal Gambit"/>
+    <meta property="og:url" content="https://ernster.dev/postal-gambit/why.html"/>
+    <meta property="og:title" content="Why Postal Gambit exists: the quiet game, given back"/>
+    <meta property="og:description"
+          content="Online platforms replaced postal chess with ratings, clocks, engines and accounts. Postal Gambit does the bookkeeping software is for and refuses everything else; your own email is the board."/>
+    <meta property="og:image" content="https://ernster.dev/postal-gambit/icon.png"/>
+    <meta property="og:image:alt" content="Postal Gambit app icon"/>
+    <meta property="og:locale" content="en_GB"/>
+    <meta name="twitter:card" content="summary"/>
+    <meta name="twitter:title" content="Why Postal Gambit exists: the quiet game, given back"/>
+    <meta name="twitter:description" content="Online platforms replaced postal chess with ratings, clocks, engines and accounts. Postal Gambit does the bookkeeping software is for and refuses everything else."/>
+    <meta name="twitter:image" content="https://ernster.dev/postal-gambit/icon.png"/>
+    <link rel="icon" type="image/png" href="icon.png"/>
+    <link rel="stylesheet" href="site.css"/>
+</head>
+<body>
+<div class="wrap">
+    <header class="site">
+        <div class="logo">
+            <img src="icon.png" alt="Postal Gambit"/>
+            <span>Postal Gambit</span>
+        </div>
+        <nav class="nav">
+            <a href="index.html#how">How it works</a>
+            <a href="index.html#features">Features</a>
+            <a href="why.html">Why</a>
+            <a href="index.html#faq">FAQ</a>
+            <a href="https://github.com/oernster/postal-gambit">GitHub</a>
+            <a href="index.html#download">Download</a>
+        </nav>
+    </header>
+
+    <section class="section prose" id="exists">
+        <span class="eyebrow">The reasoning</span>
+        <h2>Why this exists</h2>
+        <p>Correspondence chess is not a worse version of online chess; it is a different game.
+            Days per move, one deliberate decision at a time, played against a person you know
+            rather than a rating pool. Online platforms did not improve that game, they replaced
+            it: ratings, clocks, engines and accounts arrived together and the quiet version
+            disappeared underneath them.</p>
+        <p>What actually killed postal chess was never preference, it was friction. Keeping the
+            board state straight across letters, catching an illegal move, remembering whose turn
+            it is across five simultaneous games: that is precisely the bookkeeping software is
+            for. Postal Gambit does that bookkeeping and refuses to do anything else. It keeps
+            the games, enforces every rule of chess including all the draw rules and writes each
+            move as a ready-to-send email in whatever mail client you already use.</p>
+        <p>The email itself is the protocol, built to be read by a human first and a parser
+            second: a short note, an ASCII board and a delimited block carrying the entire game
+            state. Because every message carries the whole game, a lost email never corrupts
+            anything and the two sides can never silently diverge; a disagreement is detected and
+            reported. An opponent without the app can reply with a bare move like Nf6 and it
+            imports fine.</p>
+        <p>Two refusals are structural rather than settings. There is no network code at all, a
+            rule the test suite enforces by forbidding network imports, so the app cannot phone
+            home or fail on someone else's server. And there is no engine, ever: correspondence
+            chess died once already from machines. Underneath sits the usual engineering bar: a
+            clean layered core with python-chess quarantined behind a port, a 100% coverage gate
+            outside the UI and one plain JSON file per game with atomic writes.</p>
+        <p>Full reasoning at <a href="https://www.crankthecode.com/posts/postal-gambit">crankthecode.com</a>.</p>
+        <div class="cta" style="justify-content:flex-start;">
+            <a class="btn primary" href="index.html#download">Download Postal Gambit</a>
+            <a class="btn" href="index.html">Back to overview</a>
+        </div>
+    </section>
+
+    <footer class="site">
+        <span>Postal Gambit by Oliver Ernster. Released under GPL-3.0; author attribution must be
+            retained in all copies and derivative works.</span>
+        <span>
+            <a href="https://github.com/oernster/postal-gambit">GitHub</a>
+            &nbsp;·&nbsp;
+            <a href="https://github.com/oernster/postal-gambit/releases">Releases</a>
+        </span>
+    </footer>
+</div>
+</body>
+</html>
