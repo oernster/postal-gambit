@@ -20,6 +20,8 @@ Website: https://oernster.github.io/postal-gambit/
   structural test suite.
 - [DEVELOPMENT-README.md](DEVELOPMENT-README.md): building the installer
   and packages on Windows, Linux and macOS.
+- [TECH_DEBT.md](TECH_DEBT.md): what is still open, what is deliberately left
+  and what only looks like debt.
 
 ## Who it is for
 
