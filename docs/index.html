@@ -48,17 +48,17 @@
         "@type": "FAQPage",
         "mainEntity": [
             {"@type": "Question", "name": "Does my opponent need the app?",
-             "acceptedAnswer": {"@type": "Answer", "text": "No. Every email is readable text: a short note, an ASCII board and the game record. An opponent without the app can reply with a plain move like Nf6 and it imports fine."}},
+             "acceptedAnswer": {"@type": "Answer", "text": "No. Every email is readable text. An opponent without the app can reply with a plain move like Nf6 and it imports fine; they just miss the conveniences."}},
             {"@type": "Question", "name": "What email account do I need?",
              "acceptedAnswer": {"@type": "Answer", "text": "Any account you already use. Postal Gambit never sends anything itself: it opens a pre-filled draft in your own mail client or copies the email to your clipboard and you press send."}},
             {"@type": "Question", "name": "What happens if an email gets lost?",
              "acceptedAnswer": {"@type": "Answer", "text": "Nothing is corrupted. Every email carries the entire game state, so the next one that arrives catches you up. If the two sides ever disagree, the divergence is detected and reported, never silently resolved."}},
-            {"@type": "Question", "name": "Is there engine analysis?",
-             "acceptedAnswer": {"@type": "Answer", "text": "No, deliberately. Postal Gambit ships no engine and never will; no machines is the point of correspondence chess between people."}},
+            {"@type": "Question", "name": "Can it stop my opponent cheating?",
+             "acceptedAnswer": {"@type": "Answer", "text": "No. Nothing can. Correspondence chess has always been played on trust. What Postal Gambit guarantees is that every move is legal; whether a human chose it is between you and your friend."}},
             {"@type": "Question", "name": "Where do my games live?",
-             "acceptedAnswer": {"@type": "Answer", "text": "In plain JSON files under your home directory, one per game. No server, no account, no cloud."}},
+             "acceptedAnswer": {"@type": "Answer", "text": "In plain JSON files under your home directory, one per game, portable and inspectable. Delete the folder and they are gone; copy it and they are backed up."}},
             {"@type": "Question", "name": "Is it really offline?",
-             "acceptedAnswer": {"@type": "Answer", "text": "The app contains no network code at all; the test suite structurally forbids network imports. The only thing that touches the internet is your own mail client sending your email."}}
+             "acceptedAnswer": {"@type": "Answer", "text": "Yes. It is checked rather than promised: the test suite forbids network code anywhere in what you install, the setup program included, failing the build if any appears. The only thing that touches the internet is your own mail client sending your email."}}
         ]
     }
     </script>
@@ -332,7 +332,7 @@ Import this move with one click:
         <h2>Download Postal Gambit</h2>
         <p class="lead">Pick your platform and you have the newest release. Free and GPL-3.0; local-first,
             so your games and your email stay on your own machine.</p>
-        <span class="dl-version" id="dl-version">Version <!--VERSION-->0.3.0<!--/VERSION--></span>
+        <span class="dl-version" id="dl-version">Version <!--VERSION-->1.0.0<!--/VERSION--></span>
         <div class="downloads">
             <div class="dl-card">
                 <div class="ico">🪟</div>

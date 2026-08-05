@@ -41,8 +41,11 @@ and state.
    outcome are always derived from the PGN by replay, never stored beside
    it. `GameRecord` has no turn or status field by construction. Enforced
    by domain unit tests plus review.
-6. **Wire format v1 is frozen** once released. Changes bump the version
-   token and get a parser branch. Governance rule, documented in
+6. **Wire format v1 is frozen.** Changes bump the version token in the BEGIN
+   line and get their own parser branch; a parser rejects a version it does
+   not know rather than guessing. A game played over months has to survive
+   the two players running different versions of the application; the block
+   is the only thing they share. Governance rule, documented in
    `WIRE_FORMAT.md`.
 7. **One composition root** at `main.py`; constructor injection everywhere;
    no module-level singletons, no service locators. Enforced by

@@ -1,7 +1,10 @@
 # Postal Gambit Wire Format v1
 
-Status: draft, frozen on first release. Any breaking change bumps the version
-token in the BEGIN line; parsers reject versions they do not know.
+Status: frozen. Any breaking change bumps the version token in the BEGIN line
+and gets its own parser branch; parsers reject versions they do not know. The
+freeze is the whole point: a game played over months has to survive the two
+players being on different versions of the application; the only thing they
+share is this block.
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are to be
 interpreted as described in RFC 2119 and RFC 8174.
