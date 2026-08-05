@@ -64,18 +64,10 @@ class GameActions:
     # Eligibility -------------------------------------------------------
 
     def resignable(self) -> tuple[GameRecord, ...]:
-        return tuple(
-            r
-            for r in self._selection()
-            if not self._moves.status(r.meta.game_id).is_over
-        )
+        return self._moves.in_progress(self._selection())
 
     def draw_acceptable(self) -> tuple[GameRecord, ...]:
-        return tuple(
-            r
-            for r in self._selection()
-            if r.meta.draw_offer_open and not self._moves.status(r.meta.game_id).is_over
-        )
+        return self._moves.draw_acceptable(self._selection())
 
     # Flows -------------------------------------------------------------
 

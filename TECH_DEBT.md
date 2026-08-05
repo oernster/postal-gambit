@@ -2,39 +2,19 @@
 
 A standing reference to the project's outstanding technical debt. It records what is still open, weighs whether each item is worth doing and gives the rationale. Every item is a behaviour-preserving internal concern: nothing here proposes reverting a feature or changing any UI or UX behaviour. Scope is the whole repository (the `postalgambit` package, the composition root, the bespoke installer, the delivery scripts for Windows, Linux and macOS, plus the GitHub Pages site) read against `ARCHITECTURE.md`, `WIRE_FORMAT.md`, `TESTING.md` and the tests under `tests/structural/`.
 
-This project is in strong shape. Five structural suites (domain purity, layer boundaries, module size, style and a no-network invariant) share one AST scanner, the package and the setup program's Qt-free halves are gated at 100% line and branch coverage, `VERSION` is the single source of truth (nothing outside it names the product's version; the version-like literals in `tests/installer/` are fixture data chosen to exercise the upgrade comparison) and there is not a single em dash in the tree. The list below is short; item 1 is the only one that touches the product's central promise.
+This project is in strong shape. Five structural suites (domain purity, layer boundaries, module size, style and a no-network invariant) share one AST scanner, the no-network invariant is proven over everything a user installs rather than over the package alone, the size cap covers the test tree and carries a danger band, the package and the setup program's Qt-free halves are gated at 100% line and branch coverage, `VERSION` is the single source of truth (nothing outside it names the product's version; the version-like literals in `tests/installer/` are fixture data chosen to exercise the upgrade comparison) and there is not a single em dash in the tree. One item remains and it is continuous rather than a task with an end state.
 
 ---
 
-## 1. The no-network invariant is enforced over the package, not over what ships
-
-`tests/structural/test_no_network.py` is the best test in this repository. It forbids any import of `socket`, `requests`, `urllib3`, `urllib.request` or `urllib.error`, which makes the project's defining claim mechanically checkable: Postal Gambit exchanges moves as email messages that the *user* sends; the application itself never opens a connection.
-
-`tests/structural/scan.py` sets `PACKAGE_ROOT = REPO_ROOT / "postalgambit"` and every structural suite iterates from there. So the invariant is proven for the package and is unproven for:
-
-- `main.py`, the composition root
-- `installer/` and `installer_main.py`, the setup program
-- the delivery scripts
-
-None of those is likely to open a socket today; the setup program extracts a bundled payload rather than downloading one. That is not the point. The claim on the site and in the README is about the product a user installs; the test that backs it stops at the package boundary. A future "check for updates" button in the installer would pass the suite untouched, as would an analytics call added to `main.py`.
-
-Widen the scan to the repository's shipped Python (package, `main.py`, `installer/`) for this one test, with the delivery scripts explicitly exempted and the exemption written down. `test_module_size.py` now shows the shape to copy: it scans the package plus a named list of extra trees. That converts the strongest guarantee in the project from true-of-most-of-it into true-of-all-of-it; it is perhaps twenty lines of work.
-
-## 2. Three modules sit at the edge of the cap
-
-- `postalgambit/ui/main_window.py` at 357
-- `tests/application/test_import_service.py` at 358
-- `builddmg.py` at 367 (a delivery script, exempt by design)
-
-The first two are comfortably under 400 and clear of the 381 to 399 danger band, so nothing needs doing today. They are noted because `test_module_size.py` enforces the cap and nothing warns before it: adding a second assertion at 380 would give a signal one edit earlier, which is when it is cheap to act on.
-
-## 3. The UI layers are omitted from the gate in full
+## 1. The UI layers are omitted from the gate in full
 
 `[tool.coverage.run]` measures `postalgambit`, `installer.ops` and `installer.state`, with `postalgambit/ui/*` and `version.py` omitted; `installer/ui`, `installer/app.py`, `installer/cli.py` and `installer/shared` are simply outside the source list. The version module is a file read and the UI omissions are the standard portfolio position, correct for painting and layout.
 
-It is recorded so the omission is never read as "the UI has no logic". `main_window.py` at 357 lines is the largest module in the package; a correspondence-chess client's window carries real decisions: which moves are legal to offer, when a game is awaiting the opponent, what happens on an out-of-order message. `postalgambit/application` is where those belong; the port-behind-`python-chess` design means most of it can move there.
+It is recorded so the omission is never read as "the UI has no logic". `main_window.py` is the largest module in the package and a correspondence-chess client's window carries real decisions.
 
-This is continuous work rather than a task with an end state.
+The eligibility questions have moved. `MoveService` now answers which games an action may be offered for at all (`in_progress`, `draw_acceptable`, `awaiting_opponent`) and whether a move promotes a pawn (`is_promotion`, over a `BoardView.piece_at` that owns the square arithmetic its own docstring defines). The window and the action bar ask rather than filtering records themselves, so each question has one answer and every one of them sits inside the gate. That also removed the UI's second copy of the board's coordinate mapping: `main_window.py` no longer imports the widget's `BOARD_SIZE` and `FILES` to work out an index.
+
+What is left in the UI is genuinely presentational, plus the flows that sequence dialogs. The next bite, when someone is next in the file: `GameActions` still decides what a confirmation says and which games it names; `_show_selected` still assembles the window's state from four service calls in a fixed order. Neither is urgent.
 
 ---
 
@@ -45,12 +25,14 @@ This is continuous work rather than a task with an end state.
 - The fourteen tracked PNGs plus the `.ico` and `.icns`. Emitted by `generate_icons.py` from a single master and consumed by named packaging paths on three platforms.
 - `WIRE_FORMAT.md` as a separate document from `ARCHITECTURE.md`. The wire format is a compatibility contract between two installations that may be on different versions; it deserves its own file and its own version discipline.
 - `tests/structural/scan.py` being a helper module inside the test tree rather than a package. One scanner shared by five suites is exactly right.
+- Twenty-six findings from a default `ruff check`, measured, none of them in the gate this repository actually runs (black and flake8, both asserted in-suite by `test_style.py`). They are import ordering in `main.py`, `Mapping` imported from `typing` rather than `collections.abc`, `timezone.utc` rather than the `datetime.UTC` alias and `subprocess.run` without an explicit `check` in two delivery scripts. Discretionary modernisation rather than debt. Two of them would be actively wrong to accept: `RUF100` calls the `# noqa: N802 (Qt override)` comments on `event()` and `showEvent()` unused, which is true only because no pep8-naming plugin is installed; the comment is what tells the next reader the odd casing is Qt's and not a slip.
 
 ## Not debt (do not "fix" these)
 
 These look like candidates but are correct as they stand; changing them would regress or add cost for nothing.
 
-- **`test_no_network.py` itself.** It is the mechanism that makes "the app never touches the network" a fact rather than a marketing line; it is the single best-targeted structural test in the portfolio. Item 1 widens its scope; nothing here weakens it.
+- **`test_no_network.py` itself.** It is the mechanism that makes "the app never touches the network" a fact rather than a marketing line; it is the single best-targeted structural test in the portfolio. It now proves the claim over everything a user installs: the package, both composition roots and the whole setup program. Its own scope is asserted alongside it, so narrowing it back to the package fails the suite rather than passing quietly.
+- **The delivery scripts being exempt from the no-network scan.** They build what ships rather than shipping, so they legitimately reach the network: the Flatpak build downloads its wheels and the macOS build talks to Apple to notarise. Holding them to the application's invariant would be a claim about the wrong thing. The exemption is named in `scan.py` and asserted, so it cannot quietly grow.
 - **`python-chess` behind a port rather than used directly.** It looks like an unnecessary indirection over a mature library. It is what keeps the domain pure and what would let the engine be replaced without touching the rules layer; it is why the application layer holds a 100% gate.
 - **Wire format v1 being versioned at all**, for a two-player game played by email. Two installations will be on different versions eventually; a format with no version is a format that cannot ever change.
 - **A pre-1.0 `VERSION` on a shipped, installable product.** That is an accurate statement about the wire format's stability, not an oversight.

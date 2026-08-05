@@ -21,7 +21,6 @@ from postalgambit.domain.errors import PostalGambitError
 from postalgambit.domain.game import Colour, GameId, GameRecord
 from postalgambit.domain.wire import WireAction, WireMessage
 from postalgambit.ui.actions import GameActions
-from postalgambit.ui.board_widget import BOARD_SIZE, FILES
 from postalgambit.ui.central_layout import build_central
 from postalgambit.ui.dialogs.about import LicenceDialog
 from postalgambit.ui.dialogs.export_dialog import ExportDialog
@@ -42,8 +41,6 @@ from postalgambit.ui.labels import (
 from postalgambit.ui.menus import build_menus
 from postalgambit.ui.theme import DEFAULT_THEME, THEMES, build_qss
 from postalgambit.version import APP_NAME
-
-_LAST_RANKS = ("8", "1")
 
 
 class MainWindow(QMainWindow):
@@ -226,7 +223,7 @@ class MainWindow(QMainWindow):
         if self._selected_id is None:
             return
         promotion = None
-        if self._is_promotion(source, target):
+        if self._moves.is_promotion(self._selected_id, source, target):
             dialog = PromotionDialog(self)
             if not dialog.exec():
                 return
@@ -245,13 +242,6 @@ class MainWindow(QMainWindow):
         self.offer_draw_box.setChecked(False)
         self.refresh_games()
         ExportDialog(self._exports.build_email(record, message, applied), self).exec()
-
-    def _is_promotion(self, source: str, target: str) -> bool:
-        if self._selected_id is None or target[1] not in _LAST_RANKS:
-            return False
-        view = self._moves.board(self._selected_id)
-        index = (BOARD_SIZE - int(source[1])) * BOARD_SIZE + FILES.index(source[0])
-        return view.squares[index] in ("P", "p")
 
     def _new_game(self) -> None:
         dialog = NewGameDialog(self)
@@ -277,12 +267,7 @@ class MainWindow(QMainWindow):
             ExportDialog(self._exports.build_email(record, message), self).exec()
 
     def _import_move(self, initial_text: str = "") -> None:
-        candidates = tuple(
-            record
-            for record in self._games.list_games()
-            if not self._moves.status(record.meta.game_id).is_over
-            and not self._moves.is_my_turn(record)
-        )
+        candidates = self._moves.awaiting_opponent(self._games.list_games())
         dialog = ImportDialog(
             run_import=self._imports.import_text,
             create_new_game=lambda outcome, email: self._games.create_from_wire(

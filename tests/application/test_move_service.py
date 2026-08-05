@@ -4,12 +4,35 @@ from __future__ import annotations
 
 import pytest
 
+from postalgambit.application.dto import RANK_ORDER
 from postalgambit.application.game_service import GameService
-from postalgambit.application.move_service import MoveService
+from postalgambit.application.move_service import PROMOTION_RANKS, MoveService
 from postalgambit.domain.errors import DomainError, NotYourTurnError
-from postalgambit.domain.game import Colour
+from postalgambit.domain.game import Colour, GameRecord
 from postalgambit.domain.wire import WireAction
 from tests.application.conftest import new_game
+
+# White's c-pawn eats its way to b7, where b8 is blocked by the knight, so the
+# promotion available is the capture bxa8. A real position rather than a
+# contrived one, because the question being asked is about a real board.
+PROMOTION_LINE = "1. e4 d5 2. exd5 c6 3. dxc6 Nf6 4. cxb7 e6 *"
+EMPTY_MOVETEXT = "\n\n*\n"
+
+
+def _pawn_ready_to_promote(
+    game_service: GameService, move_service: MoveService
+) -> GameRecord:
+    record = new_game(game_service, Colour.WHITE)
+    staged = record.with_pgn(
+        record.pgn.replace(EMPTY_MOVETEXT, f"\n\n{PROMOTION_LINE}\n"),
+        record.meta.updated_at,
+    )
+    move_service.store.save(staged)
+    return staged
+
+
+def _with_draw_offer(record: GameRecord) -> GameRecord:
+    return record.with_pgn(record.pgn, record.meta.updated_at, draw_offer_open=True)
 
 
 class TestQueries:
@@ -55,6 +78,65 @@ class TestQueries:
     ) -> None:
         record = new_game(game_service, Colour.BLACK)
         assert move_service.legal_targets(record.meta.game_id, "e2") == ()
+
+
+class TestIsPromotion:
+    def test_both_ends_of_the_board_promote(self) -> None:
+        assert PROMOTION_RANKS == (RANK_ORDER[0], RANK_ORDER[-1])
+
+    def test_a_pawn_reaching_the_far_rank_promotes(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        record = _pawn_ready_to_promote(game_service, move_service)
+        assert move_service.is_promotion(record.meta.game_id, "b7", "a8") is True
+
+    def test_a_move_short_of_the_far_rank_does_not(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        record = _pawn_ready_to_promote(game_service, move_service)
+        assert move_service.is_promotion(record.meta.game_id, "b7", "b6") is False
+
+    def test_a_piece_that_is_not_a_pawn_does_not(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        record = _pawn_ready_to_promote(game_service, move_service)
+        assert move_service.is_promotion(record.meta.game_id, "a1", "a8") is False
+
+
+class TestEligibility:
+    def test_in_progress_drops_a_finished_game(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        live = new_game(game_service)
+        finished, _ = game_service.resign(new_game(game_service).meta.game_id)
+        assert move_service.in_progress((live, finished)) == (live,)
+
+    def test_draw_acceptable_needs_an_open_offer(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        plain = new_game(game_service)
+        offered = _with_draw_offer(new_game(game_service))
+        assert move_service.draw_acceptable((plain, offered)) == (offered,)
+
+    def test_a_finished_game_cannot_be_drawn_however_it_was_offered(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        finished, _ = game_service.resign(new_game(game_service).meta.game_id)
+        assert move_service.draw_acceptable((_with_draw_offer(finished),)) == ()
+
+    def test_awaiting_opponent_is_the_games_i_cannot_move_in(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        mine = new_game(game_service, Colour.WHITE)
+        theirs = new_game(game_service, Colour.BLACK)
+        assert move_service.awaiting_opponent((mine, theirs)) == (theirs,)
+
+    def test_a_finished_game_is_not_awaiting_anybody(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        record = new_game(game_service, Colour.BLACK)
+        finished, _ = game_service.resign(record.meta.game_id)
+        assert move_service.awaiting_opponent((finished,)) == ()
 
 
 class TestMyMove:
