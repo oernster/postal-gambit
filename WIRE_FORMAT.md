@@ -152,6 +152,14 @@ URL fragment holds the same query:
 https://oernster.github.io/postal-gambit/open/#v=1&d=<payload>
 ```
 
+That host is the one the application emits, from `WEB_LINK_BASE` in
+`postalgambit/domain/applink.py`. The site itself declares
+`ernster.dev/postal-gambit/` canonical for search engines and the emitted
+host redirects there, so both addresses reach the same page; every link
+already sent depends on the emitted one continuing to resolve, which is
+why it is stated here rather than silently tracking whichever host the
+site prefers.
+
 The static page behind it rebuilds the scheme URI locally and hands it to
 the recipient's registered Postal Gambit; a URL fragment is never sent to
 any server, so the move data stays between the players. The app decodes

@@ -6,10 +6,12 @@ The whole suite runs with one command and one hard gate:
 pytest -v --cov
 ```
 
-325 tests. Coverage must be 100% over the measured surface, line and
-branch; anything less fails the run (`--cov-fail-under=100
---cov-branch`). The exit code is authoritative: 0 means every test
-passed and the gate was met. Coverage source and omissions are
+Coverage must be 100% over the measured surface, line and branch;
+anything less fails the run (`--cov-fail-under=100 --cov-branch`). The
+exit code is authoritative: 0 means every test passed and the gate was
+met. No test count is quoted here on purpose: it is a number that would
+have to be remembered on every change and would be wrong the first time
+it was not. Coverage source and omissions are
 configured in `pyproject.toml`, so a bare `--cov`, the configured addopts
 and plain `pytest` all measure the same thing; the repo root is on
 `sys.path` via the `pythonpath` ini setting, so the `pytest` launcher and
@@ -82,7 +84,7 @@ needs no double. Storage tests use real files in pytest tmp directories.
 | application | unit, hand-written fakes for ports, real python-chess | none |
 | infrastructure | integration, real files in tmp dirs | tmp only |
 | installer ops and state | integration, redirected profile, scratch registry keys, fake command runner | tmp and scratch HKCU |
-| structural | AST and source scans over the package | file reads |
+| structural | AST and source scans over what ships, plus the test tree for size | file reads |
 
 ## Structural suite
 
@@ -94,10 +96,18 @@ needs no double. Storage tests use real files in pytest tmp directories.
   only composition root.
 - `test_domain_purity.py`: no I/O, wall-clock reads, randomness, logging
   or threading in the domain.
-- `test_no_network.py`: no network imports anywhere in the package.
-- `test_module_size.py`: every module at or below 400 lines, across the
-  package and `installer/` alike. The staged payload is build output and
-  the delivery scripts are linear recipes, so both are out of scope.
+- `test_no_network.py`: no network imports anywhere in what ships. The
+  scan covers the package, `main.py`, `installer_main.py` and the whole
+  `installer/` tree. It asserts its own reach too, so narrowing it back
+  to the package fails rather than passing quietly.
+- `test_module_size.py`: every module at or below 400 lines, plus the 5%
+  danger band as a second assertion so a file at 399 is caught before the
+  next edit breaks the cap for an unrelated reason. The band is derived
+  from the cap rather than written as a second literal. Scope is what
+  ships plus the test tree, which grows the same way source does. The
+  staged payload is build output and the delivery scripts are linear
+  recipes, so both are out of scope; the exemption is named in
+  `tests/structural/scan.py` and asserted.
 - `test_style.py`: black (88) and flake8 run as in-suite assertions over
   the package, the tests, the setup program and every build script.
 

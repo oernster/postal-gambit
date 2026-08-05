@@ -7,7 +7,8 @@ documentation lives in [README.md](README.md); architecture in
 
 ## Setup
 
-Python 3.13 or newer.
+Python 3.11 or newer, which is what `pyproject.toml` declares. Development
+and the packaged builds run on 3.13.
 
 ```
 pip install -r requirements.txt -r requirements-dev.txt
@@ -122,8 +123,8 @@ branch, `main` and `/docs`.
   live release version and each asset's size.
 - `why.html` is the reasoning page, linked from the nav.
 - `open/index.html` is the click-to-import bounce page: emails carry
-  `https://oernster.github.io/postal-gambit/open/#v=1&d=<payload>`, and
-  the page rebuilds the `postalgambit:` URI locally (the fragment never
+  `https://oernster.github.io/postal-gambit/open/#v=1&d=<payload>`. The
+  page rebuilds the `postalgambit:` URI locally (the fragment never
   reaches any server) and launches the app. That address is the one the
   app emits, from `WEB_LINK_BASE` in `postalgambit/domain/applink.py`,
   so it must keep resolving whatever canonical host the site declares

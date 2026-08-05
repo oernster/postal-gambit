@@ -9,12 +9,15 @@ the application at all: no server, no account, no telemetry and nothing
 to sign in to. Your own mail client is the transport; the claim is
 mechanically enforced rather than merely stated, because
 `tests/structural/test_no_network.py` fails the suite the moment any
-network import appears.
+network import appears. The scan covers everything you install (the
+package, both composition roots and the whole setup program). It asserts
+its own reach too, so narrowing it back fails the suite rather than
+passing quietly.
 
-Status: implemented and gated (325 tests; 100% line and branch coverage
-over the package and over the setup program's Qt-free halves).
+Status: implemented and gated at 100% line and branch coverage over the
+package and over the setup program's Qt-free halves.
 
-Website: https://oernster.github.io/postal-gambit/
+Website: https://ernster.dev/postal-gambit/
 
 ## Documentation
 
@@ -74,7 +77,7 @@ Website: https://oernster.github.io/postal-gambit/
 
 | Concern | Choice |
 |---|---|
-| Language | Python 3.13 |
+| Language | Python 3.11 or newer (`pyproject.toml` is the authority; development runs on 3.13) |
 | UI | PySide6 (widgets) |
 | Chess rules | python-chess, quarantined behind a port |
 | Storage | One JSON file per game, local, atomic writes |
@@ -85,8 +88,8 @@ Website: https://oernster.github.io/postal-gambit/
 ## Install
 
 Ready-made packages for all three platforms are on the
-[releases page](https://github.com/oernster/postal-gambit/releases), and
-the download buttons on the website always point at the newest one.
+[releases page](https://github.com/oernster/postal-gambit/releases). The
+download buttons on the website always point at the newest one.
 
 - **Windows**: `PostalGambitSetup.exe`. A per-user setup program that
   needs no administrator rights. It offers to close a running copy for

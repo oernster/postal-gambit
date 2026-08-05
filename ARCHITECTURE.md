@@ -26,10 +26,17 @@ and state.
    `RulesEngine` port. No other layer imports it. If the library ever had
    to be replaced, one adapter changes. Enforced by
    `tests/structural/test_layer_boundaries.py`.
-4. **No network code anywhere.** The transport is the user's mail client.
-   Imports of `socket`, `http`, `urllib.request`, `smtplib`, `imaplib`,
-   `poplib` and any third-party HTTP client are forbidden across the whole
-   package. Enforced by `tests/structural/test_no_network.py`.
+4. **No network code anywhere in what ships.** The transport is the user's
+   mail client. Imports of `socket`, `http`, `urllib.request`, `smtplib`,
+   `imaplib`, `poplib` and any third-party HTTP client are forbidden across
+   the package, both composition roots and the whole setup program, because
+   the claim is made about the product a user installs rather than about one
+   directory inside it. The delivery scripts are the only exemption: they
+   build what ships rather than shipping, so they legitimately fetch wheels
+   and talk to Apple to notarise. That exemption is named in
+   `tests/structural/scan.py`. The scan asserts its own reach, so narrowing
+   it back to the package fails rather than passing quietly.
+   Enforced by `tests/structural/test_no_network.py`.
 5. **PGN is the canonical game state.** Whose turn it is, game status and
    outcome are always derived from the PGN by replay, never stored beside
    it. `GameRecord` has no turn or status field by construction. Enforced
@@ -41,10 +48,15 @@ and state.
    no module-level singletons, no service locators. Enforced by
    `tests/structural/test_layer_boundaries.py`
    (`test_main_is_the_only_composition_root`).
-8. **Modules stay at or below 400 lines**, across the package and the
-   setup program alike; the staged payload is build output and the delivery
-   scripts are linear recipes, so both are out of scope. Enforced by
-   `tests/structural/test_module_size.py`.
+8. **Modules stay at or below 400 lines and clear of the band below it.**
+   Scope is what ships plus the test tree, which grows the same way source
+   does; the staged payload is build output and the delivery scripts are
+   linear recipes, so both are out of scope. The cap and the 5% danger band
+   (381 to 399) are separate assertions, so a red run names which half broke,
+   and the band is derived from the cap rather than written as a second
+   literal. A file entering the band goes back to 350 rather than being
+   shaved to sit just under the cap, because shaving is undone by the next
+   edit. Enforced by `tests/structural/test_module_size.py`.
 9. **The version lives in `VERSION` only.** Runtime reads it through
    `postalgambit/version.py`; build scripts read it through a shared
    helper; the setup program reads the copy bundled beside the payload.
@@ -73,10 +85,13 @@ postal-gambit/
     application/
       ports.py                RulesEngine, GameStore, SettingsStore, Clock,
                               IdGenerator (Protocols)
-      dto.py                  GameStatus, BoardView, MoveApplied,
+      dto.py                  GameStatus, BoardView (with piece_at, which
+                              owns the square arithmetic), MoveApplied,
                               ImportOutcome, EmailDraft
       game_service.py         create, list, resign, offer/accept draw
-      move_service.py         apply my move via RulesEngine
+      move_service.py         apply my move via RulesEngine; eligibility
+                              (in progress, draw acceptable, awaiting the
+                              opponent) and promotion detection
       export_service.py       WireMessage -> email body, subject, mailto URI
       import_service.py       pasted text / .pgn file -> validated game update
     infrastructure/
@@ -144,6 +159,18 @@ target squares, report outcome and produce a `BoardView` DTO (an 8x8 map of
 piece codes) for the UI. Services orchestrate: a move flows in from the UI
 as source and target squares, comes back as SAN from the rules engine, is
 appended to the PGN, persisted and handed to the export service.
+
+Eligibility is answered here rather than in the window. Which games an
+action may be offered for (`in_progress`, `draw_acceptable`,
+`awaiting_opponent`) and whether a move promotes a pawn (`is_promotion`)
+are decisions about game state, so `MoveService` owns them and the UI asks.
+That placement matters more than usual in this project: the UI layer is
+outside the coverage gate by design, so a decision made there is a decision
+nothing measures. `BoardView.piece_at` follows the same rule for the square
+arithmetic, which the DTO's own docstring defines; before it existed the
+window borrowed the board widget's `BOARD_SIZE` and `FILES` and recomputed
+the index, which was a second copy of the layout in the layer least able to
+prove it right.
 
 ### Infrastructure
 
@@ -214,7 +241,7 @@ through the Windows scripting host, so the compiled onefile pulls in nothing
 beyond PySide6 and the standard library.
 
 It follows the same shape as the application, for the same reason. `ops` holds
-the side effects (payload extraction, paths, shortcuts, process control, and
+the side effects (payload extraction, paths, shortcuts, process control plus
 the install, repair and uninstall sequences) and `state` holds the HKCU
 registrations, the `postalgambit:` URI scheme, version comparison and the state
 model the window reads. Neither imports Qt. `ui` is the only Qt client,
