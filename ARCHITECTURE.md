@@ -39,7 +39,9 @@ and structural) gates at 100% coverage outside the UI layer.
    no module-level singletons, no service locators. Enforced by
    `tests/structural/test_layer_boundaries.py`
    (`test_main_is_the_only_composition_root`).
-8. **Modules stay at or below 400 lines.** Enforced by
+8. **Modules stay at or below 400 lines**, across the package and the
+   setup program alike; the staged payload is build output and the delivery
+   scripts are linear recipes, so both are out of scope. Enforced by
    `tests/structural/test_module_size.py`.
 9. **The version lives in `VERSION` only.** Runtime reads it through
    `postalgambit/version.py`; build scripts read it through a shared
@@ -96,7 +98,19 @@ postal-gambit/
                               licence; all derive NeutralDialog (neutral
                               start plus the shared dialog ring)
       theme.py                semantic dark/light token dicts and stylesheet
+  installer_main.py           setup-program entry point (see below)
+  installer/
+    constants.py              every name written to disk or the registry
+    cli.py                    the --uninstall command line Windows re-invokes
+    app.py                    the setup program's composition root
+    ops/                      Qt-free side effects: commands, paths, payload,
+                              progress, running_app, shortcuts, install_ops,
+                              uninstall_ops, errors
+    state/                    registry, url_scheme, versioning, model
+    shared/                   resource_path, logging_setup
+    ui/                       themed window, dialogs and the worker thread
   tests/                      mirrors the package, plus tests/structural/
+                              and tests/installer/
   assets/                     generated icon set (generate_icons.py)
 ```
 
@@ -180,6 +194,53 @@ in the scene, so the squares stay square inside a rounded silhouette.
 command line to the running window and exits. The same channel carries
 clicked `postalgambit:` links.
 
+### The setup program
+
+The `installer` package is a second, self-contained program that ships the
+first one. It imports nothing from `postalgambit` and is deliberately
+dependency-light: process detection is `tasklist`, the forced close is
+`taskkill`, version comparison is a tuple compare and shortcuts are written
+through the Windows scripting host, so the compiled onefile pulls in nothing
+beyond PySide6 and the standard library.
+
+It follows the same shape as the application, for the same reason. `ops` holds
+the side effects (payload extraction, paths, shortcuts, process control, and
+the install, repair and uninstall sequences) and `state` holds the HKCU
+registrations, the `postalgambit:` URI scheme, version comparison and the state
+model the window reads. Neither imports Qt. `ui` is the only Qt client,
+`shared` holds resource resolution and crash logging, and `app.py` is the
+composition root.
+
+Three seams keep the privileged work testable, which is what allows
+`installer.ops` and `installer.state` to sit inside the 100% gate:
+
+- every external command goes through an injectable `CommandRunner`, so no
+  test spawns a process it did not intend to;
+- the HKCU locations, including the URI scheme key, are a `RegistryKeys` value
+  rather than constants baked into each function, so a test writes to a scratch
+  key instead of the user's own registration;
+- the per-user directories come from environment variables and the payload is
+  anchored on the installer package directory, so the suite redirects the
+  profile and the payload into a temporary tree and never opens the 35 MB
+  bundle the build stages.
+
+Long operations run on a worker thread (`ui/worker.py`) and report a phase
+message plus a percentage, so the window paints while hundreds of files are
+written. A running application is detected before any of it starts and the user
+is offered a forced close, because the application intercepts a window close
+and a polite request would leave the executable locked. Extraction is member by
+member with every entry checked to resolve inside the destination first: the
+payload is first party, so that guard enforces a guarantee rather than fixing an
+exploit, and going member by member is also what makes real progress reportable.
+
+The entry point is `installer_main.py` at the repository root rather than a
+script inside the package. A script is compiled with its own directory on the
+module search path, so compiling `installer/app.py` directly would leave the
+`installer.*` imports unresolvable. Compiling from the root also gives the
+payload one anchor that holds in both source and compiled runs: it is resolved
+relative to the `installer` package directory, and `buildinstaller.py` includes
+the staged payload at that same relative location.
+
 ## Execution flows
 
 **New game**: wizard collects opponent name, email and my colour. The
@@ -253,13 +314,16 @@ manifest and the macOS bundle.
 
 ## Quality enforcement
 
-- pytest with `--cov-fail-under=100` over the `postalgambit` package with
-  `ui/` and `version.py` omitted (coverage source and omit list live in
-  `pyproject.toml`, so `pytest -v --cov` and plain `pytest` measure the
-  same thing). No mock libraries: hand-written fakes implement the ports
-  (an in-memory `GameStore`, a scripted `Clock`, a fixed `IdGenerator`).
-  The python-chess adapter is tested against the real library, which is
-  pure computation and needs no test doubles. See `TESTING.md`.
+- pytest with `--cov-fail-under=100` and `--cov-branch` over the
+  `postalgambit` package (with `ui/` and `version.py` omitted) plus
+  `installer.ops` and `installer.state`, the two Qt-free halves of the setup
+  program (coverage source and omit list live in `pyproject.toml`, so
+  `pytest -v --cov` and plain `pytest` measure the same thing). No mock
+  libraries: hand-written fakes implement the ports (an in-memory
+  `GameStore`, a scripted `Clock`, a fixed `IdGenerator`) and the installer's
+  one `CommandRunner` seam. The python-chess adapter is tested against the
+  real library, which is pure computation and needs no test doubles. See
+  `TESTING.md`.
 - Structural tests as listed under Invariants: layering by AST scan, domain
   purity, no-network, module size, composition-root whitelist, style.
 - Wire-format conformance tests mirror `WIRE_FORMAT.md` section by section,
@@ -271,7 +335,10 @@ manifest and the macOS bundle.
 Implemented: `buildexe.py` (Nuitka, standalone, PE metadata,
 `assets/postal-gambit.ico`) builds straight into the installer payload;
 `buildinstaller.py` zips the payload and wraps the themed bespoke
-per-user installer as `dist-installer/PostalGambitSetup.exe`;
+per-user installer as `dist-installer/PostalGambitSetup.exe`, compiling
+`installer_main.py` with `--include-package=installer` and the payload
+included at `installer/payload` so it resolves relative to the package in
+both source and compiled runs;
 `build_flatpak.sh` and `builddmg.py` cover Linux and macOS. App id
 `uk.codecrafter.PostalGambit`. All three register the `postalgambit:` URI
 scheme. The icon set is generated from the repo-root master by

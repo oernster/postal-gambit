@@ -24,10 +24,18 @@ target-version = ["py311"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-addopts = "--cov=postalgambit --cov-fail-under=100 --cov-report=term-missing"
+# The gate covers the package plus the two Qt-free halves of the setup program.
+# The installer does the most privileged work in the product (registry writes,
+# the postalgambit: URI registration, shortcut creation, per-user deployment,
+# uninstall), so its operations and its state model are gated rather than left
+# unmeasured. installer/ui, installer/app.py, installer/cli.py, the constants
+# and installer/shared are the Qt client and its wiring, excluded on the same
+# grounds as postalgambit/ui.
+addopts = "--cov=postalgambit --cov=installer.ops --cov=installer.state --cov-branch --cov-fail-under=100 --cov-report=term-missing"
 
 [tool.coverage.run]
-source = ["postalgambit"]
+branch = true
+source = ["postalgambit", "installer.ops", "installer.state"]
 omit = [
     "postalgambit/ui/*",
     "postalgambit/version.py",

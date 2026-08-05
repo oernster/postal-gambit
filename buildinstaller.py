@@ -14,7 +14,9 @@ Two-step workflow (run from the project root):
 
 Step 1 writes the standalone bundle to installer/payload/PostalGambit. Step 2
 zips that bundle (alongside the LICENSE) into the installer payload, then
-compiles the installer UI (installer/app.py) into a single onefile executable.
+compiles the installer package into a single onefile executable through the
+entry script named by INSTALLER_ENTRY below (installer_main.py at the
+repository root).
 
 The bundle ships as a single zip because Nuitka's onefile build strips loose
 executables and DLLs from an included data directory; the installer extracts
@@ -46,8 +48,15 @@ VERSION_FILE = PROJECT_ROOT / "VERSION"
 
 # Installer UI entry point and payload locations. buildexe.py writes the
 # standalone bundle directly into installer/payload/PostalGambit.
+#
+# The entry script sits at the repository root rather than inside the package:
+# a script is compiled with its own directory on the module search path, so
+# compiling installer/app.py directly would leave the ``installer.*`` imports
+# unresolvable. Compiling from the root gives Nuitka the same layout it
+# reproduces in the bundle.
 INSTALLER_DIR = PROJECT_ROOT / "installer"
-INSTALLER_ENTRY = INSTALLER_DIR / "app.py"
+INSTALLER_ENTRY = PROJECT_ROOT / "installer_main.py"
+INSTALLER_PACKAGE = "installer"
 PAYLOAD_DIR_NAME = "payload"
 PAYLOAD_STAGE_DIR = INSTALLER_DIR / PAYLOAD_DIR_NAME
 APP_BUNDLE_DIR = PAYLOAD_STAGE_DIR / APP_NAME
@@ -172,7 +181,7 @@ def build_installer() -> int:
 
     if not INSTALLER_ENTRY.exists():
         raise SystemExit(
-            f"[buildinstaller] Installer UI entry script not found at "
+            f"[buildinstaller] Installer entry script not found at "
             f"{INSTALLER_ENTRY}."
         )
 
@@ -214,8 +223,17 @@ def build_installer() -> int:
         f"--product-version={pe_version}",
         f"--file-description={APP_DESCRIPTION} Installer",
         f"--copyright={copyright_text()}",
-        # Embed the staged payload (app bundle + zip + LICENSE) in the installer.
-        f"--include-data-dir={PAYLOAD_STAGE_DIR}={PAYLOAD_DIR_NAME}",
+        # Compile the whole installer package, not only what the entry script
+        # reaches statically.
+        f"--include-package={INSTALLER_PACKAGE}",
+        # Embed the staged payload (app bundle + zip + LICENSE) in the
+        # installer, under the package directory. The installer resolves its
+        # payload relative to the installer package in both source and compiled
+        # runs, so both find it in the same place.
+        (
+            f"--include-data-dir={PAYLOAD_STAGE_DIR}"
+            f"={INSTALLER_PACKAGE}/{PAYLOAD_DIR_NAME}"
+        ),
     ]
 
     if ICON_FILE.exists():
@@ -247,7 +265,7 @@ def build_installer() -> int:
     for part in nuitka_args:
         print("  ", part)
 
-    result = subprocess.run(nuitka_args, cwd=str(PROJECT_ROOT))
+    result = subprocess.run(nuitka_args, cwd=str(PROJECT_ROOT), check=False)
     if result.returncode != 0:
         print(
             f"[buildinstaller] ERROR: Nuitka build failed "

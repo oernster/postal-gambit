@@ -63,12 +63,21 @@ python buildinstaller.py
 - `buildinstaller.py` zips the payload (Nuitka onefile strips loose
   executables from data dirs, so zip-then-extract is load-bearing) and
   builds the themed GUI installer to
-  `dist-installer/PostalGambitSetup.exe`.
+  `dist-installer/PostalGambitSetup.exe`. It compiles `installer_main.py`
+  at the repository root, not a script inside the package: a script is
+  compiled with its own directory on the module search path, so compiling
+  `installer/app.py` directly would leave the `installer.*` imports
+  unresolvable.
+
+Run the setup program from source with `python installer_main.py`, and the
+uninstall flow with `python installer_main.py --uninstall`.
 
 The installer is per-user and needs no admin: it extracts to
 `%LOCALAPPDATA%\Programs\PostalGambit`, writes the HKCU uninstall entry,
 offers Desktop and Start Menu shortcuts, registers the `postalgambit:`
-URI scheme and supports install, upgrade, repair and uninstall.
+URI scheme and supports install, upgrade, repair and uninstall. It offers
+to close a running Postal Gambit first, and reports a phase and a
+percentage while it works.
 
 ## Linux: Flatpak
 

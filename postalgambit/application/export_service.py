@@ -56,7 +56,7 @@ class ExportService:
         if message.action is WireAction.MOVE:
             last = self._last_move(message, applied)
             if last is not None:
-                move_number, mover, san = last
+                move_number, _mover, san = last
                 return build_subject(short_id, message.action, move_number, san)
         return build_subject(short_id, message.action)
 
@@ -109,7 +109,9 @@ class ExportService:
             return ["Draw agreed. Thanks for the game."]
         lines = []
         last = self._last_move(message, applied)
-        if last is not None:
+        # The false side is unreachable: only a MOVE reaches here, and a move
+        # with nothing to report has already failed in _subject.
+        if last is not None:  # pragma: no branch
             move_number, mover, san = last
             lines.append(f"Move {move_number} ({_COLOUR_LABELS[mover]}): {san}")
             status = (

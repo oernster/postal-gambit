@@ -16,6 +16,7 @@ _CHECK_TARGETS = (
     "buildinstaller.py",
     "builddmg.py",
     "installer",
+    "installer_main.py",
 )
 
 
@@ -23,6 +24,7 @@ def _run(*args: str) -> subprocess.CompletedProcess:
     return subprocess.run(
         [sys.executable, "-m", *args],
         cwd=REPO_ROOT,
+        check=False,
         capture_output=True,
         text=True,
     )
