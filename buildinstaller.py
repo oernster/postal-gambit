@@ -35,7 +35,6 @@ from pathlib import Path
 # --- Project identity (single source of truth for installer metadata) -------
 APP_NAME = "PostalGambit"
 APP_DISPLAY_NAME = "Postal Gambit"
-APP_DESCRIPTION = "Correspondence chess over your own email"
 APP_AUTHOR = "Oliver Ernster"
 INSTALLER_NAME = "PostalGambitSetup"
 
@@ -80,7 +79,7 @@ UNLINK_DELAY_SECONDS = 0.15
 
 
 def read_version() -> str:
-    """Return the project version from the VERSION file, or a safe default."""
+    """Return the project version from the VERSION file, else a safe default."""
     try:
         version = VERSION_FILE.read_text(encoding="utf-8").strip()
     except OSError:
@@ -180,7 +179,7 @@ def stage_payload() -> None:
 def prune_build_scratch() -> None:
     """Remove compiler scratch directories from the payload before it is embedded.
 
-    The whole payload directory is embedded in the installer, and buildexe.py
+    The whole payload directory is embedded in the installer; buildexe.py
     writes its Nuitka output into that same directory, so the compiler's scratch
     trees land beside the bundle. Those trees contain a full environment dump,
     which on a developer machine means real credentials. Anything left here ships
@@ -242,7 +241,9 @@ def build_installer() -> int:
         f"--product-name={APP_DISPLAY_NAME} Setup",
         f"--file-version={pe_version}",
         f"--product-version={pe_version}",
-        f"--file-description={APP_DESCRIPTION} Installer",
+        # Task Manager shows FileDescription as the process name, so this is
+        # the name, not a sentence. It matches the product name above.
+        f"--file-description={APP_DISPLAY_NAME} Setup",
         f"--copyright={copyright_text()}",
         # Compile the whole installer package, not only what the entry script
         # reaches statically.

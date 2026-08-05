@@ -39,7 +39,6 @@ from pathlib import Path
 # --- Project identity (single source of truth for build metadata) -----------
 APP_NAME = "PostalGambit"
 APP_DISPLAY_NAME = "Postal Gambit"
-APP_DESCRIPTION = "Correspondence chess over your own email"
 APP_AUTHOR = "Oliver Ernster"
 EXE_NAME = "postal-gambit"
 
@@ -81,7 +80,7 @@ TRUTHY_VALUES = {"1", "true", "yes", "on"}
 
 
 def read_version() -> str:
-    """Return the project version from the VERSION file, or a safe default."""
+    """Return the project version from the VERSION file, else a safe default."""
     try:
         version = VERSION_FILE.read_text(encoding="utf-8").strip()
     except OSError:
@@ -92,7 +91,7 @@ def read_version() -> str:
 def to_pe_version(version: str) -> str:
     """Normalise a semantic version into the 4-part numeric form Nuitka wants.
 
-    Non-numeric suffixes (for example a pre-release tag) are dropped, and the
+    Non-numeric suffixes (for example a pre-release tag) are dropped; the
     tuple is padded or truncated to exactly PE_VERSION_PARTS numeric segments.
     """
     numeric_parts: list[str] = []
@@ -183,7 +182,10 @@ def build_exe() -> int:
         f"--product-name={APP_DISPLAY_NAME}",
         f"--file-version={pe_version}",
         f"--product-version={pe_version}",
-        f"--file-description={APP_DESCRIPTION}",
+        # Task Manager shows FileDescription as the process name; so do the
+        # file properties dialog and the UAC prompt. It has to be the product's
+        # name, not a sentence about it.
+        f"--file-description={APP_DISPLAY_NAME}",
         f"--copyright={copyright_text()}",
     ]
 
