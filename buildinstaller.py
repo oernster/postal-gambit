@@ -174,6 +174,27 @@ def stage_payload() -> None:
     else:
         print(f"[buildinstaller] WARNING: LICENSE not found at {LICENSE_FILE}.")
 
+    prune_build_scratch()
+
+
+def prune_build_scratch() -> None:
+    """Remove compiler scratch directories from the payload before it is embedded.
+
+    The whole payload directory is embedded in the installer, and buildexe.py
+    writes its Nuitka output into that same directory, so the compiler's scratch
+    trees land beside the bundle. Those trees contain a full environment dump,
+    which on a developer machine means real credentials. Anything left here ships
+    inside the setup executable, so the scratch is removed rather than trusted to
+    be harmless.
+    """
+    for entry in PAYLOAD_STAGE_DIR.iterdir():
+        if not entry.is_dir():
+            continue
+        if entry.name == APP_NAME:
+            continue
+        shutil.rmtree(entry, ignore_errors=True)
+        print(f"[buildinstaller] Pruned build scratch from payload: {entry.name}")
+
 
 def build_installer() -> int:
     """Compile the installer UI into a onefile executable. Returns a code."""

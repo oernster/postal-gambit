@@ -50,7 +50,7 @@
             {"@type": "Question", "name": "Does my opponent need the app?",
              "acceptedAnswer": {"@type": "Answer", "text": "No. Every email is readable text: a short note, an ASCII board and the game record. An opponent without the app can reply with a plain move like Nf6 and it imports fine."}},
             {"@type": "Question", "name": "What email account do I need?",
-             "acceptedAnswer": {"@type": "Answer", "text": "Any account you already use. Postal Gambit never sends anything itself: it opens a pre-filled draft in your own mail client or copies the email to your clipboard, and you press send."}},
+             "acceptedAnswer": {"@type": "Answer", "text": "Any account you already use. Postal Gambit never sends anything itself: it opens a pre-filled draft in your own mail client or copies the email to your clipboard and you press send."}},
             {"@type": "Question", "name": "What happens if an email gets lost?",
              "acceptedAnswer": {"@type": "Answer", "text": "Nothing is corrupted. Every email carries the entire game state, so the next one that arrives catches you up. If the two sides ever disagree, the divergence is detected and reported, never silently resolved."}},
             {"@type": "Question", "name": "Is there engine analysis?",
@@ -130,7 +130,7 @@
             <div class="step">
                 <span class="n">3</span>
                 <h3>Import the reply</h3>
-                <p>When the reply lands, click its one-click import link, or paste the email text into
+                <p>When the reply lands, click its one-click import link or paste the email text into
                     the app. Even a bare move like Nf6 from an opponent without the app imports fine.
                     The board updates and it is your move again.</p>
             </div>
@@ -243,7 +243,7 @@ Import this move with one click:
                 <p class="q">What email account do I need?</p>
                 <p class="a">Any account you already use. Postal Gambit never sends anything itself: it
                     opens a pre-filled draft in your own mail client or copies the email to your
-                    clipboard, and you press send.</p>
+                    clipboard and you press send.</p>
             </div>
             <div class="item">
                 <p class="q">What happens if an email gets lost?</p>
@@ -253,7 +253,7 @@ Import this move with one click:
             </div>
             <div class="item">
                 <p class="q">Can it stop my opponent cheating?</p>
-                <p class="a">No, and nothing can. Correspondence chess has always been played on trust.
+                <p class="a">No. Nothing can. Correspondence chess has always been played on trust.
                     What Postal Gambit guarantees is that every move is legal; whether a human chose it
                     is between you and your friend.</p>
             </div>
@@ -280,7 +280,8 @@ Import this move with one click:
             <div class="card">
                 <div class="ico">✅</div>
                 <h3>Tested to the last line</h3>
-                <p>The core logic carries a 100% test-coverage gate. The build fails if a single
+                <p>The core logic carries a 100% test-coverage gate, as does the part of the
+                    Windows setup program that touches your machine. The build fails if a single
                     untested line lands.</p>
             </div>
             <div class="card">
@@ -329,7 +330,7 @@ Import this move with one click:
         <h2>Download Postal Gambit</h2>
         <p class="lead">Pick your platform and you have the newest release. Free and GPL-3.0; local-first,
             so your games and your email stay on your own machine.</p>
-        <span class="dl-version" id="dl-version">Latest release</span>
+        <span class="dl-version" id="dl-version">Version <!--VERSION-->0.3.0<!--/VERSION--></span>
         <div class="downloads">
             <div class="dl-card">
                 <div class="ico">🪟</div>
@@ -340,7 +341,8 @@ Import this move with one click:
                     for Windows</a>
                 <p class="meta" data-asset="PostalGambitSetup.exe">Setup program (.exe)</p>
                 <p class="how">Run the setup: it installs per-user, so no administrator rights are
-                    needed.</p>
+                    needed. If Postal Gambit is already running it offers to close it for you, and
+                    it shows you what it is doing while it works.</p>
             </div>
             <div class="dl-card">
                 <div class="ico">🍎</div>
@@ -388,7 +390,8 @@ Import this move with one click:
     // redirect, which always serves the newest release's asset (the asset names are version-free
     // by design). This script only decorates the page with live details: the version chip and
     // each installer's size, fetched from the GitHub API. If the call fails (offline,
-    // rate-limited, no release yet), the static text above stands on its own.
+    // rate-limited, no release yet), the static text above stands on its own: the version
+    // chip is stamped from the VERSION file by stamp_version.py at the repository root.
     (function () {
         var api = "https://api.github.com/repos/oernster/postal-gambit/releases/latest";
         fetch(api).then(function (r) {

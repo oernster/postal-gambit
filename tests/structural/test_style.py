@@ -15,6 +15,7 @@ _CHECK_TARGETS = (
     "buildexe.py",
     "buildinstaller.py",
     "builddmg.py",
+    "stamp_version.py",
     "installer",
     "installer_main.py",
 )

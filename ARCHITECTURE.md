@@ -7,7 +7,9 @@ moves from pasted text. It contains no networking of any kind.
 
 Status: implemented. Each invariant below names the structural test that
 enforces it; the whole suite (unit, integration, wire-format conformance
-and structural) gates at 100% coverage outside the UI layer.
+and structural) gates at 100% line and branch coverage over everything
+outside the Qt code, which now includes the setup program's operations
+and state.
 
 ## Invariants
 
@@ -45,7 +47,11 @@ and structural) gates at 100% coverage outside the UI layer.
    `tests/structural/test_module_size.py`.
 9. **The version lives in `VERSION` only.** Runtime reads it through
    `postalgambit/version.py`; build scripts read it through a shared
-   helper; nothing else hardcodes a version.
+   helper; the setup program reads the copy bundled beside the payload.
+   Nothing else hardcodes a version. The GitHub Pages site cannot read a
+   file at render time, so the one place it names a version is delimited
+   by `<!--VERSION-->` markers that `stamp_version.py` refreshes from
+   `VERSION`.
 10. **Formatting is part of the suite**: black (88) and flake8 run as
     assertions in `tests/structural/test_style.py`.
 
@@ -112,6 +118,10 @@ postal-gambit/
   tests/                      mirrors the package, plus tests/structural/
                               and tests/installer/
   assets/                     generated icon set (generate_icons.py)
+  docs/                       the GitHub Pages site: landing page, the why
+                              page and open/ (the click-to-import bounce
+                              page the email links point at)
+  stamp_version.py            carries VERSION into the site's markers
 ```
 
 ### Domain
@@ -172,13 +182,13 @@ Space (Qt's Windows styles do neither). Every dialog inherits the same
 model through `NeutralDialog`: a neutral start, Right/Left as ring
 aliases around Qt's focus chain, a closed dropdown opening on Down
 rather than silently changing value, text fields keeping caret arrows
-and releasing Tab, and Enter toggling a focused checkbox or radio
+and releasing Tab, plus Enter toggling a focused checkbox or radio
 instead of submitting the form. A disabled control wears a permanent
 danger-red ring over a muted panel fill (Qt's stylesheet engine cannot
-match `:disabled:hover`, and the permanent form is the wanted behaviour
+match `:disabled:hover`; the permanent form is the wanted behaviour
 anyway); a control's fill always contrasts the surface it sits on, in
 both themes. Every destructive action (delete game, overwrite on
-divergent import) gets a modal confirmation naming the target, and the
+divergent import) gets a modal confirmation naming the target; the
 New game dialog's OK stays disabled until the form is complete (name,
 plausible email, an explicitly chosen colour).
 
@@ -208,7 +218,7 @@ the side effects (payload extraction, paths, shortcuts, process control, and
 the install, repair and uninstall sequences) and `state` holds the HKCU
 registrations, the `postalgambit:` URI scheme, version comparison and the state
 model the window reads. Neither imports Qt. `ui` is the only Qt client,
-`shared` holds resource resolution and crash logging, and `app.py` is the
+`shared` holds resource resolution and crash logging; `app.py` is the
 composition root.
 
 Three seams keep the privileged work testable, which is what allows
@@ -231,14 +241,14 @@ is offered a forced close, because the application intercepts a window close
 and a polite request would leave the executable locked. Extraction is member by
 member with every entry checked to resolve inside the destination first: the
 payload is first party, so that guard enforces a guarantee rather than fixing an
-exploit, and going member by member is also what makes real progress reportable.
+exploit; going member by member is also what makes real progress reportable.
 
 The entry point is `installer_main.py` at the repository root rather than a
 script inside the package. A script is compiled with its own directory on the
 module search path, so compiling `installer/app.py` directly would leave the
 `installer.*` imports unresolvable. Compiling from the root also gives the
 payload one anchor that holds in both source and compiled runs: it is resolved
-relative to the `installer` package directory, and `buildinstaller.py` includes
+relative to the `installer` package directory; `buildinstaller.py` includes
 the staged payload at that same relative location.
 
 ## Execution flows
@@ -273,7 +283,7 @@ opens a `.pgn` file). The codec finds and parses the block per
 verifies the strict-prefix rule and turn consistency, persists and updates
 the board. Unknown GameID offers game creation (that is the invite path):
 the opponent's address comes from the block's optional `From` header,
-shown in the confirmation before the game is created, and the app asks
+shown in the confirmation before the game is created; the app asks
 for it only when the header is absent (an older sender or hand-typed
 text). The header is a convenience default, never an authenticated
 identity. No block found falls back to bare-SAN parsing against a

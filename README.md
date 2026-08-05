@@ -2,11 +2,17 @@
 
 Correspondence chess over your own email. Postal Gambit is a local-first
 desktop app that keeps your games, enforces the rules and turns each move
-into a ready-to-send email in whatever mail client you already use. It
-never touches the network itself.
+into a ready-to-send email in whatever mail client you already use.
 
-Status: implemented and gated (195 tests, 100% coverage outside the UI
-layer). Version 0.2.0.
+**It never touches the network itself.** There is no networking code in
+the application at all: no server, no account, no telemetry and nothing
+to sign in to. Your own mail client is the transport; the claim is
+mechanically enforced rather than merely stated, because
+`tests/structural/test_no_network.py` fails the suite the moment any
+network import appears.
+
+Status: implemented and gated (325 tests; 100% line and branch coverage
+over the package and over the setup program's Qt-free halves).
 
 Website: https://oernster.github.io/postal-gambit/
 
@@ -46,7 +52,7 @@ Website: https://oernster.github.io/postal-gambit/
   clipboard: readable preamble, ASCII board, then a delimited PGN block
   that carries the entire game state (see
   [WIRE_FORMAT.md](WIRE_FORMAT.md)).
-- Import the opponent's reply by pasting the email text, or a `.pgn` file.
+- Import the opponent's reply by pasting the email text or a `.pgn` file.
   Divergence is detected and reported, never silently resolved.
 - One-click import: every outbound email carries an https link that works
   in any mail client; a static page bounces it to the installed app with
@@ -60,7 +66,7 @@ Website: https://oernster.github.io/postal-gambit/
 - Move history panel; game names carry the same short id as the email
   subject, so a list row and its thread correlate at a glance.
 - A full keyboard focus ring everywhere including dialogs: Enter and
-  Space both activate, and a disabled control wears a red ring instead
+  Space both activate; a disabled control wears a red ring instead
   of vanishing.
 - Dark and light themes (View menu), persisted between runs.
 
@@ -73,10 +79,26 @@ Website: https://oernster.github.io/postal-gambit/
 | Chess rules | python-chess, quarantined behind a port |
 | Storage | One JSON file per game, local, atomic writes |
 | Transport | Your mail client (`mailto:` or clipboard); no network code |
-| Tests | pytest via `pytest -v --cov`, 100% gate outside the UI layer |
-| Packaging | Nuitka plus bespoke installer (Windows), Flatpak, DMG |
+| Tests | pytest via `pytest -v --cov`; 100% line and branch gate outside the Qt code |
+| Packaging | Nuitka plus a bespoke per-user installer (Windows), Flatpak (Linux), DMG (macOS) |
 
-## Install and run
+## Install
+
+Ready-made packages for all three platforms are on the
+[releases page](https://github.com/oernster/postal-gambit/releases), and
+the download buttons on the website always point at the newest one.
+
+- **Windows**: `PostalGambitSetup.exe`. A per-user setup program that
+  needs no administrator rights. It offers to close a running copy for
+  you and shows the phase it is in while it works. It keeps whatever
+  "start Postal Gambit when I sign in" setting you already had. It
+  registers the `postalgambit:` links that make one-click import work.
+- **macOS**: `postal-gambit.dmg`. Open it and drag Postal Gambit into
+  Applications.
+- **Linux**: `postal-gambit.flatpak`. Install it with
+  `flatpak install --user postal-gambit.flatpak`.
+
+## Run from source
 
 ```
 pip install -r requirements.txt -r requirements-dev.txt
@@ -94,11 +116,13 @@ See [TESTING.md](TESTING.md) for the gate, the layout and the policy.
 ## Build
 
 ```
-python buildexe.py
-python buildinstaller.py
+python buildexe.py         # Windows: the standalone app, straight into the payload
+python buildinstaller.py   # Windows: the setup program around that payload
+./build_flatpak.sh         # Linux
+python builddmg.py         # macOS
 ```
 
-Windows, Linux and macOS packaging are documented in
+Each platform's prerequisites and the release checklist are in
 [DEVELOPMENT-README.md](DEVELOPMENT-README.md).
 
 ## Licence

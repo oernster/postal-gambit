@@ -69,14 +69,14 @@ python buildinstaller.py
   `installer/app.py` directly would leave the `installer.*` imports
   unresolvable.
 
-Run the setup program from source with `python installer_main.py`, and the
+Run the setup program from source with `python installer_main.py`; run the
 uninstall flow with `python installer_main.py --uninstall`.
 
 The installer is per-user and needs no admin: it extracts to
 `%LOCALAPPDATA%\Programs\PostalGambit`, writes the HKCU uninstall entry,
 offers Desktop and Start Menu shortcuts, registers the `postalgambit:`
 URI scheme and supports install, upgrade, repair and uninstall. It offers
-to close a running Postal Gambit first, and reports a phase and a
+to close a running Postal Gambit first and reports a phase and a
 percentage while it works.
 
 ## Linux: Flatpak
@@ -109,20 +109,36 @@ available, wraps the DMG and notarizes plus staples only when `APPLE_ID`
 and `APPLE_APP_PASSWORD` are set. Output lands in `dist-macos/`. The
 bundle declares the `postalgambit:` URL scheme.
 
-## Click-to-import page
+## The GitHub Pages site
 
-`docs/` is a static GitHub Pages site. `docs/open/index.html` is the
-click-to-import bounce page: emails carry
-`https://oernster.github.io/postal-gambit/open/#v=1&d=<payload>` and the
-page rebuilds the `postalgambit:` URI locally (the fragment never reaches
-any server) and launches the app. Enable it once in the repo settings:
-Settings, Pages, deploy from branch, `main` and `/docs`. The page is
-self-contained; no build step.
+`docs/` is a static GitHub Pages site, hand-written and with no build
+step. Enable it once in the repo settings: Settings, Pages, deploy from
+branch, `main` and `/docs`.
+
+- `index.html` is the landing page: what the app is, how a game flows,
+  the feature and FAQ sections and a per-platform download section. The
+  download buttons point at GitHub's `releases/latest/download` redirect,
+  so they never go stale; a small script decorates the page with the
+  live release version and each asset's size.
+- `why.html` is the reasoning page, linked from the nav.
+- `open/index.html` is the click-to-import bounce page: emails carry
+  `https://oernster.github.io/postal-gambit/open/#v=1&d=<payload>`, and
+  the page rebuilds the `postalgambit:` URI locally (the fragment never
+  reaches any server) and launches the app. That address is the one the
+  app emits, from `WEB_LINK_BASE` in `postalgambit/domain/applink.py`,
+  so it must keep resolving whatever canonical host the site declares
+  for search engines.
+
+Two site rules: the pages carry no dates or years of any kind; any
+version number they show sits inside `<!--VERSION-->` markers that
+`python stamp_version.py` refreshes from `VERSION`. Run that script after
+bumping `VERSION`; it is idempotent and prints what it changed.
 
 ## Release checklist
 
 1. Bump `VERSION`.
-2. `pytest -v --cov` green.
-3. `python generate_icons.py` if the master icon changed.
-4. Build per platform as above.
-5. Draft the release notes from `NOTES.md`.
+2. `python stamp_version.py` to carry the new version into the site.
+3. `pytest -v --cov` green.
+4. `python generate_icons.py` if the master icon changed.
+5. Build per platform as above.
+6. Draft the release notes from `NOTES.md`.

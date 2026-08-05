@@ -7,11 +7,11 @@ pytest -v --cov
 ```
 
 325 tests. Coverage must be 100% over the measured surface, line and
-branch, or the run fails (`--cov-fail-under=100 --cov-branch`). The exit
-code is authoritative: 0 means
-every test passed and the gate was met. Coverage source and omissions are
+branch; anything less fails the run (`--cov-fail-under=100
+--cov-branch`). The exit code is authoritative: 0 means every test
+passed and the gate was met. Coverage source and omissions are
 configured in `pyproject.toml`, so a bare `--cov`, the configured addopts
-and plain `pytest` all measure the same thing, and the repo root is on
+and plain `pytest` all measure the same thing; the repo root is on
 `sys.path` via the `pythonpath` ini setting, so the `pytest` launcher and
 `python -m pytest` behave identically.
 
@@ -46,7 +46,7 @@ left unmeasured. Omitted, with rationale:
 
 `tests/installer/` exercises the setup program's operations without ever
 touching a real Postal Gambit installation. Three seams make that
-possible, and each has a fixture in `tests/installer/conftest.py`:
+possible; each has a fixture in `tests/installer/conftest.py`:
 
 - **`scratch_keys`**: every HKCU location the installer writes is a field
   on an injected `RegistryKeys` value, including the `postalgambit:` URI
@@ -59,7 +59,7 @@ possible, and each has a fixture in `tests/installer/conftest.py`:
   a temporary tree. The app's own `~/.postal-gambit` follows it.
 - **`staged_payload`**: the payload is anchored on the installer package
   directory, so the fixture points that anchor at a temporary tree. The
-  real `installer/payload/PostalGambit.zip` is about 35 MB, and no test
+  real `installer/payload/PostalGambit.zip` is about 35 MB and no test
   opens it; a few-byte zip stands in.
 
 Every external command goes through the `CommandRunner` protocol, so
