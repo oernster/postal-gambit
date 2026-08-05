@@ -266,7 +266,14 @@ Three seams keep the privileged work testable, which is what allows
 
 Long operations run on a worker thread (`ui/worker.py`) and report a phase
 message plus a percentage, so the window paints while hundreds of files are
-written. A running application is detected before any of it starts and the user
+written. Every callback crosses back to the UI thread through a real slot on
+`OperationRunner` with an explicit queued connection, never through a plain
+function or lambda: a signal connected to a callable Qt cannot take a thread
+from is invoked directly on whichever thread emitted it. Connected that way
+the window's updates become widget calls from the wrong thread; worse, retiring
+the worker ends with the thread waiting on itself, which never returns.
+`tests/installer/test_operation_runner.py` asserts the callbacks arrive on the
+thread that started the work, without needing a widget or a display. A running application is detected before any of it starts and the user
 is offered a forced close, because the application intercepts a window close
 and a polite request would leave the executable locked. Extraction is member by
 member with every entry checked to resolve inside the destination first: the
