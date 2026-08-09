@@ -8,9 +8,15 @@ macOS-only; run from the repo root with the venv active:
 Flow: build the .app with Nuitka (--macos-create-app-bundle), strip the
 stray Mach-O object files PySide6 ships (Gatekeeper rejects a bundle that
 contains unsigned code and codesign --deep silently skips them), codesign
-the bundle, wrap it in a DMG with create-dmg, then sign, notarize and
-staple the DMG. Notarization runs only when APPLE_ID and APPLE_APP_PASSWORD
-are set; without them the output is a signed, locally installable DMG.
+the bundle, notarize and staple the bundle, wrap it in a DMG with
+create-dmg, then sign, notarize and staple the DMG.
+
+Notarization is mandatory. A Developer ID signature alone is not enough:
+since macOS 10.15 Gatekeeper rejects signed-but-unnotarized apps with
+"Apple could not verify ... is free of malware". Credentials come from the
+keychain profile named in NOTARY_PROFILE, created once with
+`xcrun notarytool store-credentials`. Set ALLOW_UNNOTARIZED=1 for a local
+test build; that output must never be published as a release artifact.
 
 The .icns ships pre-generated in assets/ (generate_icons.py emits it from
 the master PNG), so no image conversion happens here.
@@ -19,12 +25,16 @@ the master PNG), so no image conversion happens here.
 from __future__ import annotations
 
 import os
+import re
 import plistlib
 import shutil
 import subprocess
 import sys
 import tempfile
+from importlib import metadata
 from pathlib import Path
+
+from packaging.requirements import InvalidRequirement, Requirement
 
 # --- Project identity --------------------------------------------------------
 APP_DISPLAY_NAME = "Postal Gambit"
@@ -50,6 +60,32 @@ DEVELOPER_ID = os.environ.get(
 APPLE_ID = os.environ.get("APPLE_ID", "")
 APPLE_APP_PASSWORD = os.environ.get("APPLE_APP_PASSWORD", "")
 APPLE_TEAM_ID = os.environ.get("APPLE_TEAM_ID", "W7K465GKFJ")
+
+# Notarization credentials live in the keychain under one profile per app, each
+# holding its own app-specific password, so a leaked credential can be revoked
+# for a single app. The profile defaults to this app's name with spaces removed,
+# a keychain profile name being awkward to pass on a command line otherwise:
+# running the build from the repo picks up the right credential with nothing to
+# export, and no other app's profile can be used by accident. Set
+# APPLE_KEYCHAIN_PROFILE to override. Create it with:
+#   xcrun notarytool store-credentials PostalGambit \
+#     --apple-id <id> --team-id <team> --password <app-specific>
+NOTARY_PROFILE = os.environ.get(
+    "APPLE_KEYCHAIN_PROFILE", ""
+) or APP_DISPLAY_NAME.replace(" ", "")
+
+# The notary service accepts only an app-specific password from appleid.apple.com
+# and rejects the Apple account password with HTTP 401. The shape is distinctive,
+# so it is checked before the build rather than discovered after it.
+APP_SPECIFIC_PASSWORD_RE = re.compile(r"^[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}$")
+
+# Escape hatch for local test builds. Distribution builds must never set this:
+# an unnotarized DMG is rejected by Gatekeeper on every machine but the one
+# that signed it, and the failure is invisible at build time.
+ALLOW_UNNOTARIZED = os.environ.get("ALLOW_UNNOTARIZED", "") == "1"
+# Notarization is the default and the keychain profile always resolves, so
+# the only way to skip it is to ask for that explicitly.
+NOTARIZING = not ALLOW_UNNOTARIZED
 
 # The minimal hardened-runtime entitlement for a PySide6 app: allow loading
 # the bundled Qt libraries signed under our own identity.
@@ -296,36 +332,182 @@ def set_dmg_file_icon(dmg_path: Path) -> None:
         )
 
 
+def require_notarization_credentials() -> None:
+    """Stop before the build starts if the release cannot be notarized.
+
+    Checked next to the create-dmg and codesign requirements so a missing
+    password costs a second rather than a failed Nuitka run.
+    """
+    if ALLOW_UNNOTARIZED:
+        print("[builddmg] WARNING: ALLOW_UNNOTARIZED=1; local test build only.")
+        return
+    if APPLE_ID and APPLE_APP_PASSWORD:
+        if not APP_SPECIFIC_PASSWORD_RE.match(APPLE_APP_PASSWORD):
+            raise SystemExit(
+                "[builddmg] APPLE_APP_PASSWORD is not an app-specific password.\n"
+                "Expected four lowercase groups of four, like abcd-efgh-ijkl-mnop.\n"
+                "An Apple account password is rejected by the notary service with\n"
+                "'HTTP status code: 401. Invalid credentials'.\n"
+                "Generate one at https://appleid.apple.com (Sign-In and Security,\n"
+                "App-Specific Passwords), or leave both variables unset and store\n"
+                f"the credential in the keychain as profile {NOTARY_PROFILE}."
+            )
+        print(f"[builddmg] Notarizing as {APPLE_ID} (team {APPLE_TEAM_ID})")
+        return
+    print(f"[builddmg] Notarizing with keychain profile {NOTARY_PROFILE}")
+
+
+def notarytool_submit(target: Path) -> None:
+    """Submit target to Apple and wait for the verdict.
+
+    A failed submission stops the build rather than leaving an artifact that
+    looks distributable. subprocess is called directly rather than through run()
+    so that neither the echoed command nor the failure path exposes the
+    password. Stapling is separate because the submitted file and the file that
+    carries the ticket differ for a bundle: a zip goes up, the .app gets
+    stapled.
+    """
+    cmd = [
+        "xcrun",
+        "notarytool",
+        "submit",
+        str(target),
+        *notarytool_credentials(),
+        "--wait",
+    ]
+    print(f"[builddmg] $ {redact(cmd)}")
+    if subprocess.run(cmd, check=False).returncode == 0:
+        return
+    raise SystemExit(
+        "[builddmg] notarization failed (notarytool output above).\n"
+        "'HTTP status code: 401' means the credential is wrong: use an\n"
+        "app-specific password from https://appleid.apple.com, not your Apple\n"
+        "account password.\n"
+        "For an 'Invalid' verdict, the per-binary reasons are in:\n"
+        f"  xcrun notarytool log <submission-id> --apple-id "
+        f"{APPLE_ID or '<apple-id>'} --team-id {APPLE_TEAM_ID}"
+    )
+
+
+def notarytool_credentials() -> list[str]:
+    """Authentication arguments for notarytool.
+
+    An explicit APPLE_ID and APPLE_APP_PASSWORD pair wins, for CI that has no
+    keychain. Otherwise the per-app profile is used, which keeps the secret out
+    of the process arguments where any other process could read it via ps.
+    """
+    if APPLE_ID and APPLE_APP_PASSWORD:
+        return [
+            "--apple-id",
+            APPLE_ID,
+            "--password",
+            APPLE_APP_PASSWORD,
+            "--team-id",
+            APPLE_TEAM_ID,
+        ]
+    return ["--keychain-profile", NOTARY_PROFILE]
+
+
+def check_runtime_dependencies() -> None:
+    """Fail if anything in requirements.txt is absent from the build interpreter.
+
+    Nuitka only warns when a package it is told to include cannot be found, so a
+    stale venv yields a bundle that builds, signs and notarizes cleanly and then
+    dies at launch with ModuleNotFoundError. Checking the interpreter that is
+    about to be frozen turns a silent runtime failure into a build failure.
+    """
+    section("Runtime dependencies")
+    requirements = PROJECT_ROOT / "requirements.txt"
+    if not requirements.is_file():
+        raise SystemExit(f"[builddmg] {requirements} is missing.")
+
+    missing: list[str] = []
+    checked = 0
+    for raw in requirements.read_text(encoding="utf-8").splitlines():
+        line = raw.split("#")[0].strip()
+        if not line or line.startswith("-"):
+            continue
+        try:
+            requirement = Requirement(line)
+        except InvalidRequirement as error:
+            raise SystemExit(f"[builddmg] cannot parse '{line}': {error}")
+        # A marker such as sys_platform == "win32" means the package is not
+        # wanted here, so its absence is correct rather than a fault.
+        if requirement.marker is not None and not requirement.marker.evaluate():
+            continue
+        checked += 1
+        try:
+            metadata.version(requirement.name)
+        except metadata.PackageNotFoundError:
+            missing.append(requirement.name)
+
+    if missing:
+        raise SystemExit(
+            f"[builddmg] the build interpreter is missing {len(missing)} of "
+            f"{checked} requirements:\n"
+            + "".join(f"  {name}\n" for name in missing)
+            + "Nuitka would omit them and the app would crash at launch with\n"
+            "ModuleNotFoundError. Install them first:\n"
+            "  pip install -r requirements.txt"
+        )
+    print(f"  all {checked} requirements present")
+
+
+def redact(cmd: list[str]) -> str:
+    """Render a command with the value after --password masked.
+
+    run() echoes every command it runs, and CalledProcessError repeats the whole
+    argument list in its traceback. Both would otherwise copy the app-specific
+    password into build logs and CI output.
+    """
+    parts: list[str] = []
+    mask_next = False
+    for arg in (str(c) for c in cmd):
+        parts.append("********" if mask_next else arg)
+        mask_next = arg == "--password"
+    return " ".join(parts)
+
+
+def notarize_bundle(app_path: Path) -> None:
+    """Notarize and staple the .app before it is wrapped in the DMG.
+
+    Stapling only the DMG leaves the copied-out .app with no local ticket, so
+    Gatekeeper falls back to an online check and the app fails to launch for
+    anyone offline or behind a restrictive network. notarytool takes archives
+    only, so ditto zips the bundle first (ditto preserves the framework
+    symlinks the embedded signature depends on); the ticket goes on the bundle,
+    since a zip cannot carry one.
+    """
+    if not NOTARIZING:
+        return
+    section("Notarizing the app bundle (this waits on Apple)")
+    with tempfile.TemporaryDirectory() as tmp:
+        archive = Path(tmp) / f"{app_path.stem}.zip"
+        run(
+            ["ditto", "-c", "-k", "--keepParent", app_path, archive],
+            check=True,
+        )
+        notarytool_submit(archive)
+    run(["xcrun", "stapler", "staple", app_path], check=True)
+
+
 def sign_and_notarize_dmg(dmg_path: Path) -> None:
     section("Signing the DMG")
     run(["codesign", "--force", "--sign", DEVELOPER_ID, dmg_path], check=True)
-
-    if APPLE_ID and APPLE_APP_PASSWORD:
-        section("Notarizing (this waits on Apple)")
-        run(
-            [
-                "xcrun",
-                "notarytool",
-                "submit",
-                dmg_path,
-                "--apple-id",
-                APPLE_ID,
-                "--password",
-                APPLE_APP_PASSWORD,
-                "--team-id",
-                APPLE_TEAM_ID,
-                "--wait",
-            ],
-            check=True,
-        )
-        run(["xcrun", "stapler", "staple", dmg_path], check=True)
-    else:
-        print(
-            "[builddmg] APPLE_ID / APPLE_APP_PASSWORD not set; "
-            "skipping notarization (DMG is signed but not notarized)."
-        )
-
     run(["codesign", "--verify", dmg_path], check=True)
+
+    if not NOTARIZING:
+        print("[builddmg] WARNING: unnotarized DMG; do not publish this build.")
+        return
+
+    section("Notarizing the DMG (this waits on Apple)")
+    notarytool_submit(dmg_path)
+    run(["xcrun", "stapler", "staple", dmg_path], check=True)
+    # stapler validate proves a ticket is attached; spctl replays the check
+    # Gatekeeper runs on the end user's machine. Together they catch the silent
+    # case where signing succeeded but notarization never happened.
+    run(["xcrun", "stapler", "validate", dmg_path], check=True)
+    run(["spctl", "--assess", "--type", "install", "-vv", dmg_path], check=True)
 
 
 def main() -> int:
@@ -339,6 +521,8 @@ def main() -> int:
             "[builddmg] codesign not found; install the Xcode Command Line "
             "Tools first (xcode-select --install)."
         )
+    check_runtime_dependencies()
+    require_notarization_credentials()
 
     version = read_version()
     print(f"[builddmg] Building {APP_DISPLAY_NAME} {version} DMG")
@@ -352,6 +536,7 @@ def main() -> int:
         strip_object_files(app_path)
         register_url_scheme(app_path)
         sign_bundle(app_path, entitlements)
+        notarize_bundle(app_path)
         dmg_path = create_dmg(app_path)
         sign_and_notarize_dmg(dmg_path)
     finally:
