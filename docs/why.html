@@ -63,9 +63,11 @@
             anything and the two sides can never silently diverge; a disagreement is detected and
             reported. An opponent without the app can reply with a bare move like Nf6 and it
             imports fine.</p>
-        <p>Two refusals are structural rather than settings. There is no network code at all, a
-            rule the test suite enforces by forbidding network imports, so the app cannot phone
-            home or fail on someone else's server. And there is no engine, ever: correspondence
+        <p>Two refusals are structural rather than settings. Your games never touch the network:
+            the test suite forbids network imports everywhere except one disclosed module, whose
+            single job is an anonymous daily ask of GitHub releases for whether a newer version
+            exists, so the app cannot phone home or fail on someone else's server and nothing
+            about you or your games ever leaves your machine. And there is no engine, ever: correspondence
             chess died once already from machines. Underneath sits the usual engineering bar: a
             clean layered core with python-chess quarantined behind a port, a 100% coverage gate
             outside the UI and one plain JSON file per game with atomic writes.</p>

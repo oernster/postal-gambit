@@ -8,6 +8,7 @@ from PySide6.QtGui import QAction, QActionGroup
 from PySide6.QtWidgets import QMenu
 
 from postalgambit.ui.dialogs.about import AboutDialog
+from postalgambit.ui.update_check import MENU_ITEM_TEXT
 from postalgambit.version import APP_NAME
 
 if TYPE_CHECKING:
@@ -58,4 +59,8 @@ def build_menus(window: MainWindow) -> tuple[QMenu, ...]:
     about_action.triggered.connect(lambda: AboutDialog(window).exec())
     help_menu.addAction(licence_action)
     help_menu.addAction(about_action)
+    if window.update_controller is not None:
+        updates_action = QAction(MENU_ITEM_TEXT, window)
+        updates_action.triggered.connect(window.update_controller.check_manually)
+        help_menu.addAction(updates_action)
     return (file_menu, game_menu, view_menu, help_menu)

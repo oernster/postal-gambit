@@ -65,3 +65,17 @@ class TestTheme:
             store.load_theme()
         with pytest.raises(StorageError):
             store.save_theme("light")
+
+    def test_skipped_update_version_round_trip(self, tmp_path: Path) -> None:
+        store = JsonSettingsStore(tmp_path)
+        assert store.load_skipped_update_version() == ""
+        store.save_skipped_update_version("1.1.0")
+        assert store.load_skipped_update_version() == "1.1.0"
+
+    def test_skipped_update_version_survives_other_saves(self, tmp_path: Path) -> None:
+        store = JsonSettingsStore(tmp_path)
+        store.save_skipped_update_version("1.1.0")
+        store.save_theme("dark")
+        store.save(Identity(name="Oliver", email="o@example.org"))
+        assert store.load_skipped_update_version() == "1.1.0"
+        assert store.load_theme() == "dark"

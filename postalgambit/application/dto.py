@@ -95,3 +95,31 @@ class EmailDraft:
     body: str
     mailto_uri: str
     mailto_ok: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ReleaseAsset:
+    """One downloadable file attached to a published release."""
+
+    name: str
+    download_url: str
+
+
+@dataclass(frozen=True, slots=True)
+class ReleaseInfo:
+    """A published release as the update check needs to see it."""
+
+    version: str
+    page_url: str
+    assets: tuple[ReleaseAsset, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class UpdateStatus:
+    """What one update check concluded, ready for the ui to present."""
+
+    current: str
+    latest: str | None
+    update_available: bool
+    download_url: str | None = None
+    page_url: str | None = None

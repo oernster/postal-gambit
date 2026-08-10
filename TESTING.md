@@ -96,10 +96,13 @@ needs no double. Storage tests use real files in pytest tmp directories.
   only composition root.
 - `test_domain_purity.py`: no I/O, wall-clock reads, randomness, logging
   or threading in the domain.
-- `test_no_network.py`: no network imports anywhere in what ships. The
+- `test_no_network.py`: no network imports anywhere in what ships, with
+  the update check's GitHub adapter as the single named exemption. The
   scan covers the package, `main.py`, `installer_main.py` and the whole
   `installer/` tree. It asserts its own reach too, so narrowing it back
-  to the package fails rather than passing quietly.
+  to the package fails rather than passing quietly. It also asserts the
+  exemption whole: the exempt module must ship, must import
+  `urllib.request` and may import nothing forbidden beyond it.
 - `test_module_size.py`: every module at or below 400 lines, plus the 5%
   danger band as a second assertion so a file at 399 is caught before the
   next edit breaks the cap for an unrelated reason. The band is derived

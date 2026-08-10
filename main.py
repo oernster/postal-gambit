@@ -6,29 +6,30 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import QTimer
-
 from PySide6.QtGui import QIcon
 
 from postalgambit.application.export_service import ExportService
 from postalgambit.application.game_service import GameService
 from postalgambit.application.import_service import ImportService
 from postalgambit.application.move_service import MoveService
+from postalgambit.application.update_service import UpdateService, platform_key_for
+from postalgambit.domain.applink import is_app_link
 from postalgambit.infrastructure.clock import SystemClock
 from postalgambit.infrastructure.ids import Uuid4Generator
 from postalgambit.infrastructure.rules_pychess import PythonChessRulesEngine
 from postalgambit.infrastructure.settings_json import JsonSettingsStore
 from postalgambit.infrastructure.store_json import JsonGameStore
-from postalgambit.domain.applink import is_app_link
+from postalgambit.infrastructure.update_github import GitHubReleaseSource
 from postalgambit.ui.dialogs.forms import IdentityDialog
+from postalgambit.ui.icons import get_app_icon_path
 from postalgambit.ui.launch import (
     LinkAwareApplication,
     SingleInstanceServer,
     forward_to_running_instance,
 )
-from postalgambit.ui.icons import get_app_icon_path
 from postalgambit.ui.main_window import MainWindow
 from postalgambit.ui.theme import build_qss
-from postalgambit.version import APP_NAME
+from postalgambit.version import APP_NAME, __version__
 
 DATA_DIR_NAME = ".postal-gambit"
 WINDOW_START_WIDTH = 1150
@@ -49,6 +50,11 @@ def create_window(data_dir: Path) -> MainWindow:
         import_service=ImportService(store=store, rules=rules, clock=clock),
         export_service=ExportService(rules=rules),
         settings_store=settings,
+        update_service=UpdateService(
+            source=GitHubReleaseSource(),
+            current_version=__version__,
+            platform_key=platform_key_for(sys.platform),
+        ),
     )
 
 

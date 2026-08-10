@@ -161,6 +161,10 @@ finish-args:
   - --socket=wayland
   - --device=dri
   - --filesystem=home
+  # Network access exists for exactly one call: the anonymous daily ask of
+  # GitHub releases for a newer version. Games and moves still travel only
+  # by mail; see tests/structural/test_no_network.py for the enforced scope.
+  - --share=network
 modules:
   - name: python-deps
     buildsystem: simple

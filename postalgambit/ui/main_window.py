@@ -16,6 +16,7 @@ from postalgambit.application.game_service import GameService
 from postalgambit.application.import_service import ImportService
 from postalgambit.application.move_service import MoveService
 from postalgambit.application.ports import SettingsStore
+from postalgambit.application.update_service import UpdateService
 from postalgambit.domain.applink import decode_import_link
 from postalgambit.domain.errors import PostalGambitError
 from postalgambit.domain.game import Colour, GameId, GameRecord
@@ -40,6 +41,7 @@ from postalgambit.ui.labels import (
 )
 from postalgambit.ui.menus import build_menus
 from postalgambit.ui.theme import DEFAULT_THEME, THEMES, build_qss
+from postalgambit.ui.update_check import UpdateCheckController
 from postalgambit.version import APP_NAME
 
 
@@ -51,6 +53,7 @@ class MainWindow(QMainWindow):
         import_service: ImportService,
         export_service: ExportService,
         settings_store: SettingsStore,
+        update_service: UpdateService | None = None,
     ) -> None:
         super().__init__()
         self._games = game_service
@@ -60,6 +63,11 @@ class MainWindow(QMainWindow):
         self._settings = settings_store
         self._selected_id: GameId | None = None
         self._started = False
+        self.update_controller = None
+        if update_service is not None:
+            self.update_controller = UpdateCheckController(
+                self, update_service, settings_store
+            )
         self.setWindowTitle(APP_NAME)
         icon_path = get_app_icon_path()
         if icon_path is not None:
@@ -125,7 +133,7 @@ class MainWindow(QMainWindow):
             board=self.board,
         )
 
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         if not self._started:
             self._started = True

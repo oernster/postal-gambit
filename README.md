@@ -4,15 +4,22 @@ Correspondence chess over your own email. Postal Gambit is a local-first
 desktop app that keeps your games, enforces the rules and turns each move
 into a ready-to-send email in whatever mail client you already use.
 
-**It never touches the network itself.** There is no networking code in
-the application at all: no server, no account, no telemetry and nothing
-to sign in to. Your own mail client is the transport; the claim is
-mechanically enforced rather than merely stated, because
-`tests/structural/test_no_network.py` fails the suite the moment any
-network import appears. The scan covers everything you install (the
-package, both composition roots and the whole setup program). It asserts
-its own reach too, so narrowing it back fails the suite rather than
-passing quietly.
+**Your games never touch the network.** Your own mail client is the
+transport: no server, no account, no telemetry and nothing to sign in
+to. The app itself makes exactly one outbound call, disclosed here in
+full: shortly after launch and once a day while running, it asks GitHub
+anonymously whether a newer published release exists (Help > Check for
+updates does the same on demand). If one is found you choose Download,
+Skip this version or Later; a failed check stays silent and nothing is
+ever downloaded or run without you choosing it. The claim is
+mechanically enforced rather than merely stated:
+`tests/structural/test_no_network.py` fails the suite the moment a
+network import appears anywhere except the one named update-check
+module, whose exemption is itself asserted so it can neither widen nor
+outlive its purpose. The scan covers everything you install (the
+package, both composition roots and the whole setup program) and asserts
+its own reach, so narrowing it back fails the suite rather than passing
+quietly.
 
 Status: implemented and gated at 100% line and branch coverage over the
 package and over the setup program's Qt-free halves.

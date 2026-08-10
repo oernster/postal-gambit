@@ -46,6 +46,15 @@ class JsonSettingsStore:
         document["theme"] = theme
         self._write_document(document)
 
+    def load_skipped_update_version(self) -> str:
+        """The release version the user chose to skip, or an empty string."""
+        return str(self._read_document().get("skipped_update_version", ""))
+
+    def save_skipped_update_version(self, version: str) -> None:
+        document = self._read_document()
+        document["skipped_update_version"] = version
+        self._write_document(document)
+
     def _read_document(self) -> dict:
         if not self._path.exists():
             return {}

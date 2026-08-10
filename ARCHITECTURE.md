@@ -3,7 +3,9 @@
 Correspondence chess over the user's own email client. The application is a
 local-first PySide6 desktop app that manages games, enforces the rules of
 chess, renders outbound moves as ready-to-send emails and imports inbound
-moves from pasted text. It contains no networking of any kind.
+moves from pasted text. Games and moves never touch the network; the one
+disclosed exception in the whole product is the update check's single
+GitHub adapter (invariant 4).
 
 Status: implemented. Each invariant below names the structural test that
 enforces it; the whole suite (unit, integration, wire-format conformance
@@ -26,16 +28,23 @@ and state.
    `RulesEngine` port. No other layer imports it. If the library ever had
    to be replaced, one adapter changes. Enforced by
    `tests/structural/test_layer_boundaries.py`.
-4. **No network code anywhere in what ships.** The transport is the user's
-   mail client. Imports of `socket`, `http`, `urllib.request`, `smtplib`,
-   `imaplib`, `poplib` and any third-party HTTP client are forbidden across
-   the package, both composition roots and the whole setup program, because
-   the claim is made about the product a user installs rather than about one
-   directory inside it. The delivery scripts are the only exemption: they
-   build what ships rather than shipping, so they legitimately fetch wheels
-   and talk to Apple to notarise. That exemption is named in
-   `tests/structural/scan.py`. The scan asserts its own reach, so narrowing
-   it back to the package fails rather than passing quietly.
+4. **No network code anywhere in what ships, with one named exception.**
+   The transport is the user's mail client. Imports of `socket`, `http`,
+   `urllib.request`, `smtplib`, `imaplib`, `poplib` and any third-party
+   HTTP client are forbidden across the package, both composition roots
+   and the whole setup program, because the claim is made about the
+   product a user installs rather than about one directory inside it. The
+   single shipped exception is `postalgambit/infrastructure/update_github.py`,
+   the update check's GitHub adapter: one anonymous, best-effort GET
+   behind the `ReleaseSource` port asking whether a newer published
+   release exists. The exemption is asserted whole: the module must ship,
+   must import `urllib.request` (so the exemption cannot outlive its
+   reason) and may import nothing forbidden beyond it, so the hole can
+   never quietly widen. The delivery scripts remain exempt separately:
+   they build what ships rather than shipping, so they legitimately fetch
+   wheels and talk to Apple to notarise; that exemption is named in
+   `tests/structural/scan.py`. The scan asserts its own reach, so
+   narrowing it back to the package fails rather than passing quietly.
    Enforced by `tests/structural/test_no_network.py`.
 5. **PGN is the canonical game state.** Whose turn it is, game status and
    outcome are always derived from the PGN by replay, never stored beside
@@ -55,8 +64,8 @@ and state.
    Scope is what ships plus the test tree, which grows the same way source
    does; the staged payload is build output and the delivery scripts are
    linear recipes, so both are out of scope. The cap and the 5% danger band
-   (381 to 399) are separate assertions, so a red run names which half broke,
-   and the band is derived from the cap rather than written as a second
+   (381 to 399) are separate assertions, so a red run names which half broke;
+   the band is derived from the cap rather than written as a second
    literal. A file entering the band goes back to 350 rather than being
    shaved to sit just under the cap, because shaving is undone by the next
    edit. Enforced by `tests/structural/test_module_size.py`.
@@ -87,20 +96,25 @@ postal-gambit/
       errors.py               typed exception hierarchy
     application/
       ports.py                RulesEngine, GameStore, SettingsStore, Clock,
-                              IdGenerator (Protocols)
+                              IdGenerator, ReleaseSource (Protocols)
       dto.py                  GameStatus, BoardView (with piece_at, which
                               owns the square arithmetic), MoveApplied,
-                              ImportOutcome, EmailDraft
+                              ImportOutcome, EmailDraft, ReleaseInfo,
+                              UpdateStatus
       game_service.py         create, list, resign, offer/accept draw
       move_service.py         apply my move via RulesEngine; eligibility
                               (in progress, draw acceptable, awaiting the
                               opponent) and promotion detection
       export_service.py       WireMessage -> email body, subject, mailto URI
       import_service.py       pasted text / .pgn file -> validated game update
+      update_service.py       version comparison, platform asset selection
+                              and the skip rule for the update check
     infrastructure/
       rules_pychess.py        RulesEngine adapter over python-chess
       store_json.py           one JSON file per game under the data dir
-      settings_json.py        identity plus preferences (persisted theme)
+      settings_json.py        identity plus preferences (persisted theme,
+                              skipped update version)
+      update_github.py        the one network-exempt module (invariant 4)
       clock.py, ids.py        SystemClock, Uuid4Generator
     ui/
       main_window.py          state, selection, flows and signal wiring
@@ -115,6 +129,8 @@ postal-gambit/
       labels.py               game title with the bracketed short id, start
                               date, row state and the status headline
       launch.py               single-instance server plus app-link forwarding
+      update_check.py         update-check triggers, worker thread and the
+                              Download / Skip / Later prompt
       keyboard_nav.py         explicit focus ring (the Fulcrum model) plus
                               Enter/Space activation and Space in menus
       icons.py                bundled asset resolution across dev and builds
@@ -185,7 +201,16 @@ prove it right.
   `~/.postal-gambit/games/<game-id>.json`. Atomic writes via temp file and
   `os.replace()`. Single writer, the app itself.
 - `settings_json.py`: `~/.postal-gambit/settings.json` for the user's own
-  name and email (stamped into PGN tags) and UI preferences.
+  name and email (stamped into PGN tags) and UI preferences, including the
+  release version the user chose to skip in the update prompt.
+- `update_github.py`: the update check's GitHub adapter and the one
+  module exempt from the no-network invariant (invariant 4): a single
+  anonymous, best-effort GET behind the `ReleaseSource` port with an
+  injected opener, a 5 second timeout and every failure reading as "no
+  release visible". The ui half (`ui/update_check.py`) runs the check on
+  a worker thread 3 seconds after launch, every 24 hours and on demand
+  from Help > Check for updates, prompting Download / Skip this version /
+  Later when a newer published release exists.
 
 ### UI
 

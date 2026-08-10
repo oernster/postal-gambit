@@ -32,7 +32,7 @@
         "operatingSystem": "Windows, macOS, Linux",
         "applicationCategory": "GameApplication",
         "applicationSubCategory": "Correspondence chess",
-        "description": "A local-first desktop app for correspondence chess by email. It keeps your games, enforces the rules and turns each move into a ready-to-send email in your own mail client. It never touches the network itself.",
+        "description": "A local-first desktop app for correspondence chess by email. It keeps your games, enforces the rules and turns each move into a ready-to-send email in your own mail client. Your games never touch the network.",
         "url": "https://ernster.dev/postal-gambit/",
         "downloadUrl": "https://github.com/oernster/postal-gambit/releases",
         "softwareHelp": "https://github.com/oernster/postal-gambit",
@@ -58,7 +58,7 @@
             {"@type": "Question", "name": "Where do my games live?",
              "acceptedAnswer": {"@type": "Answer", "text": "In plain JSON files under your home directory, one per game, portable and inspectable. Delete the folder and they are gone; copy it and they are backed up."}},
             {"@type": "Question", "name": "Is it really offline?",
-             "acceptedAnswer": {"@type": "Answer", "text": "Yes. It is checked rather than promised: the test suite forbids network code anywhere in what you install, the setup program included, failing the build if any appears. The only thing that touches the internet is your own mail client sending your email."}}
+             "acceptedAnswer": {"@type": "Answer", "text": "Your games and moves never touch the network: only your own mail client sends your email. The app makes exactly one outbound call of its own, checked rather than promised: an anonymous daily ask of GitHub releases for whether a newer version exists, with an update prompt you can download, skip or defer. The test suite forbids network code anywhere else in what you install, the setup program included, and asserts that single exemption cannot widen."}}
         ]
     }
     </script>
@@ -87,8 +87,8 @@
         <h1>Correspondence chess over your own email</h1>
         <p class="tagline">
             Postal Gambit is a local-first desktop app that keeps your games, enforces the rules and
-            turns each move into a ready-to-send email in whatever mail client you already use. It
-            never touches the network itself: your email is the board between you and your friend.
+            turns each move into a ready-to-send email in whatever mail client you already use. Your
+            games never touch the network: your email is the board between you and your friend.
         </p>
         <p class="switch">Slow, thoughtful chess with a real person. One move a day is a fine pace.</p>
         <div class="cta">
@@ -217,9 +217,10 @@ Import this move with one click:
             <div class="card">
                 <div class="ico">🔒</div>
                 <h3>Private by construction</h3>
-                <p>No accounts, no server, no telemetry and no network code at all; the test suite
-                    structurally forbids network imports. Games are plain JSON files in your home
-                    directory.</p>
+                <p>No accounts, no server and no telemetry. The test suite structurally forbids
+                    network imports everywhere except the one disclosed update-check module, so
+                    your games are plain JSON files in your home directory and nothing about you
+                    ever leaves it.</p>
             </div>
             <div class="card">
                 <div class="ico">🚫</div>
@@ -265,10 +266,13 @@ Import this move with one click:
             </div>
             <div class="item">
                 <p class="q">Is it really offline?</p>
-                <p class="a">Yes. It is checked rather than promised: the test suite forbids
-                    network code anywhere in what you install, the setup program included, failing
-                    the build if any appears. The only thing that touches the internet is your own
-                    mail client sending your email.</p>
+                <p class="a">Your games and moves never touch the network: only your own mail
+                    client sends your email. The app makes exactly one outbound call of its own,
+                    checked rather than promised: an anonymous daily ask of GitHub releases for
+                    whether a newer version exists, with an update prompt you can download, skip
+                    or defer. The test suite forbids network code anywhere else in what you
+                    install, the setup program included, and asserts that single exemption
+                    cannot widen.</p>
             </div>
         </div>
     </section>
@@ -310,7 +314,7 @@ Import this move with one click:
             <span class="chip">Python and PySide6</span>
             <span class="chip">python-chess rules core</span>
             <span class="chip">Local JSON, no database</span>
-            <span class="chip">No network code</span>
+            <span class="chip">Games never touch the network</span>
             <span class="chip">GPL-3.0</span>
         </div>
     </section>
@@ -322,8 +326,10 @@ Import this move with one click:
             <li><b>No engines.</b> Not optional, not later. Chess between people.</li>
             <li><b>No server.</b> Your games live on your machine and travel in your email.</li>
             <li><b>No account.</b> There is nothing to sign up for and nothing to be locked out of.</li>
-            <li><b>No telemetry.</b> The app cannot phone home; it has no network code to do it
-                with.</li>
+            <li><b>No telemetry.</b> Nothing about you or your games ever leaves your machine.
+                The app's one outbound call is an anonymous daily ask of GitHub releases for
+                whether a newer version exists; it carries nothing and downloads nothing without
+                you choosing it.</li>
         </ul>
     </section>
 
@@ -332,7 +338,7 @@ Import this move with one click:
         <h2>Download Postal Gambit</h2>
         <p class="lead">Pick your platform and you have the newest release. Free and GPL-3.0; local-first,
             so your games and your email stay on your own machine.</p>
-        <span class="dl-version" id="dl-version">Version <!--VERSION-->1.0.0<!--/VERSION--></span>
+        <span class="dl-version" id="dl-version">Version <!--VERSION-->1.1.0<!--/VERSION--></span>
         <div class="downloads">
             <div class="dl-card">
                 <div class="ico">🪟</div>

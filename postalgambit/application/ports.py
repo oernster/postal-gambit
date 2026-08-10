@@ -5,7 +5,12 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Mapping, Protocol
 
-from postalgambit.application.dto import BoardView, GameStatus, MoveApplied
+from postalgambit.application.dto import (
+    BoardView,
+    GameStatus,
+    MoveApplied,
+    ReleaseInfo,
+)
 from postalgambit.domain.game import Colour, GameId, GameRecord
 from postalgambit.domain.identity import Identity
 
@@ -79,10 +84,29 @@ class SettingsStore(Protocol):
 
     def save_theme(self, theme: str) -> None: ...
 
+    def load_skipped_update_version(self) -> str:
+        """The release version the user chose to skip, or an empty string."""
+        ...
+
+    def save_skipped_update_version(self, version: str) -> None: ...
+
 
 class Clock(Protocol):
     def now(self) -> datetime:
         """The current moment as an aware UTC datetime."""
+        ...
+
+
+class ReleaseSource(Protocol):
+    """Fetches the newest published release for the update check.
+
+    The one concrete implementation is the single module exempt from the
+    no-network invariant; everything else reads releases only through this
+    seam.
+    """
+
+    def latest_release(self) -> ReleaseInfo | None:
+        """The latest published release, or None on any failure."""
         ...
 
 
