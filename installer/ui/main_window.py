@@ -39,6 +39,10 @@ WINDOW_TITLE = f"{APP_DISPLAY_NAME} Installer"
 LICENCE_TITLE = f"{APP_DISPLAY_NAME} Licence (GPL-3.0)"
 INSTALLER_LICENCE_TITLE = f"{APP_DISPLAY_NAME} Installer Notice"
 INSTALLED_MESSAGE = "Installed to {path}."
+LAUNCH_FAILED_MESSAGE = (
+    f"Installed, but {APP_DISPLAY_NAME} could not be started. "
+    "Start it yourself from {path}."
+)
 REPAIRED_MESSAGE = "Repair complete."
 UNINSTALLED_MESSAGE = f"{APP_DISPLAY_NAME} has been uninstalled."
 CLOSE_FAILED_MESSAGE = "{detail}"
@@ -155,7 +159,17 @@ class InstallerWindow(QWidget):
             return
         self._widgets.status.setText(INSTALLED_MESSAGE.format(path=exe_path.parent))
         if self._widgets.launch_on_finish.isChecked():
-            launch(exe_path)
+            if not launch(exe_path):
+                # The install itself succeeded, so this must not read as an
+                # install failure. It does mean the window has to stay open:
+                # closing on a launch that never happened left the user with no
+                # application, no window and nothing said, which is
+                # indistinguishable from a crash.
+                self._widgets.status.setText(
+                    LAUNCH_FAILED_MESSAGE.format(path=exe_path)
+                )
+                self._refresh()
+                return
             self.close()
             return
         self._refresh()

@@ -27,7 +27,13 @@ _TASKLIST_NO_HEADER = "/nh"
 _TASKKILL = "taskkill"
 _TASKKILL_IMAGE = "/im"
 _TASKKILL_FORCE = "/f"
-_TASKKILL_TREE = "/t"
+# There is deliberately no /t here. That flag ends the target's whole process
+# tree, decided from a recorded parent process id, so on a machine where the
+# application is repeatedly killed and restarted the setup program can be taken
+# for a descendant and terminated along with it. The symptom is a setup program
+# that vanishes while the application closes perfectly, with no traceback and no
+# error report, because a terminate is not a crash. The application starts no
+# children needing termination, so the flag bought nothing.
 
 TASKLIST_TIMEOUT_S = 10.0
 TASKKILL_TIMEOUT_S = 15.0
@@ -73,7 +79,7 @@ def close_running_app(
     active = runner or default_runner()
     wait = sleep or time.sleep
     active.run(
-        [_TASKKILL, _TASKKILL_FORCE, _TASKKILL_TREE, _TASKKILL_IMAGE, EXE_NAME],
+        [_TASKKILL, _TASKKILL_FORCE, _TASKKILL_IMAGE, EXE_NAME],
         timeout=TASKKILL_TIMEOUT_S,
     )
     for _ in range(CLOSE_POLL_ATTEMPTS):
@@ -84,7 +90,16 @@ def close_running_app(
         raise AppStillRunningError(STILL_RUNNING_MESSAGE)
 
 
-def launch(exe_path: Path, runner: CommandRunner | None = None) -> None:
-    """Start the installed application detached, so it outlives the installer."""
+def launch(exe_path: Path, runner: CommandRunner | None = None) -> bool:
+    """Start the installed application detached, so it outlives the installer.
+
+    Returns whether it started. It used to return nothing whether or not the
+    application appeared, so the setup program reported success, closed itself
+    and left the user with no application and no explanation. A missing
+    executable is reported without attempting the launch, because that is the
+    one cause the setup program can name precisely.
+    """
+    if not exe_path.exists():
+        return False
     active = runner or default_runner()
-    active.start_detached([str(exe_path)], cwd=str(exe_path.parent))
+    return active.start_detached([str(exe_path)], cwd=str(exe_path.parent))
