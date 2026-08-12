@@ -276,6 +276,25 @@ model the window reads. Neither imports Qt. `ui` is the only Qt client,
 `shared` holds resource resolution and crash logging; `app.py` is the
 composition root.
 
+The forced close terminates the named image and nothing else. It once carried
+the tree flag as well, which ends the target plus everything Windows considers
+descended from it, decided from a recorded parent process id; on a machine where
+the application is repeatedly killed and restarted the setup program can be
+taken for a descendant and terminated along with it. The symptom is a setup
+program that vanishes while the application closes perfectly, with no traceback
+and no error report, because a terminate is not a crash. The application starts
+no children needing termination, so the flag bought nothing. A test pins its
+absence, because nothing had pinned the argument list and that is how it
+survived unnoticed here after being found in a sibling project.
+
+The launch that follows an install is reported rather than assumed. Starting the
+application detached used to swallow any failure and return nothing, so a launch
+that never happened looked exactly like one that did: the setup program reported
+success, closed itself and left no application and no explanation. The runner
+now returns whether the process started; the window stays open and says so
+when it did not. The install itself succeeded in that case, so the wording keeps
+the two apart.
+
 Three seams keep the privileged work testable, which is what allows
 `installer.ops` and `installer.state` to sit inside the 100% gate:
 

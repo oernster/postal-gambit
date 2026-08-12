@@ -100,9 +100,12 @@ download buttons on the website always point at the newest one.
 
 - **Windows**: `PostalGambitSetup.exe`. A per-user setup program that
   needs no administrator rights. It offers to close a running copy for
-  you and shows the phase it is in while it works. It keeps whatever
-  "start Postal Gambit when I sign in" setting you already had. It
-  registers the `postalgambit:` links that make one-click import work.
+  you and shows the phase it is in while it works. If you asked it to
+  start Postal Gambit when finished and that start does not happen, it
+  says so and stays open rather than closing on a launch that never
+  occurred. It keeps whatever "start Postal Gambit when I sign in"
+  setting you already had. It registers the `postalgambit:` links that
+  make one-click import work.
 - **macOS**: `postal-gambit.dmg`. Open it and drag Postal Gambit into
   Applications.
 - **Linux**: `postal-gambit.flatpak`. Install it with
