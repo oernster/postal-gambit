@@ -21,7 +21,6 @@ RUNTIME="org.freedesktop.Platform"
 SDK="org.freedesktop.Sdk"
 RUNTIME_VERSION="25.08"
 PYTHON_DIR="python3.13"
-PYTHON_TAG="313"
 
 PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 BUNDLE="${PROJECT_ROOT}/postal-gambit.flatpak"
@@ -74,10 +73,12 @@ flatpak install --user --noninteractive flathub \
 section "Pre-downloading Python wheels (offline sandbox build)"
 rm -rf "${WHEELS_DIR}"
 mkdir -p "${WHEELS_DIR}"
-python3 -m pip download --only-binary :all: \
-    --python-version "${PYTHON_TAG}" --implementation cp \
-    --platform manylinux_2_34_x86_64 \
-    -d "${WHEELS_DIR}" -r "${PROJECT_ROOT}/requirements.txt"
+# pip wheel (not pip download --only-binary) so that pure-Python deps
+# published as sdist only (e.g. python-chess >= 1.11) get a wheel built on the
+# host. PySide6 ships forward-compatible abi3 wheels, and python-chess builds a
+# universal py3-none-any wheel, so both install offline in the python3.13 sandbox.
+python3 -m pip wheel --wheel-dir "${WHEELS_DIR}" \
+    -r "${PROJECT_ROOT}/requirements.txt"
 
 section "Writing packaging files"
 rm -rf "${PACKAGING_DIR}"
@@ -166,6 +167,29 @@ finish-args:
   # by mail; see tests/structural/test_no_network.py for the enforced scope.
   - --share=network
 modules:
+  # MIT Kerberos 5 provides libgssapi_krb5.so.2, a load-time dependency of
+  # Qt6Network (pulled in by PySide6.QtNetwork's QLocalServer/QLocalSocket) that
+  # the freedesktop runtime does not ship. Built into /app so the import
+  # resolves; the app still requests no network permission (local IPC only).
+  - name: krb5
+    subdir: src
+    # krb5 1.21.x uses pre-prototype (K&R) declarations that GCC 15's default
+    # C23 mode rejects as hard errors; -std=gnu17 restores the older semantics.
+    build-options:
+      cflags: -std=gnu17
+      cflags-override: true
+    config-opts:
+      - --prefix=/app
+      - --localstatedir=/var/lib
+      - --sbindir=/app/bin
+      - --disable-rpath
+      - --disable-static
+      - --without-ldap
+      - --without-keyutils
+    sources:
+      - type: archive
+        url: https://kerberos.org/dist/krb5/1.21/krb5-1.21.3.tar.gz
+        sha256: b7a4cd5ead67fb08b980b21abd150ff7217e85ea320c9ed0c6dadd304840ad35
   - name: python-deps
     buildsystem: simple
     build-commands:
