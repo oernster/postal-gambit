@@ -9,6 +9,7 @@ from pathlib import Path
 ASSETS_DIR_NAME = "assets"
 ICO_NAME = "postal-gambit.ico"
 BADGE_PNG_NAME = "postal-gambit_icon_256.png"
+DONATE_PNG_NAME = "donate.png"
 ASSETS_ENV_OVERRIDE = "POSTAL_GAMBIT_ASSETS_DIR"
 
 
@@ -49,3 +50,12 @@ def get_badge_png_path() -> Path | None:
         return None
     badge = assets / BADGE_PNG_NAME
     return badge if badge.is_file() else None
+
+
+def get_donate_png_path() -> Path | None:
+    """The artwork for the button that offers to buy the author a drink."""
+    assets = find_assets_dir()
+    if assets is None:
+        return None
+    mark = assets / DONATE_PNG_NAME
+    return mark if mark.is_file() else None

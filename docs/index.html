@@ -58,7 +58,7 @@
             {"@type": "Question", "name": "Where do my games live?",
              "acceptedAnswer": {"@type": "Answer", "text": "In plain JSON files under your home directory, one per game, portable and inspectable. Delete the folder and they are gone; copy it and they are backed up."}},
             {"@type": "Question", "name": "Is it really offline?",
-             "acceptedAnswer": {"@type": "Answer", "text": "Your games and moves never touch the network: only your own mail client sends your email. The app makes exactly one outbound call of its own, checked rather than promised: an anonymous daily ask of GitHub releases for whether a newer version exists, with an update prompt you can download, skip or defer. The test suite forbids network code anywhere else in what you install, the setup program included, and asserts that single exemption cannot widen."}}
+             "acceptedAnswer": {"@type": "Answer", "text": "Your games and moves never touch the network: only your own mail client sends your email. The app makes exactly one outbound call of its own, checked rather than promised: an anonymous daily ask of GitHub releases for whether a newer version exists, with an update prompt you can download, skip or defer. The test suite forbids network code anywhere else in what you install, the setup program included; it also asserts that single exemption cannot widen."}}
         ]
     }
     </script>
@@ -103,7 +103,7 @@
     <section class="shot">
         <div class="shot-frame">
             <img src="screenshots/main.png"
-                 alt="Postal Gambit in the dark theme: the game list on the left, the board mid-game with White's f4 played, the move history and app badge on the right."/>
+                 alt="Postal Gambit in the dark theme: the game list on the left, the board mid-game with White's f4 played, the move history and app badge on the right, plus the donate button on the strip along the foot of the window."/>
         </div>
         <p class="shot-cap">The game list, the board and the move history, in the dark theme.</p>
     </section>
@@ -271,8 +271,8 @@ Import this move with one click:
                     checked rather than promised: an anonymous daily ask of GitHub releases for
                     whether a newer version exists, with an update prompt you can download, skip
                     or defer. The test suite forbids network code anywhere else in what you
-                    install, the setup program included, and asserts that single exemption
-                    cannot widen.</p>
+                    install, the setup program included; it also asserts that single
+                    exemption cannot widen.</p>
             </div>
         </div>
     </section>
@@ -338,7 +338,7 @@ Import this move with one click:
         <h2>Download Postal Gambit</h2>
         <p class="lead">Pick your platform and you have the newest release. Free and GPL-3.0; local-first,
             so your games and your email stay on your own machine.</p>
-        <span class="dl-version" id="dl-version">Version <!--VERSION-->1.1.1<!--/VERSION--></span>
+        <span class="dl-version" id="dl-version">Version <!--VERSION-->1.2.0<!--/VERSION--></span>
         <div class="downloads">
             <div class="dl-card">
                 <div class="ico">🪟</div>
@@ -382,6 +382,22 @@ Import this move with one click:
             &nbsp;·&nbsp;
             <a href="https://github.com/oernster/postal-gambit">Source on GitHub</a>
         </p>
+    </section>
+
+    <section class="section" id="support">
+        <span class="eyebrow">Supporting the project</span>
+        <h2>Supporting Postal Gambit</h2>
+        <p class="lead">Postal Gambit is free and stays free. There is no paid tier, no licence key
+            and no feature held back behind a donation. If it has replaced something you were paying
+            for or simply saved you an afternoon, a contribution supports its maintenance and
+            continued development. The same button sits at the foot of the app's own window; it
+            hands the address to your browser, so the app itself still opens no connection.</p>
+        <div class="cta">
+            <a class="btn" href="https://www.paypal.com/ncp/payment/D7D4B3P2WPCUY">
+                <img src="donate.png" alt=""/>
+                Donate
+            </a>
+        </div>
     </section>
 
     <footer class="site">

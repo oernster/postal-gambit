@@ -20,6 +20,8 @@ from PySide6.QtWidgets import (
 )
 
 from postalgambit.ui.board_widget import BoardWidget, TargetsProvider
+from postalgambit.ui.bottom_tray import BottomTray
+from postalgambit.ui.icons import get_donate_png_path
 from postalgambit.ui.side_panel import SidePanel
 
 _LIST_MIN_WIDTH = 260
@@ -38,11 +40,19 @@ class CentralWidgets(NamedTuple):
     resign_button: QPushButton
     board: BoardWidget
     side_panel: SidePanel
+    bottom_tray: BottomTray
 
 
 def build_central(targets_provider: TargetsProvider) -> CentralWidgets:
     central = QWidget()
-    layout = QHBoxLayout(central)
+    # The columns and the foot stack vertically. The outer layout takes no
+    # margins of its own, so the columns keep the spacing they always had and
+    # the foot runs the full width of the window, as a foot should.
+    outer = QVBoxLayout(central)
+    outer.setContentsMargins(0, 0, 0, 0)
+    outer.setSpacing(0)
+    columns = QWidget()
+    layout = QHBoxLayout(columns)
     left = QVBoxLayout()
     # The action pills sit above the Games heading so the primary
     # actions read first, top-left, before the list they act on.
@@ -93,6 +103,9 @@ def build_central(targets_provider: TargetsProvider) -> CentralWidgets:
     layout.addLayout(right)
     side_panel = SidePanel()
     layout.addWidget(side_panel, stretch=1)
+    outer.addWidget(columns, stretch=1)
+    bottom_tray = BottomTray(donate_icon=get_donate_png_path())
+    outer.addWidget(bottom_tray)
     return CentralWidgets(
         central=central,
         new_button=new_button,
@@ -106,4 +119,5 @@ def build_central(targets_provider: TargetsProvider) -> CentralWidgets:
         resign_button=resign_button,
         board=board,
         side_panel=side_panel,
+        bottom_tray=bottom_tray,
     )

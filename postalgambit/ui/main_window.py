@@ -39,10 +39,11 @@ from postalgambit.ui.labels import (
     state_text,
     status_text,
 )
+from postalgambit.ui.links import open_externally
 from postalgambit.ui.menus import build_menus
 from postalgambit.ui.theme import DEFAULT_THEME, THEMES, build_qss
 from postalgambit.ui.update_check import UpdateCheckController
-from postalgambit.version import APP_NAME
+from postalgambit.version import APP_NAME, DONATE_URL
 
 
 class MainWindow(QMainWindow):
@@ -102,6 +103,7 @@ class MainWindow(QMainWindow):
         self.resign_button = widgets.resign_button
         self.board = widgets.board
         self.side_panel = widgets.side_panel
+        self.bottom_tray = widgets.bottom_tray
         self.setCentralWidget(widgets.central)
         self.new_button.clicked.connect(self._new_game)
         self.import_button.clicked.connect(lambda: self._import_move())
@@ -112,6 +114,7 @@ class MainWindow(QMainWindow):
         self.accept_draw_button.clicked.connect(self._accept_draw)
         self.resign_button.clicked.connect(self._resign)
         self.board.moveRequested.connect(self._on_move_requested)
+        self.bottom_tray.donate_button.clicked.connect(self.open_donation)
 
     def _build_navigator(self) -> None:
         self._navigator = KeyboardNavigator(
@@ -129,6 +132,7 @@ class MainWindow(QMainWindow):
                 self.resign_button,
                 self.board,
                 self.side_panel.move_list,
+                *self.bottom_tray.ring_stops(),
             ),
             board=self.board,
         )
@@ -340,6 +344,19 @@ class MainWindow(QMainWindow):
         dialog = IdentityDialog(self._settings.load(), self)
         if dialog.exec():
             self._settings.save(dialog.identity)
+
+    def open_donation(self) -> None:
+        """Hand the donation page to whatever the desktop opens links with.
+
+        Nothing is fetched here. The address goes to the desktop and the
+        browser does the asking, so the no-network invariant stands.
+        """
+        if not open_externally(DONATE_URL):
+            QMessageBox.warning(
+                self,
+                "Donate",
+                "Could not open a browser for the donation page.",
+            )
 
     def _show_licence(self) -> None:
         assets = find_assets_dir()

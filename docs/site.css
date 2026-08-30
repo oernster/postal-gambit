@@ -134,6 +134,18 @@ header.site {
 
 .btn:hover { border-color: var(--brand); }
 
+/* The donation mark. Sized in em against the button's own type, so the two
+   stay in proportion if that type ever changes. It is a detailed picture
+   rather than a glyph, so at a single line's height it is not readable: this
+   deliberately makes the donate button taller than a text-only button beside
+   it. Do not pin the two heights back together. display: block drops the
+   inline descender space that would add a stray couple of pixels underneath. */
+.btn img {
+    display: block;
+    height: 2.7em;
+    width: auto;
+}
+
 .cue {
     margin-top: 18px;
     color: var(--text-dim);

@@ -119,6 +119,10 @@ QListWidget::item:selected {{
     background: {tokens["accent"]};
     color: {tokens["accent_text"]};
 }}
+QWidget#BottomTray {{
+    background: {tokens["panel_bg"]};
+    border-top: 1px solid {tokens["border"]};
+}}
 QPushButton {{
     background: {tokens["panel_bg"]};
     border: 2px solid {tokens["border"]};
