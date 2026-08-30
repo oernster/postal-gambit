@@ -77,7 +77,9 @@ Website: https://ernster.dev/postal-gambit/
   subject, so a list row and its thread correlate at a glance.
 - A full keyboard focus ring everywhere including dialogs: Enter and
   Space both activate; a disabled control wears a red ring instead
-  of vanishing.
+  of vanishing. Where focus is shows on the thing you can act on: a
+  control rings, while a list marks the row you are on rather than
+  outlining the whole box.
 - Dark and light themes (View menu), persisted between runs.
 
 ## Stack

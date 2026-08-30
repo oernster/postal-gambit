@@ -68,6 +68,23 @@ Every external command goes through the `CommandRunner` protocol, so
 `tests/installer/fakes.py` carries one recording fake of it. No test ends
 a real process, writes a real shortcut or spawns a real `taskkill`.
 
+## The Qt application object
+
+Qt permits exactly one application object per process and it cannot be
+upgraded afterwards, so `tests/conftest.py` builds a `QApplication` at import
+time, before any test module loads. Two suites want one and they want
+different things: the setup program's worker tests need only an event loop,
+while the focus-chain suite needs widgets. Whichever ran first would claim the
+singleton; since `tests/installer` sorts before `tests/structural`, a bare
+`QCoreApplication` won and left every widget test erroring on a missing
+`setStyleSheet`.
+
+A `QApplication` is a `QCoreApplication`, so it satisfies both. The worker
+tests keep their own fixture and reuse whatever instance exists; the claim
+their docstring makes, that the setup program's plumbing needs no widget, is
+about the production code rather than about this process. The offscreen
+platform is selected first, so nothing here wants a display.
+
 ## Policy: no mocks
 
 No mock libraries anywhere. Test doubles are hand-written fakes
@@ -84,7 +101,7 @@ needs no double. Storage tests use real files in pytest tmp directories.
 | application | unit, hand-written fakes for ports, real python-chess | none |
 | infrastructure | integration, real files in tmp dirs | tmp only |
 | installer ops and state | integration, redirected profile, scratch registry keys, fake command runner | tmp and scratch HKCU |
-| structural | AST and source scans over what ships, plus the test tree for size | file reads |
+| structural | AST and source scans over what ships, plus the test tree for size; the focus-chain suite also builds real widgets offscreen | file reads |
 
 ## Structural suite
 

@@ -288,16 +288,19 @@ with donations. That test fails on a new direct caller, so the list cannot
 grow quietly.
 
 A ring belongs to a CONTROL, never to the container that holds it; the
-model splits three ways by widget kind. A control is pointed AT, so it rings
-on hover and on focus. An ITEM VIEW is pointed INTO and rings in no state at
-all: focusing a `QListWidget` paints its current row with no rule whatever, so
-the current item is already the indicator and a rectangle round the whole view
-adds nothing, while firing on a click into the empty space below the last row,
-outlining everything and selecting nothing. That is why the game list and the
-move history carry no ring. The move history needed one more thing to make it
-honest: clearing a list drops its current row, so a refresh landing while the
-user stands there would leave a focused list showing nothing, so `show_moves`
-puts the row back on the latest move.
+model splits three ways by widget kind. A control is pointed AT, so it may ring
+in both states: the buttons ring on hover as well as on focus, since a ring
+under the pointer says what is about to be pressed, while the text fields, the
+dropdown, the checkbox and the radio ring on focus alone. An ITEM VIEW is
+pointed INTO and rings in no state at all: focusing a `QListWidget` paints its
+current row with no rule whatever, so the current item is already the indicator
+and a rectangle round the whole view adds nothing, while firing on a click into
+the empty space below the last row, outlining everything and selecting nothing.
+That is why the game list and the move history carry no ring. The move history
+needed one more thing to make it honest: clearing a list drops its current row,
+so a refresh landing while the user stands there would leave a focused list
+showing nothing at all, which is why `show_moves` puts the row back on the
+latest move.
 
 A read-only scrolling region is the one case where a pane earns a place on the
 ring, because a licence text or an email preview carries no controls of its own
