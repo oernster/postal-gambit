@@ -141,6 +141,8 @@ postal-gambit/
       bottom_tray.py          the foot strip carrying the donate button
       links.py                the one seam that asks the desktop to open
                               an address
+      scroll_focus.py         a read-only region is a stop only while it
+                              overflows
       dialogs/                new game, import, export preview, about,
                               licence; all derive NeutralDialog (neutral
                               start plus the shared dialog ring)
@@ -284,6 +286,29 @@ release page) still call the opener directly; they are named in
 mail transport is a change to the product's core path and has nothing to do
 with donations. That test fails on a new direct caller, so the list cannot
 grow quietly.
+
+A ring belongs to a CONTROL, never to the container that holds it; the
+model splits three ways by widget kind. A control is pointed AT, so it rings
+on hover and on focus. An ITEM VIEW is pointed INTO and rings in no state at
+all: focusing a `QListWidget` paints its current row with no rule whatever, so
+the current item is already the indicator and a rectangle round the whole view
+adds nothing, while firing on a click into the empty space below the last row,
+outlining everything and selecting nothing. That is why the game list and the
+move history carry no ring. The move history needed one more thing to make it
+honest: clearing a list drops its current row, so a refresh landing while the
+user stands there would leave a focused list showing nothing, so `show_moves`
+puts the row back on the latest move.
+
+A read-only scrolling region is the one case where a pane earns a place on the
+ring, because a licence text or an email preview carries no controls of its own
+and could otherwise not be read without a mouse. The exception is bounded by
+what justifies it: `scroll_focus.OverflowFocus` keeps the policy equal to
+whether the region can actually scroll, recomputed from the scrollbars rather
+than chosen once at construction. It sets the viewport `NoFocus` alongside,
+since that is a separate focusable child. Such a region rings on focus only;
+never on hover, because the pointer rests inside it for as long as the window
+is open, so a hover ring would report where the mouse is rather than what is
+about to be pressed.
 
 Two themes (dark and light) share one semantic token set in `theme.py`.
 The View menu toggles them; the choice persists through the settings
@@ -454,8 +479,10 @@ manifest and the macOS bundle.
   real library, which is pure computation and needs no test doubles. See
   `TESTING.md`.
 - Structural tests as listed under Invariants: layering by AST scan, domain
-  purity, no-network, module size, composition-root whitelist, style and the
-  donate button's address, its single home and its one seam.
+  purity, no-network, module size, composition-root whitelist, style, the
+  donate button's address, its single home and its one seam, plus the two
+  halves of the focus-ring invariant: no stylesheet rule rings a pane; no
+  pane is reachable by Tab.
 - Wire-format conformance tests mirror `WIRE_FORMAT.md` section by section,
   including quoted-reply stripping, unknown versions, unknown actions,
   divergence and multi-move catch-up.

@@ -113,6 +113,20 @@ needs no double. Storage tests use real files in pytest tmp directories.
   `tests/structural/scan.py` and asserted.
 - `test_style.py`: black (88) and flake8 run as in-suite assertions over
   the package, the tests, the setup program and every build script.
+- `test_focus_rings.py`: no stylesheet rule paints a ring on a pane. A Qt
+  class selector matches every subclass, so a ring named against a
+  container would reach every scroll area, list and label in the app; an
+  item view gets no ring in any state, its current row being the
+  indicator; no region rings on hover. It reads the sheet `build_qss`
+  actually returns rather than its source. It carries a positive control
+  asserting the scanner can see a ring at all, because the other three
+  checks pass trivially if it cannot.
+- `test_focus_chain.py`: no pane is reachable by Tab. It walks the
+  toolkit's own focus chain for the main window and every dialog, which
+  is what makes the answer equal to what a real Tab press reaches, then
+  asserts every stop is something the user can act on. A read-only
+  scrolling region is checked both ways: a stop while it overflows, off
+  the ring when it fits.
 - `test_donate.py`: the donation address is the one generated for this
   application, is reached over https and has exactly one home in the
   source; the button leaves through the `ui/links.py` seam, which may

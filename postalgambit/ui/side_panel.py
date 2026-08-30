@@ -49,6 +49,13 @@ class SidePanel(QWidget):
             black = sans[index + 1] if index + 1 < len(sans) else ""
             self.move_list.addItem(f"{number}. {white}  {black}".rstrip())
         self.move_list.scrollToBottom()
+        # The list carries no ring: its current row IS the focus indicator,
+        # which Qt sets when focus arrives. Clearing the list drops that row,
+        # so a refresh landing while the user is standing here would leave a
+        # focused list showing nothing at all. Put the row back, on the latest
+        # move, which is the one scrollToBottom has just brought into view.
+        if self.move_list.hasFocus() and self.move_list.count():
+            self.move_list.setCurrentRow(self.move_list.count() - 1)
 
     def clear_moves(self) -> None:
         self.move_list.clear()

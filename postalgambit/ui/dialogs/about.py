@@ -11,6 +11,7 @@ from PySide6.QtWidgets import QLabel, QTextBrowser, QVBoxLayout, QWidget
 
 from postalgambit.ui.dialogs.neutral_dialog import NeutralDialog, close_row
 from postalgambit.ui.icons import get_badge_png_path
+from postalgambit.ui.scroll_focus import OverflowFocus
 from postalgambit.version import APP_AUTHOR, APP_NAME, APP_TAGLINE, __version__
 
 _ICON_PX = 96
@@ -65,6 +66,8 @@ class AboutDialog(NeutralDialog):
         body.setOpenExternalLinks(True)
         body.setMinimumHeight(_BODY_MIN_HEIGHT)
         body.setHtml(_ABOUT_HTML)
+        # A stop only while there is more text than fits.
+        OverflowFocus(body)
         layout.addWidget(body)
         layout.addLayout(close_row(self))
 
@@ -85,6 +88,7 @@ class LicenceDialog(NeutralDialog):
             body.setPlainText(path.read_text(encoding="utf-8"))
         else:
             body.setPlainText(_LICENCE_FALLBACK)
+        OverflowFocus(body)
         layout.addWidget(body)
         layout.addLayout(close_row(self))
         self.resize(self._fitted_width(body, layout), _LICENCE_HEIGHT)

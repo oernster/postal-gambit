@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 
 from postalgambit.application.dto import EmailDraft
 from postalgambit.ui.dialogs.neutral_dialog import NeutralDialog, close_row
+from postalgambit.ui.scroll_focus import OverflowFocus
 
 _DIALOG_MIN_WIDTH = 640
 _BODY_MIN_HEIGHT = 380
@@ -44,6 +45,9 @@ class ExportDialog(NeutralDialog):
         # scrolling, matching the scrollable-content stop contract.
         body.setTabChangesFocus(True)
         body.setMinimumHeight(_BODY_MIN_HEIGHT)
+        # Read-only, so it is a stop only while the email overruns the
+        # box; a preview that fits scrolls nowhere and leaves the ring.
+        OverflowFocus(body)
         layout.addWidget(body)
         self.note = QLabel("")
         layout.addWidget(self.note)
@@ -73,7 +77,7 @@ class ExportDialog(NeutralDialog):
             return
         # On Linux, Qt's openUrl re-serialises the URI from its parsed QUrl form on
         # the way to the desktop portal, prettifying the percent-encoding (spaces
-        # come out raw, other escapes half-survive), and the mail client's compose
+        # come out raw, other escapes half-survive); the mail client's compose
         # window is prefilled with the mangled remains. Hand the exact encoded URI
         # to xdg-open instead, so the handler receives it verbatim; openUrl stays
         # as the fallback and as the macOS path, which passes the encoded form
