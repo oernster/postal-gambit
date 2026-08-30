@@ -138,6 +138,17 @@ python builddmg.py         # macOS
 Each platform's prerequisites and the release checklist are in
 [DEVELOPMENT-README.md](DEVELOPMENT-README.md).
 
+## Supporting the project
+
+A donate button sits at the foot of the window, on a strip of its own below
+the columns. Postal Gambit is free and stays free: there is no paid tier, no
+licence key and no feature held back behind a donation.
+
+The button does not breach the no-network invariant. It hands the address to
+whatever your desktop opens links with and your browser does the asking, so
+the application still opens no connection of its own. The address has one
+home in the source and a structural test pins it.
+
 ## Licence
 
 GPL-3.0. See [LICENSE](LICENSE). The bundled installer carries its own

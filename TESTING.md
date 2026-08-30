@@ -113,6 +113,14 @@ needs no double. Storage tests use real files in pytest tmp directories.
   `tests/structural/scan.py` and asserted.
 - `test_style.py`: black (88) and flake8 run as in-suite assertions over
   the package, the tests, the setup program and every build script.
+- `test_donate.py`: the donation address is the one generated for this
+  application, is reached over https and has exactly one home in the
+  source; the button leaves through the `ui/links.py` seam, which may
+  import nothing beyond Qt. The two call sites that predate that seam are
+  named, so a new direct caller of the desktop opener fails rather than
+  slipping in. It also pins the wiring the UI gate cannot see: the button
+  is connected, it is in the focus ring, the tray is not itself a stop, the
+  tooltip says a browser opens and a desktop that declines is reported.
 
 ## Wire-format conformance
 

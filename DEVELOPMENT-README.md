@@ -35,18 +35,30 @@ else. Runtime reads it through `postalgambit/version.py`; every build
 script reads it through a shared helper. To cut a release, bump `VERSION`
 and rebuild.
 
-## Icons
+## Icons and the donation mark
 
-Every platform asset derives from the repo-root master
-`postal-gambit.png` (1024x1024 RGBA, transparent background):
+Every generated picture derives from a repo-root master:
+`postal-gambit.png` (1024x1024 RGBA, transparent background) for the icons
+and `donate.png` for the donation mark.
 
 ```
 python generate_icons.py
 ```
 
-writes the size set, the multi-frame `assets/postal-gambit.ico` and the
-macOS `assets/postal-gambit.icns`. Never edit the generated files; edit
-the master and regenerate.
+writes the icon size set, the multi-frame `assets/postal-gambit.ico` and the
+macOS `assets/postal-gambit.icns`, then the donation mark. Never edit the
+generated files; edit a master and regenerate.
+
+The mark is not an icon and does not go through the squaring path the icons
+take, which would spend half its canvas on nothing. It is cropped to the tight
+box of its non-transparent pixels then scaled by height alone, at four times
+the height it is drawn at, so it stays crisp under display scaling without
+carrying the master's full weight into the build. The same render is written
+to `assets/donate.png` (the copy the application bundles, picked up by every
+build because all three stage the whole `assets/` directory) and to
+`docs/donate.png` (the copy the site serves), in one loop, so the two cannot
+drift apart. Pillow is not in the project venv; run this with a Python that
+has it.
 
 ## Windows: exe and installer
 
@@ -140,6 +152,6 @@ bumping `VERSION`; it is idempotent and prints what it changed.
 1. Bump `VERSION`.
 2. `python stamp_version.py` to carry the new version into the site.
 3. `pytest -v --cov` green.
-4. `python generate_icons.py` if the master icon changed.
+4. `python generate_icons.py` if either master changed.
 5. Build per platform as above.
 6. Draft the release notes from `NOTES.md`.

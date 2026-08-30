@@ -45,6 +45,10 @@ and state.
    wheels and talk to Apple to notarise; that exemption is named in
    `tests/structural/scan.py`. The scan asserts its own reach, so
    narrowing it back to the package fails rather than passing quietly.
+   The donate button does not touch this: it hands its address to the
+   desktop and the browser does the asking, so no connection is opened
+   here. `tests/structural/test_donate.py` holds that half, pinning the
+   address, its single home and the one seam it leaves through.
    Enforced by `tests/structural/test_no_network.py`.
 5. **PGN is the canonical game state.** Whose turn it is, game status and
    outcome are always derived from the PGN by replay, never stored beside
@@ -134,6 +138,9 @@ postal-gambit/
       keyboard_nav.py         explicit focus ring (the Fulcrum model) plus
                               Enter/Space activation and Space in menus
       icons.py                bundled asset resolution across dev and builds
+      bottom_tray.py          the foot strip carrying the donate button
+      links.py                the one seam that asks the desktop to open
+                              an address
       dialogs/                new game, import, export preview, about,
                               licence; all derive NeutralDialog (neutral
                               start plus the shared dialog ring)
@@ -151,7 +158,8 @@ postal-gambit/
     ui/                       themed window, dialogs and the worker thread
   tests/                      mirrors the package, plus tests/structural/
                               and tests/installer/
-  assets/                     generated icon set (generate_icons.py)
+  assets/                     generated icon set plus the donation mark
+                              (generate_icons.py)
   docs/                       the GitHub Pages site: landing page, the why
                               page and open/ (the click-to-import bounce
                               page the email links point at)
@@ -246,6 +254,36 @@ both themes. Every destructive action (delete game, overwrite on
 divergent import) gets a modal confirmation naming the target; the
 New game dialog's OK stays disabled until the form is complete (name,
 plausible email, an explicitly chosen colour).
+
+Below the columns sits `BottomTray`, a strip of its own carrying the donate
+button. This window has no header tray to join and no footer, so the button
+gets a foot rather than a seat somewhere else. It sits first in the row,
+apart from every other control, because it belongs to nothing on screen and
+so is put where nothing else is reached by accident. Its mark is drawn at the
+height of one of the window's own pill buttons, taken from a real button's
+size hint rather than written as a number, so it follows the font and the
+display scaling; the button is therefore the taller one on the row, which is
+the point, since the artwork is a picture rather than a glyph and is not
+readable at a single line's height. The tray is not itself a focus stop; its
+button splices into the window's ring after the move list. The tray sets
+`WA_StyledBackground`, without which a `QWidget` subclass silently ignores
+the background and border its stylesheet gives it: measured, the top edge
+came out in the parent's fill and the foot lost the line that makes it read
+as a foot, while the stylesheet still looked correct.
+
+The address the button opens lives once, in `version.py` beside the rest of
+the identity; it leaves through one seam, `ui/links.py`. The seam exists for
+a testing reason as much as a structural one: calling Qt's opener straight
+from the window leaves no way to prove the right address is asked for without
+either mocking Qt or opening a browser mid-test. Nothing there fetches
+anything, so the no-network invariant is untouched by the button existing:
+the address goes to the desktop and the browser does the asking. Two older
+call sites (the export dialog's `mailto:` hand-off and the update check's
+release page) still call the opener directly; they are named in
+`tests/structural/test_donate.py` rather than swept up, because rerouting the
+mail transport is a change to the product's core path and has nothing to do
+with donations. That test fails on a new direct caller, so the list cannot
+grow quietly.
 
 Two themes (dark and light) share one semantic token set in `theme.py`.
 The View menu toggles them; the choice persists through the settings
@@ -416,7 +454,8 @@ manifest and the macOS bundle.
   real library, which is pure computation and needs no test doubles. See
   `TESTING.md`.
 - Structural tests as listed under Invariants: layering by AST scan, domain
-  purity, no-network, module size, composition-root whitelist, style.
+  purity, no-network, module size, composition-root whitelist, style and the
+  donate button's address, its single home and its one seam.
 - Wire-format conformance tests mirror `WIRE_FORMAT.md` section by section,
   including quoted-reply stripping, unknown versions, unknown actions,
   divergence and multi-move catch-up.
@@ -432,6 +471,6 @@ included at `installer/payload` so it resolves relative to the package in
 both source and compiled runs;
 `build_flatpak.sh` and `builddmg.py` cover Linux and macOS. App id
 `uk.codecrafter.PostalGambit`. All three register the `postalgambit:` URI
-scheme. The icon set is generated from the repo-root master by
-`generate_icons.py`. The version lives in `VERSION` only. Build steps per
+scheme. The icon set and the donation mark are generated from their
+repo-root masters by `generate_icons.py`. The version lives in `VERSION` only. Build steps per
 platform are in `DEVELOPMENT-README.md`.
