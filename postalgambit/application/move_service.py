@@ -79,6 +79,16 @@ class MoveService:
             if record.meta.draw_offer_open
         )
 
+    def undoable(self, records: Iterable[GameRecord]) -> tuple[GameRecord, ...]:
+        """The games whose latest move is mine and has not been sent yet.
+
+        A move that has left for the mail client is final: the opponent may
+        already be replying to it, so taking it back would put the two
+        machines on different games. Everything before that point is still
+        local, so it is still mine to reconsider.
+        """
+        return tuple(record for record in records if record.meta.unsent_move)
+
     def awaiting_opponent(
         self, records: Iterable[GameRecord]
     ) -> tuple[GameRecord, ...]:
@@ -110,7 +120,7 @@ class MoveService:
         if self.rules.turn(record.pgn) is not record.meta.my_colour:
             raise NotYourTurnError("it is not your move")
         applied = self.rules.apply_uci(record.pgn, source, target, promotion)
-        updated = record.with_pgn(applied.new_pgn, self.clock.now())
+        updated = record.with_pgn(applied.new_pgn, self.clock.now(), unsent_move=True)
         self.store.save(updated)
         message = WireMessage(
             action=WireAction.MOVE,
@@ -119,3 +129,28 @@ class MoveService:
             from_email=record.meta.me.email,
         )
         return updated, message, applied
+
+    def undo_my_move(self, game_id: GameId) -> GameRecord:
+        """Take back my last move, which must not have been sent."""
+        record = self.store.load(game_id)
+        if not record.meta.unsent_move:
+            raise DomainError("that move has already gone out; it cannot be taken back")
+        pgn = self.rules.undo_last_ply(record.pgn)
+        updated = record.with_pgn(pgn, self.clock.now())
+        self.store.save(updated)
+        return updated
+
+    def mark_move_sent(self, game_id: GameId) -> GameRecord:
+        """Record that the move's email has left the application.
+
+        Called when the export dialog hands the email to the mail client or
+        to the clipboard, which is the last moment the application can see.
+        Whether the user then presses send is theirs; from here the move is
+        treated as gone.
+        """
+        record = self.store.load(game_id)
+        if not record.meta.unsent_move:
+            return record
+        updated = record.with_move_sent()
+        self.store.save(updated)
+        return updated

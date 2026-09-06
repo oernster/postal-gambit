@@ -77,3 +77,22 @@ class TestGameRecord:
         offered = record.with_pgn("mid", LATER, draw_offer_open=True)
         cleared = offered.with_pgn("new", LATER)
         assert cleared.meta.draw_offer_open is False
+
+    def test_with_pgn_can_mark_a_move_as_awaiting_a_send(self) -> None:
+        record = GameRecord(meta=make_meta(), pgn="old")
+        played = record.with_pgn("new", LATER, unsent_move=True)
+        assert played.meta.unsent_move is True
+
+    def test_with_pgn_clears_an_unsent_move_by_default(self) -> None:
+        record = GameRecord(meta=make_meta(), pgn="old")
+        played = record.with_pgn("mid", LATER, unsent_move=True)
+        assert played.with_pgn("new", LATER).meta.unsent_move is False
+
+    def test_with_move_sent_keeps_the_position_and_the_timestamp(self) -> None:
+        record = GameRecord(meta=make_meta(), pgn="old")
+        played = record.with_pgn("new", LATER, unsent_move=True)
+        sent = played.with_move_sent()
+        assert sent.meta.unsent_move is False
+        assert sent.pgn == "new"
+        assert sent.meta.updated_at == LATER
+        assert played.meta.unsent_move is True

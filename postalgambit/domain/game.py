@@ -3,6 +3,12 @@
 The PGN text inside a GameRecord is the canonical game state. Whose turn it
 is, status and outcome are always derived from it by replay, never stored,
 so a record cannot drift out of step with its own moves.
+
+One fact about a game cannot live in its PGN: whether my latest move has
+been handed to the mail client yet. A move that has not left the machine is
+still mine to take back; once it has gone out, the opponent may already be
+replying to it, so it is final. That fact rides on the meta as
+`unsent_move`.
 """
 
 from __future__ import annotations
@@ -58,6 +64,7 @@ class GameMeta:
     created_at: datetime
     updated_at: datetime
     draw_offer_open: bool = False
+    unsent_move: bool = False
 
     @property
     def me(self) -> Player:
@@ -74,9 +81,25 @@ class GameRecord:
     pgn: str
 
     def with_pgn(
-        self, pgn: str, updated_at: datetime, draw_offer_open: bool = False
+        self,
+        pgn: str,
+        updated_at: datetime,
+        draw_offer_open: bool = False,
+        unsent_move: bool = False,
     ) -> GameRecord:
+        """A record carrying new PGN. Anything awaiting a send is cleared
+        unless the caller says otherwise, because every other way the PGN
+        changes (an imported reply, a resignation, an accepted draw, a move
+        taken back) settles the question of the previous move."""
         meta = replace(
-            self.meta, updated_at=updated_at, draw_offer_open=draw_offer_open
+            self.meta,
+            updated_at=updated_at,
+            draw_offer_open=draw_offer_open,
+            unsent_move=unsent_move,
         )
         return GameRecord(meta=meta, pgn=pgn)
+
+    def with_move_sent(self) -> GameRecord:
+        """The same position, no longer awaiting a send. The move has left
+        the application, so it can no longer be taken back."""
+        return GameRecord(meta=replace(self.meta, unsent_move=False), pgn=self.pgn)

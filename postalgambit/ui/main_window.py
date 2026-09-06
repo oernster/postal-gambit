@@ -2,14 +2,8 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import (
-    QApplication,
-    QListWidgetItem,
-    QMainWindow,
-    QMessageBox,
-)
+from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox
 
 from postalgambit.application.export_service import ExportService
 from postalgambit.application.game_service import GameService
@@ -21,10 +15,10 @@ from postalgambit.domain.applink import decode_import_link
 from postalgambit.domain.errors import PostalGambitError
 from postalgambit.domain.game import Colour, GameId, GameRecord
 from postalgambit.domain.wire import WireAction, WireMessage
+from postalgambit.ui import game_view
 from postalgambit.ui.actions import GameActions
 from postalgambit.ui.central_layout import build_central
 from postalgambit.ui.dialogs.about import LicenceDialog
-from postalgambit.ui.dialogs.export_dialog import ExportDialog
 from postalgambit.ui.dialogs.forms import (
     IdentityDialog,
     NewGameDialog,
@@ -33,12 +27,6 @@ from postalgambit.ui.dialogs.forms import (
 from postalgambit.ui.dialogs.import_dialog import ImportDialog
 from postalgambit.ui.icons import find_assets_dir, get_app_icon_path
 from postalgambit.ui.keyboard_nav import KeyboardNavigator, NeutralStartWidget
-from postalgambit.ui.labels import (
-    game_started,
-    game_title,
-    state_text,
-    status_text,
-)
 from postalgambit.ui.links import open_externally
 from postalgambit.ui.menus import build_menus
 from postalgambit.ui.theme import DEFAULT_THEME, THEMES, build_qss
@@ -98,6 +86,7 @@ class MainWindow(QMainWindow):
         self.game_list = widgets.game_list
         self.turn_label = widgets.turn_label
         self.offer_draw_box = widgets.offer_draw_box
+        self.undo_button = widgets.undo_button
         self.resend_button = widgets.resend_button
         self.accept_draw_button = widgets.accept_draw_button
         self.resign_button = widgets.resign_button
@@ -110,6 +99,7 @@ class MainWindow(QMainWindow):
         self.delete_button.clicked.connect(self._delete_game)
         self.game_list.currentItemChanged.connect(self._on_selection)
         self.game_list.itemSelectionChanged.connect(self._on_selection)
+        self.undo_button.clicked.connect(self._undo_move)
         self.resend_button.clicked.connect(self._resend_last)
         self.accept_draw_button.clicked.connect(self._accept_draw)
         self.resign_button.clicked.connect(self._resign)
@@ -127,6 +117,7 @@ class MainWindow(QMainWindow):
                 self.delete_button,
                 self.game_list,
                 self.offer_draw_box,
+                self.undo_button,
                 self.resend_button,
                 self.accept_draw_button,
                 self.resign_button,
@@ -146,83 +137,13 @@ class MainWindow(QMainWindow):
     # State --------------------------------------------------------------
 
     def refresh_games(self, keep: GameId | None = None) -> None:
-        target = keep or self._selected_id
-        records = self._games.list_games()
-        self.game_list.blockSignals(True)
-        self.game_list.clear()
-        for record in records:
-            # Two lines per game: players plus id, then state plus date.
-            # One line truncated in the list's width; the date is the
-            # part that fits worst, so it rides the second line.
-            state = state_text(
-                self._moves.status(record.meta.game_id),
-                self._moves.is_my_turn(record),
-            )
-            item = QListWidgetItem(
-                f"{game_title(record)}\n{state} ({game_started(record)})"
-            )
-            item.setData(Qt.ItemDataRole.UserRole, record.meta.game_id.value)
-            self.game_list.addItem(item)
-            if target is not None and record.meta.game_id == target:
-                self.game_list.setCurrentItem(item)
-        self.game_list.blockSignals(False)
-        if self.game_list.currentItem() is None and self.game_list.count():
-            self.game_list.setCurrentRow(0)
-        else:
-            self._show_selected()
-
-    def _selected_record(self) -> GameRecord | None:
-        item = self.game_list.currentItem()
-        if item is None:
-            return None
-        return self._games.get(GameId(item.data(Qt.ItemDataRole.UserRole)))
+        game_view.refresh_games(self, keep)
 
     def _selected_records(self) -> tuple[GameRecord, ...]:
-        return tuple(
-            self._games.get(GameId(item.data(Qt.ItemDataRole.UserRole)))
-            for item in self.game_list.selectedItems()
-        )
+        return game_view.selected_records(self)
 
     def _on_selection(self, *_args) -> None:
-        self._show_selected()
-
-    def _show_selected(self) -> None:
-        record = self._selected_record()
-        if record is None:
-            self._selected_id = None
-            self.board.clear_board()
-            # An empty board is not a keyboard stop: it paints no cursor,
-            # so landing on it reads as focus vanishing (the ring skips
-            # disabled widgets, which this makes it).
-            self.board.setEnabled(False)
-            self.side_panel.clear_moves()
-            self.turn_label.setText("No game selected.")
-            self._set_actions_enabled(None)
-            return
-        self._selected_id = record.meta.game_id
-        self.board.setEnabled(True)
-        my_turn = self._moves.is_my_turn(record)
-        self.board.set_position(
-            self._moves.board(record.meta.game_id),
-            record.meta.my_colour,
-            interactive=my_turn,
-        )
-        status = self._moves.status(record.meta.game_id)
-        self.turn_label.setText(
-            status_text(status, my_turn, record.meta.draw_offer_open)
-        )
-        self.side_panel.show_moves(self._moves.moves(record.meta.game_id))
-        self._set_actions_enabled(record)
-
-    def _set_actions_enabled(self, record: GameRecord | None) -> None:
-        selected = self._selected_records()
-        self.delete_button.setEnabled(bool(selected))
-        self.resend_button.setEnabled(bool(selected))
-        self.resign_button.setEnabled(bool(self._actions.resignable()))
-        self.accept_draw_button.setEnabled(bool(self._actions.draw_acceptable()))
-        self.offer_draw_box.setEnabled(
-            record is not None and self._moves.is_my_turn(record)
-        )
+        game_view.show_selected(self)
 
     # Actions ------------------------------------------------------------
 
@@ -253,7 +174,9 @@ class MainWindow(QMainWindow):
             return
         self.offer_draw_box.setChecked(False)
         self.refresh_games()
-        ExportDialog(self._exports.build_email(record, message, applied), self).exec()
+        self._actions.show_export(
+            record, self._exports.build_email(record, message, applied)
+        )
 
     def _new_game(self) -> None:
         dialog = NewGameDialog(self)
@@ -276,7 +199,9 @@ class MainWindow(QMainWindow):
                 pgn=record.pgn,
                 from_email=record.meta.me.email,
             )
-            ExportDialog(self._exports.build_email(record, message), self).exec()
+            self._actions.show_export(
+                record, self._exports.build_email(record, message)
+            )
 
     def _import_move(self, initial_text: str = "") -> None:
         candidates = self._moves.awaiting_opponent(self._games.list_games())
@@ -311,6 +236,9 @@ class MainWindow(QMainWindow):
         self.activateWindow()
         if payload:
             self.open_app_link(payload)
+
+    def _undo_move(self) -> None:
+        self._actions.undo()
 
     def _resend_last(self) -> None:
         self._actions.resend()

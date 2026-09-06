@@ -13,6 +13,7 @@ from typing import Callable
 
 from PySide6.QtWidgets import QMessageBox, QWidget
 
+from postalgambit.application.dto import EmailDraft
 from postalgambit.application.export_service import ExportService
 from postalgambit.application.game_service import GameService
 from postalgambit.application.move_service import MoveService
@@ -69,6 +70,9 @@ class GameActions:
     def draw_acceptable(self) -> tuple[GameRecord, ...]:
         return self._moves.draw_acceptable(self._selection())
 
+    def undoable(self) -> tuple[GameRecord, ...]:
+        return self._moves.undoable(self._selection())
+
     # Flows -------------------------------------------------------------
 
     def resign(self) -> None:
@@ -109,6 +113,26 @@ class GameActions:
             endings.append((updated, message))
         self._finish_with_exports(endings)
 
+    def undo(self) -> None:
+        """Take back moves that have been played locally but never sent."""
+        records = self.undoable()
+        if not self._confirm(
+            records,
+            "Take back move",
+            lambda n, names: (
+                f"Take back your last move in {plural(n, 'game')}?\n\n"
+                f"{names}\n\n"
+                "The move is removed and the position returns to what it was. "
+                "Only moves whose email has not left this application can be "
+                "taken back."
+            ),
+            empty="No selected game has a move still waiting to be sent.",
+        ):
+            return
+        for record in records:
+            self._moves.undo_my_move(record.meta.game_id)
+        self._refresh()
+
     def delete(self) -> None:
         records = self._selection()
         if not self._confirm(
@@ -142,7 +166,7 @@ class GameActions:
             except PostalGambitError:
                 skipped.append(record)
                 continue
-            ExportDialog(draft, self._parent).exec()
+            self.show_export(record, draft)
         if skipped:
             QMessageBox.information(
                 self._parent,
@@ -151,6 +175,23 @@ class GameActions:
             )
 
     # Helpers -----------------------------------------------------------
+
+    def show_export(self, record: GameRecord, draft: EmailDraft) -> None:
+        """Show one outbound email, recording the send if it is dispatched.
+
+        Every email in the product leaves through here, so there is one
+        place that decides a move has stopped being local: the dialog's
+        own hand-off to the mail client or the clipboard.
+        """
+        ExportDialog(
+            draft,
+            self._parent,
+            on_dispatch=lambda: self._sent(record),
+        ).exec()
+
+    def _sent(self, record: GameRecord) -> None:
+        self._moves.mark_move_sent(record.meta.game_id)
+        self._refresh()
 
     def _confirm(
         self,
@@ -174,6 +215,4 @@ class GameActions:
     ) -> None:
         self._refresh()
         for updated, message in endings:
-            ExportDialog(
-                self._exports.build_email(updated, message), self._parent
-            ).exec()
+            self.show_export(updated, self._exports.build_email(updated, message))

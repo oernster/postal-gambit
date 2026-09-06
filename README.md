@@ -71,8 +71,15 @@ Website: https://ernster.dev/postal-gambit/
   format. A game arriving as an invitation or first move is created with
   the opponent's reply address taken from the message itself, so nothing
   needs typing.
+- Take a move back while it is still local. A move you have played but
+  not yet handed to your mail client or clipboard can be undone; once the
+  email has left the application it is final, since your opponent may
+  already be replying to it.
 - Bulk actions across a multi-selection of games: resign, accept draws,
-  delete and re-send, each with eligibility filtering and confirmation.
+  delete, take back and re-send, each with eligibility filtering and
+  confirmation.
+- File letters and rank numbers around all four edges of the board,
+  turning with it when you play Black.
 - Move history panel; game names carry the same short id as the email
   subject, so a list row and its thread correlate at a glance.
 - A full keyboard focus ring everywhere including dialogs: Enter and

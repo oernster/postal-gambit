@@ -189,3 +189,32 @@ class TestStatus:
     def test_decisive_tag_without_termination_reads_finished(self) -> None:
         pgn = OPENING_PGN.replace('[Result "*"]', '[Result "1-0"]')
         assert engine.status(pgn).description == "finished, White wins"
+
+
+class TestUndoLastPly:
+    def test_the_last_move_goes_and_the_rest_stay(self) -> None:
+        undone = engine.undo_last_ply(OPENING_PGN)
+        assert engine.moves(undone) == ("e4", "e5")
+        assert engine.turn(undone) is Colour.WHITE
+
+    def test_headers_survive(self) -> None:
+        undone = engine.undo_last_ply(OPENING_PGN)
+        assert engine.headers(undone)["White"] == "Oliver"
+        assert engine.headers(undone)["GameID"] == (
+            "5f3a9c2e-8d41-4b7a-9e6f-2c1d0a8b7e55"
+        )
+
+    def test_the_only_move_leaves_an_empty_game(self) -> None:
+        one_move = HEADERS + "\n1. e4 *\n"
+        assert engine.moves(engine.undo_last_ply(one_move)) == ()
+
+    def test_taking_back_the_mating_move_reopens_the_game(self) -> None:
+        mated = engine.apply_san(FOOLS_MATE_SETUP, "Qh4#").new_pgn
+        assert engine.status(mated).is_over
+        undone = engine.undo_last_ply(mated)
+        assert engine.status(undone).result == RESULT_ONGOING
+        assert engine.status(undone).description == "in progress"
+
+    def test_a_game_with_no_moves_cannot_be_taken_back(self) -> None:
+        with pytest.raises(IllegalMoveError):
+            engine.undo_last_ply(EMPTY_PGN)

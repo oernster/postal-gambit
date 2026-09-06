@@ -33,15 +33,32 @@ def game_labels(records: tuple[GameRecord, ...]) -> dict[str, str]:
     return {record.meta.game_id.value: game_label(record) for record in records}
 
 
-def state_text(status: GameStatus, my_turn: bool) -> str:
-    """The short state under a game row: outcome, your move or waiting."""
+def state_text(status: GameStatus, my_turn: bool, unsent_move: bool = False) -> str:
+    """The short state under a game row: outcome, your move or waiting.
+
+    A move that has not gone out yet reads as its own state, because the
+    row would otherwise say the game is waiting on the opponent when it is
+    really waiting on an email that has not left.
+    """
+    if unsent_move:
+        return "move not sent"
     if status.is_over:
         return status.description
     return "your move" if my_turn else "waiting"
 
 
-def status_text(status: GameStatus, my_turn: bool, draw_offer_open: bool) -> str:
-    """The headline over the board: whose move, offers, or how it ended."""
+def status_text(
+    status: GameStatus,
+    my_turn: bool,
+    draw_offer_open: bool,
+    unsent_move: bool = False,
+) -> str:
+    """The headline over the board: whose move, offers or how it ended."""
+    if unsent_move:
+        return (
+            "Your move is played but not sent. Send it or take it back "
+            "while it is still here."
+        )
     if status.is_over:
         return f"Game over: {status.description}."
     parts = ["Your move." if my_turn else "Waiting for your opponent."]

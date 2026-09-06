@@ -53,7 +53,14 @@ and state.
 5. **PGN is the canonical game state.** Whose turn it is, game status and
    outcome are always derived from the PGN by replay, never stored beside
    it. `GameRecord` has no turn or status field by construction. Enforced
-   by domain unit tests plus review.
+   by domain unit tests plus review. The one fact the PGN cannot carry is
+   whether my latest move has been handed to the mail client yet, since it
+   is about this machine rather than about the game; it rides on the meta
+   as `unsent_move` and is what take-back is permitted by. Every other way
+   the PGN changes clears it, so a move can be taken back only in the
+   window between playing it and dispatching its email. A stored game
+   written before the flag existed reads as sent, which is the safe way to
+   read silence: it has had every chance to go out.
 6. **Wire format v1 is frozen.** Changes bump the version token in the BEGIN
    line and get their own parser branch; a parser rejects a version it does
    not know rather than guessing. A game played over months has to survive

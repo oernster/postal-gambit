@@ -77,6 +77,7 @@ def _to_document(record: GameRecord) -> dict:
             "created_at": meta.created_at.isoformat(),
             "updated_at": meta.updated_at.isoformat(),
             "draw_offer_open": meta.draw_offer_open,
+            "unsent_move": meta.unsent_move,
         },
         "pgn": record.pgn,
     }
@@ -93,6 +94,10 @@ def _from_document(document: dict) -> GameRecord:
             created_at=datetime.fromisoformat(meta["created_at"]),
             updated_at=datetime.fromisoformat(meta["updated_at"]),
             draw_offer_open=bool(meta["draw_offer_open"]),
+            # Absent from documents written before take-back existed. A game
+            # stored by an older build has had every chance to send its last
+            # move, so the safe reading of silence is that it went out.
+            unsent_move=bool(meta.get("unsent_move", False)),
         ),
         pgn=document["pgn"],
     )

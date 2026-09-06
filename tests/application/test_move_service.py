@@ -10,7 +10,7 @@ from postalgambit.application.move_service import PROMOTION_RANKS, MoveService
 from postalgambit.domain.errors import DomainError, NotYourTurnError
 from postalgambit.domain.game import Colour, GameRecord
 from postalgambit.domain.wire import WireAction
-from tests.application.conftest import new_game
+from tests.application.conftest import RULES, new_game
 
 # White's c-pawn eats its way to b7, where b8 is blocked by the knight, so the
 # promotion available is the capture bxa8. A real position rather than a
@@ -186,3 +186,88 @@ class TestMyMove:
         game_service.resign(record.meta.game_id)
         with pytest.raises(DomainError):
             move_service.my_move(record.meta.game_id, "e2", "e4")
+
+
+class TestTakingAMoveBack:
+    def test_a_played_move_starts_out_unsent(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        record = new_game(game_service, Colour.WHITE)
+        updated, _, _ = move_service.my_move(record.meta.game_id, "e2", "e4")
+        assert updated.meta.unsent_move is True
+        assert move_service.undoable([updated]) == (updated,)
+
+    def test_undo_restores_the_position_and_the_turn(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        record = new_game(game_service, Colour.WHITE)
+        move_service.my_move(record.meta.game_id, "e2", "e4")
+        undone = move_service.undo_my_move(record.meta.game_id)
+        assert move_service.moves(record.meta.game_id) == ()
+        assert move_service.is_my_turn(undone) is True
+        assert undone.meta.unsent_move is False
+        assert move_service.undoable([undone]) == ()
+
+    def test_only_the_last_ply_goes(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        record = new_game(game_service, Colour.WHITE)
+        move_service.my_move(record.meta.game_id, "e2", "e4")
+        move_service.mark_move_sent(record.meta.game_id)
+        replied = move_service.store.load(record.meta.game_id)
+        move_service.store.save(
+            replied.with_pgn(
+                RULES.apply_san(replied.pgn, "e5").new_pgn, replied.meta.updated_at
+            )
+        )
+        move_service.my_move(record.meta.game_id, "g1", "f3")
+        move_service.undo_my_move(record.meta.game_id)
+        assert move_service.moves(record.meta.game_id) == ("e4", "e5")
+        assert move_service.legal_targets(record.meta.game_id, "g1") == (
+            "e2",
+            "f3",
+            "h3",
+        )
+
+    def test_a_sent_move_cannot_be_taken_back(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        record = new_game(game_service, Colour.WHITE)
+        move_service.my_move(record.meta.game_id, "e2", "e4")
+        move_service.mark_move_sent(record.meta.game_id)
+        with pytest.raises(DomainError):
+            move_service.undo_my_move(record.meta.game_id)
+
+    def test_marking_sent_persists_and_keeps_the_move(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        record = new_game(game_service, Colour.WHITE)
+        move_service.my_move(record.meta.game_id, "e2", "e4")
+        sent = move_service.mark_move_sent(record.meta.game_id)
+        assert sent.meta.unsent_move is False
+        assert move_service.moves(record.meta.game_id) == ("e4",)
+        assert move_service.store.load(record.meta.game_id).meta.unsent_move is False
+
+    def test_marking_an_already_sent_move_changes_nothing(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        record = new_game(game_service, Colour.WHITE)
+        move_service.my_move(record.meta.game_id, "e2", "e4")
+        first = move_service.mark_move_sent(record.meta.game_id)
+        assert move_service.mark_move_sent(record.meta.game_id) == first
+
+    def test_resigning_supersedes_an_unsent_move(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        record = new_game(game_service, Colour.WHITE)
+        move_service.my_move(record.meta.game_id, "e2", "e4")
+        resigned, _ = game_service.resign(record.meta.game_id)
+        assert resigned.meta.unsent_move is False
+        with pytest.raises(DomainError):
+            move_service.undo_my_move(record.meta.game_id)
+
+    def test_undoable_ignores_games_with_nothing_pending(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        record = new_game(game_service, Colour.WHITE)
+        assert move_service.undoable([record]) == ()

@@ -1,5 +1,8 @@
 """The chess board: a QGraphicsView canvas with mouse and keyboard input.
 
+The squares sit inside a band carrying the file letters and rank numbers on
+all four edges, which turn with the board when it is drawn for Black.
+
 Interaction is click-click: select a piece, then a destination. The widget
 knows nothing about chess rules; a legal-targets provider is injected and a
 moveRequested signal carries the chosen squares out to the window.
@@ -29,6 +32,11 @@ from postalgambit.ui.theme import DARK
 
 BOARD_SIZE = 8
 SQUARE_PX = 64
+# The band of empty space around the squares carrying the file letters and
+# rank numbers. Files run along the top and the bottom, ranks down both
+# sides, matching the ascii board the emails carry.
+LABEL_BAND_PX = 20
+LABEL_POINT_SIZE = 9
 GLYPH_POINT_SIZE = 34
 CURSOR_PEN_WIDTH = 3
 TARGET_DOT_RATIO = 0.28
@@ -69,8 +77,9 @@ class BoardWidget(QGraphicsView):
         self._cursor_square = "e2"
         self._scene = QGraphicsScene(self)
         self.setScene(self._scene)
-        side = BOARD_SIZE * SQUARE_PX
-        self.setFixedSize(side + 4, side + 4)
+        span = BOARD_SIZE * SQUARE_PX + 2 * LABEL_BAND_PX
+        self.setSceneRect(0, 0, span, span)
+        self.setFixedSize(span + 4, span + 4)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -117,7 +126,12 @@ class BoardWidget(QGraphicsView):
             column, row = file, BOARD_SIZE - rank
         else:
             column, row = BOARD_SIZE - 1 - file, rank - 1
-        return QRectF(column * SQUARE_PX, row * SQUARE_PX, SQUARE_PX, SQUARE_PX)
+        return QRectF(
+            LABEL_BAND_PX + column * SQUARE_PX,
+            LABEL_BAND_PX + row * SQUARE_PX,
+            SQUARE_PX,
+            SQUARE_PX,
+        )
 
     # Painting -----------------------------------------------------------
 
@@ -131,6 +145,7 @@ class BoardWidget(QGraphicsView):
             for column in range(BOARD_SIZE):
                 name = self._square_name(column, row)
                 self._paint_square(name, (row + column) % 2 == 0)
+        self._paint_coordinates()
         if self.hasFocus():
             self._paint_cursor()
 
@@ -139,7 +154,14 @@ class BoardWidget(QGraphicsView):
         the board's outer corners are rounded while squares stay square."""
         side = BOARD_SIZE * SQUARE_PX
         path = QPainterPath()
-        path.addRoundedRect(0, 0, side, side, CORNER_RADIUS_PX, CORNER_RADIUS_PX)
+        path.addRoundedRect(
+            LABEL_BAND_PX,
+            LABEL_BAND_PX,
+            side,
+            side,
+            CORNER_RADIUS_PX,
+            CORNER_RADIUS_PX,
+        )
         clip = QGraphicsPathItem(path)
         clip.setPen(QPen(Qt.PenStyle.NoPen))
         clip.setFlag(QGraphicsItem.GraphicsItemFlag.ItemClipsChildrenToShape)
@@ -184,6 +206,39 @@ class BoardWidget(QGraphicsView):
                 rect.y() + (SQUARE_PX - bounds.height()) / 2,
             )
 
+    def _paint_coordinates(self) -> None:
+        """File letters top and bottom, rank numbers down both sides.
+
+        Both are read off the square each band sits against, so the labels
+        follow the board when it is turned for Black rather than restating
+        the flip a second time.
+        """
+        side = BOARD_SIZE * SQUARE_PX
+        for index in range(BOARD_SIZE):
+            file_letter = self._square_name(index, 0)[0]
+            rank_digit = self._square_name(0, index)[1]
+            left = LABEL_BAND_PX + index * SQUARE_PX
+            top = LABEL_BAND_PX + index * SQUARE_PX
+            self._paint_label(file_letter, QRectF(left, 0, SQUARE_PX, LABEL_BAND_PX))
+            self._paint_label(
+                file_letter,
+                QRectF(left, LABEL_BAND_PX + side, SQUARE_PX, LABEL_BAND_PX),
+            )
+            self._paint_label(rank_digit, QRectF(0, top, LABEL_BAND_PX, SQUARE_PX))
+            self._paint_label(
+                rank_digit,
+                QRectF(LABEL_BAND_PX + side, top, LABEL_BAND_PX, SQUARE_PX),
+            )
+
+    def _paint_label(self, text: str, band: QRectF) -> None:
+        label = self._scene.addSimpleText(text, QFont("Segoe UI", LABEL_POINT_SIZE))
+        label.setBrush(QBrush(QColor(self._tokens["muted_text"])))
+        bounds = label.boundingRect()
+        label.setPos(
+            band.x() + (band.width() - bounds.width()) / 2,
+            band.y() + (band.height() - bounds.height()) / 2,
+        )
+
     def _paint_cursor(self) -> None:
         rect = self._square_rect(self._cursor_square).adjusted(2, 2, -2, -2)
         pen = QPen(QColor(self._tokens["square_cursor"]))
@@ -196,8 +251,12 @@ class BoardWidget(QGraphicsView):
     def mousePressEvent(self, event) -> None:  # noqa: N802 (Qt override)
         if self._interactive and self._view is not None:
             point = self.mapToScene(event.position().toPoint())
-            column = int(point.x()) // SQUARE_PX
-            row = int(point.y()) // SQUARE_PX
+            # The coordinate bands are outside the squares, so a click in
+            # one lands on a negative or an over-range index and is ignored.
+            # Floor rather than truncate, so a click anywhere in the left or
+            # top band is negative rather than rounding back up to zero.
+            column = int((point.x() - LABEL_BAND_PX) // SQUARE_PX)
+            row = int((point.y() - LABEL_BAND_PX) // SQUARE_PX)
             if 0 <= column < BOARD_SIZE and 0 <= row < BOARD_SIZE:
                 name = self._square_name(column, row)
                 self._cursor_square = name

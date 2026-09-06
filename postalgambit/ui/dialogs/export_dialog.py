@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+from typing import Callable
 
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QDesktopServices, QGuiApplication
@@ -29,9 +30,23 @@ _TOO_LONG_NOTE = "This email is too long for a mailto link; use the clipboard in
 
 
 class ExportDialog(NeutralDialog):
-    def __init__(self, draft: EmailDraft, parent: QWidget | None = None) -> None:
+    """The outbound email: the moment the move stops being local.
+
+    Opening the mail client or copying the email hands the move to the
+    outside world, which is the last thing this application can observe
+    about it. `on_dispatch` is called then, so the window can record that
+    the move is no longer take-back-able.
+    """
+
+    def __init__(
+        self,
+        draft: EmailDraft,
+        parent: QWidget | None = None,
+        on_dispatch: Callable[[], None] | None = None,
+    ) -> None:
         super().__init__(parent)
         self._draft = draft
+        self._on_dispatch = on_dispatch
         self.setWindowTitle("Send your move")
         self.setMinimumWidth(_DIALOG_MIN_WIDTH)
         layout = QVBoxLayout(self)
@@ -66,7 +81,12 @@ class ExportDialog(NeutralDialog):
             open_button.setEnabled(False)
             self.note.setText(_TOO_LONG_NOTE)
 
+    def _dispatched(self) -> None:
+        if self._on_dispatch is not None:
+            self._on_dispatch()
+
     def _open_mail_client(self) -> None:
+        self._dispatched()
         # On Windows, Qt's openUrl has a special mail branch that resolves the LEGACY
         # default-mail-client registry (Software\Clients\Mail), where a stale Outlook
         # entry can linger, instead of the per-user MAILTO choice from Settings >
@@ -91,6 +111,7 @@ class ExportDialog(NeutralDialog):
         QDesktopServices.openUrl(QUrl(self._draft.mailto_uri))
 
     def _copy(self) -> None:
+        self._dispatched()
         text = (
             f"To: {self._draft.to}\n"
             f"Subject: {self._draft.subject}\n\n"

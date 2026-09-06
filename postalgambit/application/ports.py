@@ -54,6 +54,15 @@ class RulesEngine(Protocol):
         """Apply a SAN move; raise IllegalMoveError if illegal."""
         ...
 
+    def undo_last_ply(self, pgn: str) -> str:
+        """Replay every move but the last, giving the position before it.
+
+        The result tag returns to ongoing, since the only ending an
+        untaken-back move can have caused is one the board itself declared.
+        Raise IllegalMoveError when the game has no moves to take back.
+        """
+        ...
+
     def with_result(self, pgn: str, result: str, termination: str) -> str:
         """Set the Result and Termination tags, ending the game."""
         ...
@@ -79,13 +88,13 @@ class SettingsStore(Protocol):
     def save(self, identity: Identity) -> None: ...
 
     def load_theme(self) -> str:
-        """The persisted theme name, or an empty string when unset."""
+        """The persisted theme name; an empty string when unset."""
         ...
 
     def save_theme(self, theme: str) -> None: ...
 
     def load_skipped_update_version(self) -> str:
-        """The release version the user chose to skip, or an empty string."""
+        """The release version the user chose to skip; empty when none."""
         ...
 
     def save_skipped_update_version(self, version: str) -> None: ...
@@ -106,7 +115,7 @@ class ReleaseSource(Protocol):
     """
 
     def latest_release(self) -> ReleaseInfo | None:
-        """The latest published release, or None on any failure."""
+        """The latest published release; None on any failure."""
         ...
 
 

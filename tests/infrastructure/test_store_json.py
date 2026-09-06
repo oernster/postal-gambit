@@ -83,3 +83,22 @@ class TestErrors:
         )
         with pytest.raises(StorageError):
             store.load(GameId(GAME_UUID))
+
+
+class TestUnsentMove:
+    def test_a_move_awaiting_a_send_survives_a_round_trip(
+        self, store: JsonGameStore
+    ) -> None:
+        record = make_record().with_pgn("pgn", LATER, unsent_move=True)
+        store.save(record)
+        assert store.load(GameId(GAME_UUID)).meta.unsent_move is True
+
+    def test_a_document_written_before_take_back_reads_as_sent(
+        self, store: JsonGameStore, tmp_path: Path
+    ) -> None:
+        store.save(make_record().with_pgn("pgn", LATER, unsent_move=True))
+        path = tmp_path / "games" / f"{GAME_UUID}.json"
+        document = json.loads(path.read_text("utf-8"))
+        del document["meta"]["unsent_move"]
+        path.write_text(json.dumps(document), "utf-8")
+        assert store.load(GameId(GAME_UUID)).meta.unsent_move is False

@@ -124,6 +124,23 @@ class PythonChessRulesEngine:
             raise IllegalMoveError(f"illegal move {san!r}") from None
         return self._push(game, board, move)
 
+    def undo_last_ply(self, pgn: str) -> str:
+        game = self._read(pgn)
+        moves = list(game.mainline_moves())
+        if not moves:
+            raise IllegalMoveError("there is no move to take back")
+        trimmed = chess.pgn.Game()
+        for key, value in game.headers.items():
+            trimmed.headers[key] = value
+        # A move can only be taken back before it is sent, so the only
+        # ending it can have caused is one the board declared as it was
+        # played. Removing the move removes the ending with it.
+        trimmed.headers["Result"] = RESULT_ONGOING
+        node = trimmed
+        for move in moves[:-1]:
+            node = node.add_main_variation(move)
+        return self._export(trimmed)
+
     def with_result(self, pgn: str, result: str, termination: str) -> str:
         game = self._read(pgn)
         game.headers["Result"] = result

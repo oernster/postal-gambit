@@ -35,6 +35,7 @@ class CentralWidgets(NamedTuple):
     game_list: QListWidget
     turn_label: QLabel
     offer_draw_box: QCheckBox
+    undo_button: QPushButton
     resend_button: QPushButton
     accept_draw_button: QPushButton
     resign_button: QPushButton
@@ -84,6 +85,9 @@ def build_central(targets_provider: TargetsProvider) -> CentralWidgets:
     right.addWidget(turn_label)
     actions = QHBoxLayout()
     offer_draw_box = QCheckBox("Offer a draw with this move")
+    # Take back sits immediately left of Re-send: the two are the pair that
+    # act on the move just played, one keeping it and one dropping it.
+    undo_button = QPushButton("Take back move")
     resend_button = QPushButton("Re-send last email")
     accept_draw_button = QPushButton("Accept draw")
     resign_button = QPushButton("Resign")
@@ -93,6 +97,7 @@ def build_central(targets_provider: TargetsProvider) -> CentralWidgets:
     # natural height and no fixed padding matches across fonts.
     offer_draw_box.setFixedHeight(resend_button.sizeHint().height())
     actions.addWidget(offer_draw_box)
+    actions.addWidget(undo_button)
     actions.addWidget(resend_button)
     actions.addWidget(accept_draw_button)
     actions.addWidget(resign_button)
@@ -114,6 +119,7 @@ def build_central(targets_provider: TargetsProvider) -> CentralWidgets:
         game_list=game_list,
         turn_label=turn_label,
         offer_draw_box=offer_draw_box,
+        undo_button=undo_button,
         resend_button=resend_button,
         accept_draw_button=accept_draw_button,
         resign_button=resign_button,
