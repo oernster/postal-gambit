@@ -72,12 +72,13 @@ Website: https://ernster.dev/postal-gambit/
   the opponent's reply address taken from the message itself, so nothing
   needs typing.
 - Playing a move sends nothing. The board updates and the move waits, so
-  you can look at the position you have just made; Send move then builds
-  the email; it will build it again if one goes astray.
+  you can look at the position you have just made; Send move then writes
+  the email; it greys out once that email has left.
 - Take a move back while it is still local. A move you have played but
   not yet handed to your mail client or clipboard can be undone; once the
   email has left the application it is final, since your opponent may
-  already be replying to it.
+  already be replying to it. Send and Take back light and grey together,
+  because they act on exactly the same move.
 - Bulk actions across a multi-selection of games: resign, accept draws,
   delete, take back and send, each with eligibility filtering and
   confirmation.

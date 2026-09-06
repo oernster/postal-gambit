@@ -106,8 +106,10 @@ def show_selected(window: MainWindow) -> None:
 def set_actions_enabled(window: MainWindow, record: GameRecord | None) -> None:
     selected = selected_records(window)
     window.delete_button.setEnabled(bool(selected))
-    window.send_button.setEnabled(bool(window._actions.sendable()))
-    window.undo_button.setEnabled(bool(window._actions.undoable()))
+    # Both act on a move that has not gone out, so one answer drives both.
+    waiting = bool(window._actions.unsent())
+    window.send_button.setEnabled(waiting)
+    window.undo_button.setEnabled(waiting)
     window.resign_button.setEnabled(bool(window._actions.resignable()))
     window.accept_draw_button.setEnabled(bool(window._actions.draw_acceptable()))
     window.offer_draw_box.setEnabled(

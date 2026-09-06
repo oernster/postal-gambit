@@ -124,20 +124,20 @@ class TestEligibility:
         finished, _ = game_service.resign(new_game(game_service).meta.game_id)
         assert move_service.draw_acceptable((_with_draw_offer(finished),)) == ()
 
-    def test_sendable_needs_a_move_to_send(
+    def test_unsent_is_the_games_with_a_move_waiting(
         self, game_service: GameService, move_service: MoveService
     ) -> None:
         fresh = new_game(game_service, Colour.WHITE)
         played, _, _ = move_service.my_move(fresh.meta.game_id, "e2", "e4")
-        assert move_service.sendable((fresh, played)) == (played,)
+        assert move_service.unsent((fresh, played)) == (played,)
 
-    def test_a_finished_game_can_still_be_sent_again(
+    def test_a_sent_move_is_neither_sendable_nor_retractable(
         self, game_service: GameService, move_service: MoveService
     ) -> None:
         record = new_game(game_service, Colour.WHITE)
         move_service.my_move(record.meta.game_id, "e2", "e4")
-        finished, _ = game_service.resign(record.meta.game_id)
-        assert move_service.sendable((finished,)) == (finished,)
+        sent = move_service.mark_move_sent(record.meta.game_id)
+        assert move_service.unsent((sent,)) == ()
 
     def test_awaiting_opponent_is_the_games_i_cannot_move_in(
         self, game_service: GameService, move_service: MoveService
@@ -210,7 +210,7 @@ class TestTakingAMoveBack:
         record = new_game(game_service, Colour.WHITE)
         updated, _, _ = move_service.my_move(record.meta.game_id, "e2", "e4")
         assert updated.meta.unsent_move is True
-        assert move_service.undoable([updated]) == (updated,)
+        assert move_service.unsent([updated]) == (updated,)
 
     def test_undo_restores_the_position_and_the_turn(
         self, game_service: GameService, move_service: MoveService
@@ -221,7 +221,7 @@ class TestTakingAMoveBack:
         assert move_service.moves(record.meta.game_id) == ()
         assert move_service.is_my_turn(undone) is True
         assert undone.meta.unsent_move is False
-        assert move_service.undoable([undone]) == ()
+        assert move_service.unsent([undone]) == ()
 
     def test_only_the_last_ply_goes(
         self, game_service: GameService, move_service: MoveService
@@ -307,8 +307,8 @@ class TestTakingAMoveBack:
         undone = move_service.undo_my_move(record.meta.game_id)
         assert undone.meta.my_draw_offer is False
 
-    def test_undoable_ignores_games_with_nothing_pending(
+    def test_unsent_ignores_games_with_nothing_pending(
         self, game_service: GameService, move_service: MoveService
     ) -> None:
         record = new_game(game_service, Colour.WHITE)
-        assert move_service.undoable([record]) == ()
+        assert move_service.unsent([record]) == ()

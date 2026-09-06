@@ -17,7 +17,6 @@ from postalgambit.application.dto import EmailDraft
 from postalgambit.application.export_service import ExportService
 from postalgambit.application.game_service import GameService
 from postalgambit.application.move_service import MoveService
-from postalgambit.domain.errors import PostalGambitError
 from postalgambit.domain.game import GameRecord
 from postalgambit.domain.wire import WireAction, WireMessage
 from postalgambit.ui.dialogs.export_dialog import ExportDialog
@@ -70,11 +69,10 @@ class GameActions:
     def draw_acceptable(self) -> tuple[GameRecord, ...]:
         return self._moves.draw_acceptable(self._selection())
 
-    def undoable(self) -> tuple[GameRecord, ...]:
-        return self._moves.undoable(self._selection())
-
-    def sendable(self) -> tuple[GameRecord, ...]:
-        return self._moves.sendable(self._selection())
+    def unsent(self) -> tuple[GameRecord, ...]:
+        """The selected games with a move waiting; both Send and Take back
+        act on exactly these, so they light and grey together."""
+        return self._moves.unsent(self._selection())
 
     # Flows -------------------------------------------------------------
 
@@ -118,7 +116,7 @@ class GameActions:
 
     def undo(self) -> None:
         """Take back moves that have been played locally but never sent."""
-        records = self.undoable()
+        records = self.unsent()
         if not self._confirm(
             records,
             "Take back move",
@@ -153,16 +151,17 @@ class GameActions:
         self._refresh()
 
     def send(self) -> None:
-        """Build and show the outbound email for every selected game.
-
-        The same act whether the move has been sent before or not: the email
-        is rebuilt from the game as it stands, so this both sends a move for
-        the first time and sends one again when a mail went astray.
-        """
-        records = self._selection()
+        """Show the outbound email for every selected game with a move
+        waiting. A move that has gone out is not offered again: the email
+        exists in the world already, so this is one press per move."""
+        records = self.unsent()
         if not records:
+            QMessageBox.information(
+                self._parent,
+                "Send move",
+                "No selected game has a move waiting to be sent.",
+            )
             return
-        skipped = []
         for record in records:
             message = WireMessage(
                 action=WireAction.MOVE,
@@ -173,18 +172,7 @@ class GameActions:
                 offer_draw=record.meta.my_draw_offer,
                 from_email=record.meta.me.email,
             )
-            try:
-                draft = self._exports.build_email(record, message)
-            except PostalGambitError:
-                skipped.append(record)
-                continue
-            self.show_export(record, draft)
-        if skipped:
-            QMessageBox.information(
-                self._parent,
-                "Send move",
-                "Skipped games with no moves yet:\n" + describe_games(tuple(skipped)),
-            )
+            self.show_export(record, self._exports.build_email(record, message))
 
     # Helpers -----------------------------------------------------------
 

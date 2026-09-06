@@ -79,23 +79,15 @@ class MoveService:
             if record.meta.draw_offer_open
         )
 
-    def undoable(self, records: Iterable[GameRecord]) -> tuple[GameRecord, ...]:
-        """The games whose latest move is mine and has not been sent yet.
+    def unsent(self, records: Iterable[GameRecord]) -> tuple[GameRecord, ...]:
+        """The games holding a move of mine that has not gone out yet.
 
-        A move that has left for the mail client is final: the opponent may
-        already be replying to it, so taking it back would put the two
-        machines on different games. Everything before that point is still
-        local, so it is still mine to reconsider.
+        One question answers two: a move waiting to be sent is exactly the
+        move that can still be taken back. Once it has left for the mail
+        client it is final, because the opponent may already be replying to
+        it, so neither sending it again nor retracting it is offered.
         """
         return tuple(record for record in records if record.meta.unsent_move)
-
-    def sendable(self, records: Iterable[GameRecord]) -> tuple[GameRecord, ...]:
-        """The games there is a move email to build for: those with a move.
-
-        A game with nothing played has no move to send; its opening email is
-        the invitation, which is built when the game is created.
-        """
-        return tuple(record for record in records if self.rules.moves(record.pgn))
 
     def awaiting_opponent(
         self, records: Iterable[GameRecord]
