@@ -53,18 +53,19 @@ and state.
 5. **PGN is the canonical game state.** Whose turn it is, game status and
    outcome are always derived from the PGN by replay, never stored beside
    it. `GameRecord` has no turn or status field by construction. Enforced
-   by domain unit tests plus review. The one fact the PGN cannot carry is
-   whether my latest move has been handed to the mail client yet, since it
-   is about this machine rather than about the game; it rides on the meta
-   as `unsent_move` and is what take-back is permitted by. A draw offered
-   with a move is the same shape of fact, since the email is written when
-   the move is sent rather than when it is played; it rides as
-   `my_draw_offer` and survives the send, so sending again says the same
-   thing. Every other way
-   the PGN changes clears it, so a move can be taken back only in the
-   window between playing it and dispatching its email. A stored game
-   written before the flag existed reads as sent, which is the safe way to
-   read silence: it has had every chance to go out.
+   by domain unit tests plus review. Two facts about a move cannot live in
+   the PGN, so they ride on `GameMeta` instead. `unsent_move` records
+   whether my latest move has been handed to the mail client, which is a
+   fact about this machine rather than about the game; it is what both
+   sending and take-back are permitted by, so a move can be taken back only
+   in the window between playing it and dispatching its email. Every other
+   way the PGN changes clears it, which is how a resignation, an accepted
+   draw, an imported reply and a take-back each settle the previous move.
+   `my_draw_offer` records the offer my waiting move will carry, a thing
+   said in the email rather than a thing on the board; it survives the send
+   so that sending the same move again says the same thing. A stored game
+   written before either flag existed reads as sent and offering nothing,
+   which is the safe way to read silence: it has had every chance to go out.
 6. **Wire format v1 is frozen.** Changes bump the version token in the BEGIN
    line and get their own parser branch; a parser rejects a version it does
    not know rather than guessing. A game played over months has to survive
@@ -117,9 +118,10 @@ postal-gambit/
                               ImportOutcome, EmailDraft, ReleaseInfo,
                               UpdateStatus
       game_service.py         create, list, resign, offer/accept draw
-      move_service.py         apply my move via RulesEngine; eligibility
-                              (in progress, draw acceptable, awaiting the
-                              opponent) and promotion detection
+      move_service.py         apply my move via RulesEngine, take one back,
+                              mark one sent; eligibility (in progress, draw
+                              acceptable, unsent, awaiting the opponent) and
+                              promotion detection
       export_service.py       WireMessage -> email body, subject, mailto URI
       import_service.py       pasted text / .pgn file -> validated game update
       update_service.py       version comparison, platform asset selection
@@ -141,7 +143,8 @@ postal-gambit/
       actions.py              selection-aware bulk flows (resign, draw,
                               delete, take back, send) with per-game export
                               dialogs
-      board_widget.py         QGraphicsView board, click-click moves, rounded
+      board_widget.py         QGraphicsView board, click-click moves, file
+                              and rank labels round all four edges, rounded
                               corners, theme tokens injected at runtime
       side_panel.py           app badge above the numbered move history
       labels.py               game title with the bracketed short id, start
@@ -185,10 +188,14 @@ postal-gambit/
 ### Domain
 
 Frozen dataclasses (`frozen=True, slots=True`, tuples for collections).
-`GameRecord` holds `GameMeta` plus the PGN text. One piece of protocol
-state lives beside the PGN rather than in it: `draw_offer_open` on
-`GameMeta`, because a draw offer is wire-protocol state that PGN cannot
-carry; everything chess-derivable stays derived. The wire codec is pure
+`GameRecord` holds `GameMeta` plus the PGN text. Three pieces of state live
+beside the PGN rather than in it, all on `GameMeta`, none of them
+chess-derivable: `draw_offer_open` (the offer standing against me, which is
+wire-protocol state PGN cannot carry), `unsent_move` (whether my latest move
+has been handed to the mail client, which is a fact about this machine) and
+`my_draw_offer` (the offer my own waiting move will carry, which is a thing
+said in the email rather than a thing on the board). Everything
+chess-derivable stays derived. The wire codec is pure
 string work (render a `WireMessage` to a block, parse text back to one) so
 it lives in the domain: it is the protocol contract and must be testable
 with zero machinery. The codec parses structure only; chess legality is not
@@ -204,9 +211,12 @@ as source and target squares, comes back as SAN from the rules engine, is
 appended to the PGN, persisted and handed to the export service.
 
 Eligibility is answered here rather than in the window. Which games an
-action may be offered for (`in_progress`, `draw_acceptable`,
+action may be offered for (`in_progress`, `draw_acceptable`, `unsent`,
 `awaiting_opponent`) and whether a move promotes a pawn (`is_promotion`)
 are decisions about game state, so `MoveService` owns them and the UI asks.
+`unsent` answers two buttons at once: a move waiting to be sent is exactly
+the move that can still be taken back, so Send move and Take back move
+cannot disagree about which games they apply to.
 That placement matters more than usual in this project: the UI layer is
 outside the coverage gate by design, so a decision made there is a decision
 nothing measures. `BoardView.piece_at` follows the same rule for the square
@@ -248,10 +258,13 @@ the bracketed short GameID that the email subject prefix uses, so a list
 row and its email thread correlate at a glance.
 
 The board is a `QGraphicsView` canvas stop inside the standard explicit
-focus ring: Tab/Right and Shift+Tab/Left step the ring, Up/Down move the
-square cursor inside the board, Enter selects and drops, Escape cancels
-a pending selection. Board orientation puts the user's colour at the
-bottom. The ring follows the visual order exactly and skips dead stops,
+focus ring, with one deliberate relaxation: a chess board is genuinely
+two-dimensional, so while it holds focus all four arrows move the square
+cursor and only Tab/Shift+Tab step the ring. Enter selects and drops,
+Escape cancels a pending selection. Board orientation puts the user's
+colour at the bottom. The file letters and rank numbers in the band round
+all four edges are read off the squares they sit against, so they turn
+with the board rather than restating the flip. The ring follows the visual order exactly and skips dead stops,
 including the cleared board while no game is selected (it disables
 itself, so Tab never lands on a canvas painting no cursor). Enter and
 Space both activate every stop: the navigator clicks a focused button or
@@ -397,7 +410,9 @@ from is invoked directly on whichever thread emitted it. Connected that way
 the window's updates become widget calls from the wrong thread; worse, retiring
 the worker ends with the thread waiting on itself, which never returns.
 `tests/installer/test_operation_runner.py` asserts the callbacks arrive on the
-thread that started the work, without needing a widget or a display. A running application is detected before any of it starts and the user
+thread that started the work, without needing a widget or a display.
+
+A running application is detected before any of it starts and the user
 is offered a forced close, because the application intercepts a window close
 and a polite request would leave the executable locked. Extraction is member by
 member with every entry checked to resolve inside the destination first: the
@@ -421,10 +436,21 @@ opponent moves first; otherwise it goes straight to the board.
 
 **My move**: board interaction produces source and target squares. The
 rules engine validates and returns SAN plus the updated PGN. The record is
-persisted, then the export dialog shows the exact email (subject and body,
-preamble, block, footer) with two buttons: "Open in mail client" (a
+persisted with `unsent_move` set; nothing opens. A dialog over the board
+would hide the position just made, which is the one thing worth looking at
+before committing to a move. The move waits there, take-back-able, until
+Send move builds the email; sending it and taking it back are offered for
+exactly the same games and grey together once the email has left.
+
+**Sending a move**: the export dialog shows the exact email (subject and
+body, preamble, block, footer) with two buttons: "Open in mail client" (a
 `mailto:` URI launched through `QDesktopServices.openUrl`) and "Copy email
-to clipboard". On Windows the mailto URI is launched with `os.startfile`
+to clipboard". Either is the hand-off, so either clears `unsent_move`
+through `MoveService.mark_move_sent`: the application cannot see the user
+press send in their mail client, so it draws the line at the last thing it
+can honestly observe. Resigning, accepting a draw and inviting an opponent
+still show their email straight away, since none of them hides anything and
+an invitation has no move to send. On Windows the mailto URI is launched with `os.startfile`
 (the ShellExecute path, which honours the per-user MAILTO default) rather
 than Qt's openUrl, whose Windows mail branch consults the legacy
 `Software\Clients\Mail` registry and can resurrect a stale Outlook entry.

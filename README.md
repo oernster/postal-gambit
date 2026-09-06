@@ -22,7 +22,7 @@ its own reach, so narrowing it back fails the suite rather than passing
 quietly.
 
 Status: implemented and gated at 100% line and branch coverage over the
-package and over the setup program's Qt-free halves.
+package outside its Qt code and over the setup program's Qt-free halves.
 
 Website: https://ernster.dev/postal-gambit/
 
@@ -101,7 +101,7 @@ Website: https://ernster.dev/postal-gambit/
 | UI | PySide6 (widgets) |
 | Chess rules | python-chess, quarantined behind a port |
 | Storage | One JSON file per game, local, atomic writes |
-| Transport | Your mail client (`mailto:` or clipboard); no network code |
+| Transport | Your mail client (`mailto:` or clipboard); no network code on the game path |
 | Tests | pytest via `pytest -v --cov`; 100% line and branch gate outside the Qt code |
 | Packaging | Nuitka plus a bespoke per-user installer (Windows), Flatpak (Linux), DMG (macOS) |
 
