@@ -78,6 +78,7 @@ def _to_document(record: GameRecord) -> dict:
             "updated_at": meta.updated_at.isoformat(),
             "draw_offer_open": meta.draw_offer_open,
             "unsent_move": meta.unsent_move,
+            "my_draw_offer": meta.my_draw_offer,
         },
         "pgn": record.pgn,
     }
@@ -98,6 +99,7 @@ def _from_document(document: dict) -> GameRecord:
             # stored by an older build has had every chance to send its last
             # move, so the safe reading of silence is that it went out.
             unsent_move=bool(meta.get("unsent_move", False)),
+            my_draw_offer=bool(meta.get("my_draw_offer", False)),
         ),
         pgn=document["pgn"],
     )

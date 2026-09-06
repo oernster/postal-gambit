@@ -124,6 +124,21 @@ class TestEligibility:
         finished, _ = game_service.resign(new_game(game_service).meta.game_id)
         assert move_service.draw_acceptable((_with_draw_offer(finished),)) == ()
 
+    def test_sendable_needs_a_move_to_send(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        fresh = new_game(game_service, Colour.WHITE)
+        played, _, _ = move_service.my_move(fresh.meta.game_id, "e2", "e4")
+        assert move_service.sendable((fresh, played)) == (played,)
+
+    def test_a_finished_game_can_still_be_sent_again(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        record = new_game(game_service, Colour.WHITE)
+        move_service.my_move(record.meta.game_id, "e2", "e4")
+        finished, _ = game_service.resign(record.meta.game_id)
+        assert move_service.sendable((finished,)) == (finished,)
+
     def test_awaiting_opponent_is_the_games_i_cannot_move_in(
         self, game_service: GameService, move_service: MoveService
     ) -> None:
@@ -265,6 +280,32 @@ class TestTakingAMoveBack:
         assert resigned.meta.unsent_move is False
         with pytest.raises(DomainError):
             move_service.undo_my_move(record.meta.game_id)
+
+    def test_a_draw_offered_with_the_move_is_kept_for_the_email(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        record = new_game(game_service, Colour.WHITE)
+        updated, _, _ = move_service.my_move(
+            record.meta.game_id, "e2", "e4", offer_draw=True
+        )
+        assert updated.meta.my_draw_offer is True
+        sent = move_service.mark_move_sent(record.meta.game_id)
+        assert sent.meta.my_draw_offer is True
+
+    def test_a_move_without_an_offer_carries_none(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        record = new_game(game_service, Colour.WHITE)
+        updated, _, _ = move_service.my_move(record.meta.game_id, "e2", "e4")
+        assert updated.meta.my_draw_offer is False
+
+    def test_taking_the_move_back_takes_the_offer_with_it(
+        self, game_service: GameService, move_service: MoveService
+    ) -> None:
+        record = new_game(game_service, Colour.WHITE)
+        move_service.my_move(record.meta.game_id, "e2", "e4", offer_draw=True)
+        undone = move_service.undo_my_move(record.meta.game_id)
+        assert undone.meta.my_draw_offer is False
 
     def test_undoable_ignores_games_with_nothing_pending(
         self, game_service: GameService, move_service: MoveService

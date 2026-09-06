@@ -21,7 +21,7 @@ def build_menus(window: MainWindow) -> tuple[QMenu, ...]:
         ("&New game...", window._new_game),
         ("&Import a move...", lambda: window._import_move()),
         ("&Take back move...", window._undo_move),
-        ("&Re-send last email...", window._resend_last),
+        ("&Send move...", window._send_move),
         ("&Delete game...", window._delete_game),
     ):
         action = QAction(label, window)

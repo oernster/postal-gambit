@@ -44,7 +44,7 @@ def describe_games(records: tuple[GameRecord, ...]) -> str:
 
 
 class GameActions:
-    """Bulk-capable resign, draw-acceptance, deletion and re-send flows."""
+    """Bulk-capable resign, draw-acceptance, deletion, take-back and send."""
 
     def __init__(
         self,
@@ -72,6 +72,9 @@ class GameActions:
 
     def undoable(self) -> tuple[GameRecord, ...]:
         return self._moves.undoable(self._selection())
+
+    def sendable(self) -> tuple[GameRecord, ...]:
+        return self._moves.sendable(self._selection())
 
     # Flows -------------------------------------------------------------
 
@@ -149,8 +152,13 @@ class GameActions:
             self._games.delete(record.meta.game_id)
         self._refresh()
 
-    def resend(self) -> None:
-        """Rebuild and show the outbound email for every selected game."""
+    def send(self) -> None:
+        """Build and show the outbound email for every selected game.
+
+        The same act whether the move has been sent before or not: the email
+        is rebuilt from the game as it stands, so this both sends a move for
+        the first time and sends one again when a mail went astray.
+        """
         records = self._selection()
         if not records:
             return
@@ -159,6 +167,10 @@ class GameActions:
             message = WireMessage(
                 action=WireAction.MOVE,
                 pgn=record.pgn,
+                # The offer was made when the move was played, so it is read
+                # back off the game rather than off the checkbox, which by
+                # now belongs to whatever game is selected.
+                offer_draw=record.meta.my_draw_offer,
                 from_email=record.meta.me.email,
             )
             try:
@@ -170,7 +182,7 @@ class GameActions:
         if skipped:
             QMessageBox.information(
                 self._parent,
-                "Re-send",
+                "Send move",
                 "Skipped games with no moves yet:\n" + describe_games(tuple(skipped)),
             )
 

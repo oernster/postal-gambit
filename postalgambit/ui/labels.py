@@ -52,13 +52,19 @@ def status_text(
     my_turn: bool,
     draw_offer_open: bool,
     unsent_move: bool = False,
+    my_draw_offer: bool = False,
 ) -> str:
     """The headline over the board: whose move, offers or how it ended."""
     if unsent_move:
-        return (
-            "Your move is played but not sent. Send it or take it back "
-            "while it is still here."
-        )
+        parts = [
+            (
+                "Your move is played but not sent. Send it or take it back "
+                "while it is still here."
+            )
+        ]
+        if my_draw_offer:
+            parts.append("It offers a draw.")
+        return " ".join(parts)
     if status.is_over:
         return f"Game over: {status.description}."
     parts = ["Your move." if my_turn else "Waiting for your opponent."]

@@ -87,7 +87,7 @@ class MainWindow(QMainWindow):
         self.turn_label = widgets.turn_label
         self.offer_draw_box = widgets.offer_draw_box
         self.undo_button = widgets.undo_button
-        self.resend_button = widgets.resend_button
+        self.send_button = widgets.send_button
         self.accept_draw_button = widgets.accept_draw_button
         self.resign_button = widgets.resign_button
         self.board = widgets.board
@@ -100,7 +100,7 @@ class MainWindow(QMainWindow):
         self.game_list.currentItemChanged.connect(self._on_selection)
         self.game_list.itemSelectionChanged.connect(self._on_selection)
         self.undo_button.clicked.connect(self._undo_move)
-        self.resend_button.clicked.connect(self._resend_last)
+        self.send_button.clicked.connect(self._send_move)
         self.accept_draw_button.clicked.connect(self._accept_draw)
         self.resign_button.clicked.connect(self._resign)
         self.board.moveRequested.connect(self._on_move_requested)
@@ -118,7 +118,7 @@ class MainWindow(QMainWindow):
                 self.game_list,
                 self.offer_draw_box,
                 self.undo_button,
-                self.resend_button,
+                self.send_button,
                 self.accept_draw_button,
                 self.resign_button,
                 self.board,
@@ -162,7 +162,7 @@ class MainWindow(QMainWindow):
                 return
             promotion = dialog.letter
         try:
-            record, message, applied = self._moves.my_move(
+            self._moves.my_move(
                 self._selected_id,
                 source,
                 target,
@@ -172,11 +172,11 @@ class MainWindow(QMainWindow):
         except PostalGambitError as error:
             QMessageBox.warning(self, "Move rejected", str(error))
             return
+        # The email is not offered here. A dialog opening over the board hides
+        # the move that was just played, which is the one thing worth looking
+        # at before committing to it, so sending is a separate press.
         self.offer_draw_box.setChecked(False)
         self.refresh_games()
-        self._actions.show_export(
-            record, self._exports.build_email(record, message, applied)
-        )
 
     def _new_game(self) -> None:
         dialog = NewGameDialog(self)
@@ -240,8 +240,8 @@ class MainWindow(QMainWindow):
     def _undo_move(self) -> None:
         self._actions.undo()
 
-    def _resend_last(self) -> None:
-        self._actions.resend()
+    def _send_move(self) -> None:
+        self._actions.send()
 
     def _resign(self) -> None:
         self._actions.resign()

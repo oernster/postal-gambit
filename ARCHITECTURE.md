@@ -56,7 +56,11 @@ and state.
    by domain unit tests plus review. The one fact the PGN cannot carry is
    whether my latest move has been handed to the mail client yet, since it
    is about this machine rather than about the game; it rides on the meta
-   as `unsent_move` and is what take-back is permitted by. Every other way
+   as `unsent_move` and is what take-back is permitted by. A draw offered
+   with a move is the same shape of fact, since the email is written when
+   the move is sent rather than when it is played; it rides as
+   `my_draw_offer` and survives the send, so sending again says the same
+   thing. Every other way
    the PGN changes clears it, so a move can be taken back only in the
    window between playing it and dispatching its email. A stored game
    written before the flag existed reads as sent, which is the safe way to
@@ -128,12 +132,15 @@ postal-gambit/
       update_github.py        the one network-exempt module (invariant 4)
       clock.py, ids.py        SystemClock, Uuid4Generator
     ui/
-      main_window.py          state, selection, flows and signal wiring
+      main_window.py          commands and signal wiring
+      game_view.py            what the list, board and panel show for the
+                              games as they stand (functions over the window)
       central_layout.py       central-widget construction (pure arrangement,
                               handed back unwired as a NamedTuple)
       menus.py                File, Game, View (theme toggle) and Help menus
       actions.py              selection-aware bulk flows (resign, draw,
-                              delete, re-send) with per-game export dialogs
+                              delete, take back, send) with per-game export
+                              dialogs
       board_widget.py         QGraphicsView board, click-click moves, rounded
                               corners, theme tokens injected at runtime
       side_panel.py           app badge above the numbered move history

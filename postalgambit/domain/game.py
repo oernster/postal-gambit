@@ -9,6 +9,12 @@ been handed to the mail client yet. A move that has not left the machine is
 still mine to take back; once it has gone out, the opponent may already be
 replying to it, so it is final. That fact rides on the meta as
 `unsent_move`.
+
+A draw offered with my move is the same shape of fact. It is a thing said in
+the email rather than a thing on the board, so the PGN cannot hold it; the
+email is now written when the move is sent rather than when it is played.
+It rides on the meta as `my_draw_offer` and survives the send, so a
+move sent a second time carries the same offer it did the first time.
 """
 
 from __future__ import annotations
@@ -65,6 +71,7 @@ class GameMeta:
     updated_at: datetime
     draw_offer_open: bool = False
     unsent_move: bool = False
+    my_draw_offer: bool = False
 
     @property
     def me(self) -> Player:
@@ -86,6 +93,7 @@ class GameRecord:
         updated_at: datetime,
         draw_offer_open: bool = False,
         unsent_move: bool = False,
+        my_draw_offer: bool = False,
     ) -> GameRecord:
         """A record carrying new PGN. Anything awaiting a send is cleared
         unless the caller says otherwise, because every other way the PGN
@@ -96,10 +104,12 @@ class GameRecord:
             updated_at=updated_at,
             draw_offer_open=draw_offer_open,
             unsent_move=unsent_move,
+            my_draw_offer=my_draw_offer,
         )
         return GameRecord(meta=meta, pgn=pgn)
 
     def with_move_sent(self) -> GameRecord:
         """The same position, no longer awaiting a send. The move has left
-        the application, so it can no longer be taken back."""
+        the application, so it can no longer be taken back. Any draw offered
+        with it stays, since sending the move again must say the same thing."""
         return GameRecord(meta=replace(self.meta, unsent_move=False), pgn=self.pgn)

@@ -89,6 +89,14 @@ class MoveService:
         """
         return tuple(record for record in records if record.meta.unsent_move)
 
+    def sendable(self, records: Iterable[GameRecord]) -> tuple[GameRecord, ...]:
+        """The games there is a move email to build for: those with a move.
+
+        A game with nothing played has no move to send; its opening email is
+        the invitation, which is built when the game is created.
+        """
+        return tuple(record for record in records if self.rules.moves(record.pgn))
+
     def awaiting_opponent(
         self, records: Iterable[GameRecord]
     ) -> tuple[GameRecord, ...]:
@@ -120,7 +128,12 @@ class MoveService:
         if self.rules.turn(record.pgn) is not record.meta.my_colour:
             raise NotYourTurnError("it is not your move")
         applied = self.rules.apply_uci(record.pgn, source, target, promotion)
-        updated = record.with_pgn(applied.new_pgn, self.clock.now(), unsent_move=True)
+        updated = record.with_pgn(
+            applied.new_pgn,
+            self.clock.now(),
+            unsent_move=True,
+            my_draw_offer=offer_draw,
+        )
         self.store.save(updated)
         message = WireMessage(
             action=WireAction.MOVE,

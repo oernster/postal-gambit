@@ -29,7 +29,7 @@ def _pill_height() -> int:
     A fresh widget carries the fallback font until it is polished, so it is
     polished before it is asked how tall it wants to be.
     """
-    probe = QPushButton("Re-send last email")
+    probe = QPushButton("Send move")
     probe.ensurePolished()
     return probe.sizeHint().height()
 

@@ -93,6 +93,15 @@ class TestUnsentMove:
         store.save(record)
         assert store.load(GameId(GAME_UUID)).meta.unsent_move is True
 
+    def test_a_draw_offered_with_the_move_survives_a_round_trip(
+        self, store: JsonGameStore
+    ) -> None:
+        record = make_record().with_pgn(
+            "pgn", LATER, unsent_move=True, my_draw_offer=True
+        )
+        store.save(record)
+        assert store.load(GameId(GAME_UUID)).meta.my_draw_offer is True
+
     def test_a_document_written_before_take_back_reads_as_sent(
         self, store: JsonGameStore, tmp_path: Path
     ) -> None:

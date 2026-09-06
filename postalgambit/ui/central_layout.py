@@ -36,7 +36,7 @@ class CentralWidgets(NamedTuple):
     turn_label: QLabel
     offer_draw_box: QCheckBox
     undo_button: QPushButton
-    resend_button: QPushButton
+    send_button: QPushButton
     accept_draw_button: QPushButton
     resign_button: QPushButton
     board: BoardWidget
@@ -71,7 +71,7 @@ def build_central(targets_provider: TargetsProvider) -> CentralWidgets:
     game_list.setMinimumWidth(_LIST_MIN_WIDTH)
     # Extended selection: the CURRENT item drives the board while the
     # full selection drives the bulk actions (resign, accept draw,
-    # delete, re-send apply to every selected game they fit).
+    # delete, send apply to every selected game they fit).
     game_list.setSelectionMode(QListWidget.SelectionMode.ExtendedSelection)
     left.addWidget(game_list, stretch=1)
     layout.addLayout(left)
@@ -85,20 +85,21 @@ def build_central(targets_provider: TargetsProvider) -> CentralWidgets:
     right.addWidget(turn_label)
     actions = QHBoxLayout()
     offer_draw_box = QCheckBox("Offer a draw with this move")
-    # Take back sits immediately left of Re-send: the two are the pair that
-    # act on the move just played, one keeping it and one dropping it.
+    # Take back sits immediately left of Send move: the two are the pair
+    # that act on the move just played, one keeping it and one dropping it.
     undo_button = QPushButton("Take back move")
-    resend_button = QPushButton("Re-send last email")
+    send_button = QPushButton("Send move")
+    send_button.setObjectName("Primary")
     accept_draw_button = QPushButton("Accept draw")
     resign_button = QPushButton("Resign")
     resign_button.setObjectName("Danger")
     # The checkbox rides in the button row, so its pill height is
     # pinned to the buttons' own: its indicator gives it a different
     # natural height and no fixed padding matches across fonts.
-    offer_draw_box.setFixedHeight(resend_button.sizeHint().height())
+    offer_draw_box.setFixedHeight(send_button.sizeHint().height())
     actions.addWidget(offer_draw_box)
     actions.addWidget(undo_button)
-    actions.addWidget(resend_button)
+    actions.addWidget(send_button)
     actions.addWidget(accept_draw_button)
     actions.addWidget(resign_button)
     actions.addStretch()
@@ -120,7 +121,7 @@ def build_central(targets_provider: TargetsProvider) -> CentralWidgets:
         turn_label=turn_label,
         offer_draw_box=offer_draw_box,
         undo_button=undo_button,
-        resend_button=resend_button,
+        send_button=send_button,
         accept_draw_button=accept_draw_button,
         resign_button=resign_button,
         board=board,

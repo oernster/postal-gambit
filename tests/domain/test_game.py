@@ -88,6 +88,16 @@ class TestGameRecord:
         played = record.with_pgn("mid", LATER, unsent_move=True)
         assert played.with_pgn("new", LATER).meta.unsent_move is False
 
+    def test_a_draw_offered_with_a_move_survives_the_send(self) -> None:
+        record = GameRecord(meta=make_meta(), pgn="old")
+        played = record.with_pgn("new", LATER, unsent_move=True, my_draw_offer=True)
+        assert played.with_move_sent().meta.my_draw_offer is True
+
+    def test_with_pgn_clears_my_draw_offer_by_default(self) -> None:
+        record = GameRecord(meta=make_meta(), pgn="old")
+        played = record.with_pgn("mid", LATER, my_draw_offer=True)
+        assert played.with_pgn("new", LATER).meta.my_draw_offer is False
+
     def test_with_move_sent_keeps_the_position_and_the_timestamp(self) -> None:
         record = GameRecord(meta=make_meta(), pgn="old")
         played = record.with_pgn("new", LATER, unsent_move=True)

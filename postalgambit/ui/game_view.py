@@ -96,6 +96,7 @@ def show_selected(window: MainWindow) -> None:
             my_turn,
             record.meta.draw_offer_open,
             record.meta.unsent_move,
+            record.meta.my_draw_offer,
         )
     )
     window.side_panel.show_moves(window._moves.moves(record.meta.game_id))
@@ -105,7 +106,7 @@ def show_selected(window: MainWindow) -> None:
 def set_actions_enabled(window: MainWindow, record: GameRecord | None) -> None:
     selected = selected_records(window)
     window.delete_button.setEnabled(bool(selected))
-    window.resend_button.setEnabled(bool(selected))
+    window.send_button.setEnabled(bool(window._actions.sendable()))
     window.undo_button.setEnabled(bool(window._actions.undoable()))
     window.resign_button.setEnabled(bool(window._actions.resignable()))
     window.accept_draw_button.setEnabled(bool(window._actions.draw_acceptable()))
