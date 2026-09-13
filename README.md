@@ -26,6 +26,12 @@ package outside its Qt code and over the setup program's Qt-free halves.
 
 Website: https://ernster.dev/postal-gambit/
 
+> **Commercial licences available.** Postal Gambit is free and open source
+> under GPL-3.0. If those terms do not suit what you are building, such as a
+> closed-source product, a commercial licence can be bought from me
+> separately. It covers my own code; PySide6 keeps its own LGPL-3.0 licence.
+> See [commercial licensing](https://ernster.dev/commercial-licensing.html).
+
 ## Documentation
 
 - [ARCHITECTURE.md](ARCHITECTURE.md): layers, invariants, execution flows
@@ -162,7 +168,13 @@ whatever your desktop opens links with and your browser does the asking, so
 the application still opens no connection of its own. The address has one
 home in the source and a structural test pins it.
 
+<a href="https://www.paypal.com/ncp/payment/D7D4B3P2WPCUY"><img src="assets/donate.png" alt="Donate to Postal Gambit" width="120"></a>
+
 ## Licence
 
 GPL-3.0. See [LICENSE](LICENSE). The bundled installer carries its own
 as-is notice in [INSTALLER_LICENSE](INSTALLER_LICENSE).
+
+A commercial licence for my own code is also available, separately from the
+open-source licence: see
+[commercial licensing](https://ernster.dev/commercial-licensing.html).
