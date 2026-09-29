@@ -168,7 +168,7 @@ whatever your desktop opens links with and your browser does the asking, so
 the application still opens no connection of its own. The address has one
 home in the source and a structural test pins it.
 
-<a href="https://www.paypal.com/ncp/payment/D7D4B3P2WPCUY"><img src="assets/donate.png" alt="Donate to Postal Gambit" width="120"></a>
+<a href="https://www.paypal.com/ncp/payment/9SYYUDRGLVFUQ"><img src="assets/donate.png" alt="Donate to Postal Gambit" width="120"></a>
 
 ## Licence
 

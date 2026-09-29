@@ -28,7 +28,7 @@ from tests.structural.scan import (
 # The address Oliver generated for Postal Gambit. Written out here in full so
 # that changing it in the application has to be a deliberate act that changes
 # this line too, rather than something a stray keystroke can do quietly.
-EXPECTED_DONATE_URL = "https://www.paypal.com/ncp/payment/D7D4B3P2WPCUY"
+EXPECTED_DONATE_URL = "https://www.paypal.com/ncp/payment/9SYYUDRGLVFUQ"
 
 # The one module allowed to know the address, plus the seam the donate
 # path leaves through.

@@ -12,7 +12,7 @@ APP_AUTHOR = "Oliver Ernster"
 # application knows. It is handed to the desktop rather than fetched, so the
 # no-network invariant is untouched by this button existing: Postal Gambit
 # opens no connection of its own here or anywhere else.
-DONATE_URL = "https://www.paypal.com/ncp/payment/D7D4B3P2WPCUY"
+DONATE_URL = "https://www.paypal.com/ncp/payment/9SYYUDRGLVFUQ"
 
 _FALLBACK_VERSION = "0.0.0-dev"
 
