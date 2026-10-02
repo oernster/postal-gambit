@@ -90,8 +90,10 @@ class UpdateCheckController(QObject):
     def _hand_back(self, status: UpdateStatus | None, manual: bool) -> None:
         """Send the answer across to the UI thread, from the worker thread.
 
-        The window can go while the question is out, taking this controller
-        with it; the emit then raises on a thread nothing would catch it on.
+        Hardening: if this controller has been deleted while the question is
+        out, the emit raises on a thread nothing would catch it on. Closing or
+        quitting the app was measured not to delete it, so nothing known does
+        this today; deleting the window does, which is how the test forces it.
         Nobody is left to tell, so that answer is dropped. Asking first whether
         the controller still exists would not do: it can go between the asking
         and the emit. Anything else the emit raises is still raised.

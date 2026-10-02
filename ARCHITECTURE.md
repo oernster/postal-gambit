@@ -245,10 +245,11 @@ prove it right.
   a worker thread 3 seconds after launch, every 24 hours and on demand
   from Help > Check for updates, prompting Download / Skip this version /
   Later when a newer published release exists. The answer crosses back
-  through a signal on the controller, which the window owns; when the
-  window has gone first, taking the controller with it, the answer is
-  dropped rather than raised on the worker thread
-  (`tests/ui/test_update_check_after_close.py`).
+  through a signal on the controller, which the window owns. As hardening,
+  an answer whose controller has already been deleted is dropped rather
+  than raised on the worker thread
+  (`tests/ui/test_update_check_after_close.py`, which deletes the window
+  to force it); closing or quitting the app was measured not to delete it.
 
 ### UI
 

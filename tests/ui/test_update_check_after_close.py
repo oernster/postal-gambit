@@ -1,10 +1,13 @@
-"""An update check whose window has gone before its answer comes back.
+"""An update check whose controller is deleted before its answer comes back.
 
-The controller is a child of the main window, so Qt deletes it with the
-window. A check still out at that moment runs on to its emit; through a
-deleted controller that raises "Signal source has been deleted" on a thread
-nothing catches. Nobody is left to tell, so the answer is dropped; what must
-not happen is an exception escaping a thread this application started.
+The controller is a child of the main window, so deleting the window deletes
+it. A check still out at that moment runs on to its emit; through a deleted
+controller that raises "Signal source has been deleted" on a thread nothing
+catches. This is hardening: a probe of the app's real close and quit paths
+found the controller still alive after the event loop ended, so the test
+deletes the window directly. Nobody is left to tell, so the answer is
+dropped; what must not happen is an exception escaping a thread this
+application started.
 """
 
 from __future__ import annotations

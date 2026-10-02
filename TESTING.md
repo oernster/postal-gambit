@@ -160,10 +160,12 @@ needs no double. Storage tests use real files in pytest tmp directories.
 `QApplication` on the offscreen platform with nothing in Qt mocked. These
 tests sit outside the line gate with the rest of `postalgambit/ui`.
 
-- `test_update_check_after_close.py`: an update check still out when the
-  window goes. The release source is held open on an event, the window is
-  deleted (taking the controller with it), the answer is released and the
-  worker joined; nothing may reach `threading.excepthook`.
+- `test_update_check_after_close.py`: hardening for an update check whose
+  controller is deleted while it is out. The release source is held open
+  on an event, the window is deleted (taking the controller with it), the
+  answer is released and the worker joined; nothing may reach
+  `threading.excepthook`. Closing or quitting the app was measured not to
+  delete the controller, so the test forces the deletion directly.
 
 ## Wire-format conformance
 
