@@ -179,9 +179,10 @@ postal-gambit/
                               and tests/installer/
   assets/                     generated icon set plus the donation mark
                               (generate_icons.py)
-  docs/                       the GitHub Pages site: landing page, the why
-                              page and open/ (the click-to-import bounce
-                              page the email links point at)
+  docs/                       the GitHub Pages site: landing, features, why
+                              and download pages plus open/ (the
+                              click-to-import bounce page the email links
+                              point at)
   stamp_version.py            carries VERSION into the site's markers
 ```
 

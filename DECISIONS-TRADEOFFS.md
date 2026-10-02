@@ -94,7 +94,7 @@ name, because they fetch wheels and talk to Apple to notarise.
 
 ### Update checks: quiet unless there is news
 
-A check runs three seconds after launch and then once a day on a background
+A check runs shortly after launch and then once a day on a background
 thread. It says nothing unless a newer release exists; a check from the Help
 menu always answers. A version it cannot read is never treated as newer.
 Download hands the release address to the browser; Skip this version is
@@ -203,15 +203,15 @@ rank numbers round it.
 
 ### Each game has a permanent identity in its PGN
 
-A game is named by a random identifier held as a tag in its PGN. Its first
-eight characters appear in every email subject and in every game's name in
-the list.
+A game is named by a random identifier held as a tag in its PGN. A short
+form of it appears in every email subject and in every game's name in the
+list.
 
 - **Rather than:** the identity in a header of the block only; an identity
   made from the players and the date.
 - **Gains:** an exported PGN file is a complete, routable record on its own;
   a list row and its email thread can be matched at a glance.
-- **Costs:** every name carries eight characters of code.
+- **Costs:** every name carries a short code.
 
 ### A one-click link that degrades to the paste
 
@@ -246,11 +246,14 @@ player asks for it.
 A move can be undone until its email is handed to the mail client or the
 clipboard, the last step the application can see. After that it is final.
 Send and Take back are answered by one question, so they light and grey
-together.
+together. Every other change to a game (a resignation, an accepted draw, an
+imported reply) also settles the waiting move; a game saved before this
+existed reads as sent.
 
-- **Rather than:** no take-back; take-back at any time.
+- **Rather than:** no take-back; take-back at any time; each action clearing
+  the waiting move only when it remembers to.
 - **Gains:** a slip is free to correct while the opponent cannot have seen
-  it.
+  it; a stale waiting move cannot linger and silence is read the safe way.
 - **Costs:** the application cannot tell whether the player really pressed
   send in their mail client; once the email has left, re-sending it is not
   offered.
@@ -264,16 +267,6 @@ back.
 - **Rather than:** an offer on its own; an offer held only on a checkbox,
   which a later send would have dropped.
 - **Gains:** sending the same move again says the same thing.
-- **Costs:** none recorded.
-
-### Every other change settles the waiting move
-
-A resignation, an accepted draw, an imported reply or a take-back clears the
-waiting-move flag. A game saved before the flag existed reads as sent.
-
-- **Rather than:** each action clearing what it remembers to.
-- **Gains:** a stale waiting move cannot linger; silence is read the safe
-  way, as a move that has had every chance to go out.
 - **Costs:** none recorded.
 
 ### The player's colour is a decision
@@ -314,23 +307,16 @@ directory, written to a temporary file and moved into place.
 
 On Windows the mailto link goes through the same shell path a clicked link
 uses. On Linux it goes to the desktop opener exactly as encoded. On macOS
-Qt's own opener is used.
+Qt's own opener is used. A link too long for some clients and shells to
+carry whole is not offered; the dialog steers to the clipboard instead.
 
 - **Rather than:** Qt's opener everywhere. On Windows it can follow a stale
   registry entry to the wrong mail client; on Linux it re-encodes the text
-  and mangles the email.
+  and mangles the email. Handing over a link that may arrive truncated.
 - **Gains:** the player's actual default mail client opens with the email
-  intact.
-- **Costs:** three code paths for one action.
-
-### A long email goes by clipboard
-
-A mailto link longer than six thousand characters is not offered; the dialog
-steers to the clipboard instead.
-
-- **Rather than:** handing over a link some clients and shells truncate.
-- **Gains:** a long game never arrives cut short.
-- **Costs:** a long game needs a paste rather than one press.
+  intact; a long game never arrives cut short.
+- **Costs:** three code paths for one action; a long game needs a paste
+  rather than one press.
 
 ## The interface
 
@@ -521,16 +507,18 @@ violation and watching it fail.
   bite.
 - **Costs:** fakes are written by hand.
 
-### Small modules
+### Small modules and formatting are part of the suite
 
-No module may exceed four hundred lines, with a second assertion for the five
-percent below the cap. A module entering that band is cut back to three
-hundred and fifty rather than shaved. The test tree is held to the same rule;
-build scripts are exempt.
+Every module, the tests included, stays under a size cap with a warning band
+below it; a module entering the band is cut back well clear of it rather
+than shaved. Formatting and lint run as test assertions. The build scripts
+are exempt from the size cap as linear recipes.
 
-- **Rather than:** letting files grow.
-- **Gains:** modules split at real seams; a red run names which half broke.
-- **Costs:** many small files.
+- **Rather than:** letting files grow; a separate lint step that can be
+  skipped.
+- **Gains:** modules split at real seams; a passing suite means formatted
+  code.
+- **Costs:** many small files; a formatting slip fails the whole run.
 
 ### The version lives in one file
 
@@ -541,12 +529,3 @@ The documents quote no test count for the same reason.
 - **Rather than:** copies written where they are needed.
 - **Gains:** a change is made once and cannot drift.
 - **Costs:** static files have to be stamped from the source.
-
-### Formatting is part of the suite
-
-black and flake8 run as test assertions over the package, the tests, the
-setup program and the build scripts.
-
-- **Rather than:** a separate lint step that can be skipped.
-- **Gains:** a passing suite means formatted code.
-- **Costs:** a formatting slip fails the whole run.

@@ -20,8 +20,9 @@ Nuitka notes:
   so the running app's resolver (postalgambit.ui.icons) finds it; VERSION and
   LICENSE ship at the bundle root.
 
-There is no stamp_version step: no static doc in this repo carries a version
-string; runtime and build both read the VERSION file directly.
+There is no stamp_version step here: runtime and build both read the VERSION
+file directly. The one static place that names a version is the site's
+download page, which `python stamp_version.py` refreshes after a bump.
 
 The standalone bundle is written directly into the installer payload
 directory (installer/payload/PostalGambit) so buildinstaller.py can package

@@ -134,12 +134,15 @@ declares the `postalgambit:` URL scheme.
 step. Enable it once in the repo settings: Settings, Pages, deploy from
 branch, `main` and `/docs`.
 
-- `index.html` is the landing page: what the app is, how a game flows,
-  the feature and FAQ sections and a per-platform download section. The
-  download buttons point at GitHub's `releases/latest/download` redirect,
-  so they never go stale; a small script decorates the page with the
-  live release version and each asset's size.
-- `why.html` is the reasoning page, linked from the nav.
+- `index.html` is the landing page: what the app is, the screenshot, how
+  a game flows and the donation section.
+- `features.html` lists what is included and shows a sample email.
+- `why.html` is the reasoning page with the FAQ.
+- `download.html` holds the per-platform downloads. Its buttons point at
+  GitHub's `releases/latest/download` redirect, so they never go stale; a
+  small script decorates the page with the live release version and each
+  asset's size.
+- Those four pages share `site.css` and carry the same nav and footer.
 - `open/index.html` is the click-to-import bounce page: emails carry
   `https://oernster.github.io/postal-gambit/open/#v=1&d=<payload>`. The
   page rebuilds the `postalgambit:` URI locally (the fragment never
