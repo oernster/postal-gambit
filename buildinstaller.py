@@ -32,6 +32,8 @@ import sys
 import time
 from pathlib import Path
 
+from build_utils import require_nuitka
+
 # --- Project identity (single source of truth for installer metadata) -------
 APP_NAME = "PostalGambit"
 APP_DISPLAY_NAME = "Postal Gambit"
@@ -324,6 +326,7 @@ def build_installer() -> int:
 
 
 def main() -> int:
+    require_nuitka()
     return build_installer()
 
 

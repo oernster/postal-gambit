@@ -37,6 +37,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from build_utils import require_nuitka
+
 # --- Project identity (single source of truth for build metadata) -----------
 APP_NAME = "PostalGambit"
 APP_DISPLAY_NAME = "Postal Gambit"
@@ -257,6 +259,7 @@ def build_exe() -> int:
 
 
 def main() -> int:
+    require_nuitka()
     return build_exe()
 
 

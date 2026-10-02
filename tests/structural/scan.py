@@ -30,6 +30,7 @@ DELIVERY_SCRIPTS = (
     "buildexe.py",
     "buildinstaller.py",
     "builddmg.py",
+    "build_utils.py",
     "generate_icons.py",
     "stamp_version.py",
 )
