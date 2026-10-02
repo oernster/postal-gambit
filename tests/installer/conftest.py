@@ -5,8 +5,8 @@ rather than constants, so every test that writes one is given a scratch key
 under a test-only root and that key is removed afterwards. The per-user
 locations come from environment variables, so the profile directories are
 redirected into a temporary tree. The payload is anchored on the installer
-package directory, so that anchor is redirected too and the 35 MB bundle the
-build stages is never opened. Between them, running this suite never touches an
+package directory, so that anchor is redirected too and the bundle the build
+stages is never opened. Between them, running this suite never touches an
 actual Postal Gambit installation. British spelling is used in comments. No em
 dashes appear anywhere.
 """
@@ -81,7 +81,7 @@ def scratch_keys() -> Iterator[RegistryKeys]:
 def staged_payload(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
     """Point the payload anchor at a temporary installer package directory.
 
-    The real payload is a 35 MB archive staged by the build, so no test reads
+    The real payload is the full archive staged by the build, so no test reads
     it. Redirecting the anchor lets a small bundle stand in for it.
     """
     root = tmp_path / _INSTALLER_DIR

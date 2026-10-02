@@ -61,8 +61,8 @@ possible; each has a fixture in `tests/installer/conftest.py`:
   a temporary tree. The app's own `~/.postal-gambit` follows it.
 - **`staged_payload`**: the payload is anchored on the installer package
   directory, so the fixture points that anchor at a temporary tree. The
-  real `installer/payload/PostalGambit.zip` is about 35 MB and no test
-  opens it; a few-byte zip stands in.
+  real `installer/payload/PostalGambit.zip` is the full build output and
+  no test opens it; a few-byte zip stands in.
 
 Every external command goes through the `CommandRunner` protocol, so
 `tests/installer/fakes.py` carries one recording fake of it. No test ends

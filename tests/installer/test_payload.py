@@ -1,8 +1,8 @@
-"""The bundled payload: reading it, and putting it on disk safely.
+"""The bundled payload: reading it then putting it on disk safely.
 
 The payload is anchored on the installer package directory, so these tests point
 that anchor at a temporary tree and stage a small bundle inside it rather than
-touching the 35 MB archive the build stages. British spelling is used in
+touching the real archive the build stages. British spelling is used in
 comments. No em dashes appear anywhere.
 """
 

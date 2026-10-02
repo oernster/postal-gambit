@@ -75,7 +75,7 @@ rm -rf "${WHEELS_DIR}"
 mkdir -p "${WHEELS_DIR}"
 # pip wheel (not pip download --only-binary) so that pure-Python deps
 # published as sdist only (e.g. python-chess >= 1.11) get a wheel built on the
-# host. PySide6 ships forward-compatible abi3 wheels, and python-chess builds a
+# host. PySide6 ships forward-compatible abi3 wheels; python-chess builds a
 # universal py3-none-any wheel, so both install offline in the python3.13 sandbox.
 python3 -m pip wheel --wheel-dir "${WHEELS_DIR}" \
     -r "${PROJECT_ROOT}/requirements.txt"
@@ -170,7 +170,8 @@ modules:
   # MIT Kerberos 5 provides libgssapi_krb5.so.2, a load-time dependency of
   # Qt6Network (pulled in by PySide6.QtNetwork's QLocalServer/QLocalSocket) that
   # the freedesktop runtime does not ship. Built into /app so the import
-  # resolves; the app still requests no network permission (local IPC only).
+  # resolves. This module grants nothing; the one network permission is the
+  # --share=network in finish-args above, for the update check.
   - name: krb5
     subdir: src
     # krb5 1.21.x uses pre-prototype (K&R) declarations that GCC 15's default

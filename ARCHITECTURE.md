@@ -398,7 +398,7 @@ Three seams keep the privileged work testable, which is what allows
   key instead of the user's own registration;
 - the per-user directories come from environment variables and the payload is
   anchored on the installer package directory, so the suite redirects the
-  profile and the payload into a temporary tree and never opens the 35 MB
+  profile and the payload into a temporary tree and never opens the
   bundle the build stages.
 
 Long operations run on a worker thread (`ui/worker.py`) and report a phase
@@ -506,7 +506,7 @@ manifest and the macOS bundle.
 | Game identity | uuid4 in a `GameID` PGN tag | The `.pgn` file alone stays a complete routable record; the short form appears in every game label AND the email subject so threads and rows correlate | ID in block header only; deriving identity from players plus date |
 | Opponent address on import | Optional `From` wire header | A game created from a one-click link or paste needs no typed address; receivers ignore unknown headers so it is forward compatible within v1; shown before creation, a convenience default, never an authenticated identity | Asking the user to type the address every time; an address in the URL |
 | Engine assistance | None, ever | The product is human correspondence chess; "no machines" is scope, not just a default | Optional analysis mode |
-| i18n | Deferred; strings centralised from day one | Not core to v1; centralising early keeps the JSON-locale pattern cheap to adopt later | Qt Linguist |
+| i18n | Deferred; no string catalogue or locale layer exists yet | Not core to v1; adopting a JSON-locale pattern later starts with gathering the user-facing strings into one place | Qt Linguist |
 | Theming | Semantic colour tokens, dark and light dicts, runtime toggle persisted in settings | Widget code never names a colour, so a theme is one dict; the board takes tokens by injection | Qt palettes; per-widget styling |
 
 ## Quality enforcement

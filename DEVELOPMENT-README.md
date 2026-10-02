@@ -117,10 +117,16 @@ python builddmg.py
 ```
 
 Builds the `.app` bundle with Nuitka, strips stray object files that
-break Gatekeeper, signs with the Developer ID certificate when one is
-available, wraps the DMG and notarizes plus staples only when `APPLE_ID`
-and `APPLE_APP_PASSWORD` are set. Output lands in `dist-macos/`. The
-bundle declares the `postalgambit:` URL scheme.
+break Gatekeeper, signs it with the Developer ID certificate, notarizes
+and staples it, wraps it in a DMG, then signs, notarizes and staples the
+DMG. Notarization is mandatory. The credential is an `APPLE_ID` plus
+`APPLE_APP_PASSWORD` (app-specific password) pair when both are set;
+otherwise it is the keychain profile `PostalGambit`, created once with
+`xcrun notarytool store-credentials` and renamed through
+`APPLE_KEYCHAIN_PROFILE`. A failed submission stops the build.
+`ALLOW_UNNOTARIZED=1` skips notarization for a local test build that
+must never be published. Output lands in `dist-macos/`. The bundle
+declares the `postalgambit:` URL scheme.
 
 ## The GitHub Pages site
 

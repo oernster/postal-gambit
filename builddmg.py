@@ -13,7 +13,8 @@ create-dmg, then sign, notarize and staple the DMG.
 
 Notarization is mandatory. A Developer ID signature alone is not enough:
 since macOS 10.15 Gatekeeper rejects signed-but-unnotarized apps with
-"Apple could not verify ... is free of malware". Credentials come from the
+"Apple could not verify ... is free of malware". Credentials come from
+APPLE_ID plus APPLE_APP_PASSWORD when both are set; otherwise from the
 keychain profile named in NOTARY_PROFILE, created once with
 `xcrun notarytool store-credentials`. Set ALLOW_UNNOTARIZED=1 for a local
 test build; that output must never be published as a release artifact.
@@ -66,7 +67,7 @@ APPLE_TEAM_ID = os.environ.get("APPLE_TEAM_ID", "W7K465GKFJ")
 #     --apple-id <id> --team-id <team> --password <app-specific>
 # One profile per app means a leaked credential can be revoked for a single
 # app. Stated explicitly rather than derived from a display name: the profile
-# is a fact registered with Apple, and deriving it would silently change which
+# is a fact registered with Apple; deriving it would silently change which
 # credential the build looks for if that name were ever edited.
 # APPLE_KEYCHAIN_PROFILE overrides it.
 NOTARY_PROFILE = os.environ.get("APPLE_KEYCHAIN_PROFILE", "") or "PostalGambit"
@@ -78,7 +79,7 @@ APP_SPECIFIC_PASSWORD_RE = re.compile(r"^[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}$")
 
 # Escape hatch for local test builds. Distribution builds must never set this:
 # an unnotarized DMG is rejected by Gatekeeper on every machine but the one
-# that signed it, and the failure is invisible at build time.
+# that signed it; the failure is invisible at build time.
 ALLOW_UNNOTARIZED = os.environ.get("ALLOW_UNNOTARIZED", "") == "1"
 # Notarization is the default and the keychain profile always resolves, so
 # the only way to skip it is to ask for that explicitly.
@@ -346,7 +347,7 @@ def require_notarization_credentials() -> None:
                 "An Apple account password is rejected by the notary service with\n"
                 "'HTTP status code: 401. Invalid credentials'.\n"
                 "Generate one at https://appleid.apple.com (Sign-In and Security,\n"
-                "App-Specific Passwords), or leave both variables unset and store\n"
+                "App-Specific Passwords). Alternatively leave both unset and store\n"
                 f"the credential in the keychain as profile {NOTARY_PROFILE}."
             )
         print(f"[builddmg] Notarizing as {APPLE_ID} (team {APPLE_TEAM_ID})")
@@ -453,7 +454,7 @@ def check_runtime_dependencies() -> None:
 def redact(cmd: list[str]) -> str:
     """Render a command with the value after --password masked.
 
-    run() echoes every command it runs, and CalledProcessError repeats the whole
+    run() echoes every command it runs; CalledProcessError repeats the whole
     argument list in its traceback. Both would otherwise copy the app-specific
     password into build logs and CI output.
     """
