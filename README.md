@@ -44,6 +44,8 @@ Website: https://ernster.dev/postal-gambit/
   and packages on Windows, Linux and macOS.
 - [TECH_DEBT.md](TECH_DEBT.md): what is still open, what is deliberately left
   and what only looks like debt.
+- [`DECISIONS-TRADEOFFS.md`](DECISIONS-TRADEOFFS.md) sets out the decisions
+  Postal Gambit rests on, with what each one gains and what it costs.
 
 ## Who it is for
 
