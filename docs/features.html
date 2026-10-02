@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Postal Gambit features: what is included</title>
+    <meta name="description"
+          content="What Postal Gambit includes: full rules enforcement, one-click import, any number of games, invitations, draws and resignation by email, dark and light themes, keyboard-first play and an email a person can read."/>
+    <link rel="canonical" href="https://ernster.dev/postal-gambit/features.html"/>
+    <meta name="robots" content="index, follow"/>
+    <meta name="author" content="Oliver Ernster"/>
+    <meta name="theme-color" content="#0e1a23"/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:site_name" content="Postal Gambit"/>
+    <meta property="og:url" content="https://ernster.dev/postal-gambit/features.html"/>
+    <meta property="og:title" content="Postal Gambit features: what is included"/>
+    <meta property="og:description"
+          content="What Postal Gambit includes: full rules enforcement, one-click import, any number of games, invitations, draws and resignation by email, dark and light themes, keyboard-first play and an email a person can read."/>
+    <meta property="og:image" content="https://ernster.dev/postal-gambit/icon.png"/>
+    <meta property="og:image:alt" content="Postal Gambit app icon"/>
+    <meta property="og:locale" content="en_GB"/>
+    <meta name="twitter:card" content="summary"/>
+    <meta name="twitter:title" content="Postal Gambit features: what is included"/>
+    <meta name="twitter:description" content="What Postal Gambit includes: full rules enforcement, one-click import, any number of games and an email a person can read."/>
+    <meta name="twitter:image" content="https://ernster.dev/postal-gambit/icon.png"/>
+    <link rel="icon" type="image/png" href="icon.png"/>
+    <link rel="stylesheet" href="site.css"/>
+</head>
+<body>
+<div class="wrap">
+    <header class="site">
+        <div class="logo">
+            <img src="icon.png" alt="Postal Gambit"/>
+            <span>Postal Gambit</span>
+        </div>
+        <nav class="nav">
+            <a href="features.html">Features</a>
+            <a href="why.html">Why</a>
+            <a href="https://github.com/oernster/postal-gambit">GitHub</a>
+            <a href="download.html">Download</a>
+        </nav>
+    </header>
+
+    <section class="section" id="features">
+        <h2>What is included</h2>
+        <p class="lead">Everything a long-running set of postal games needs, nothing a chess website
+            has.</p>
+        <div class="grid">
+            <div class="card">
+                <div class="ico">♟️</div>
+                <h3>Full rules enforcement</h3>
+                <p>Legality, check, mate, stalemate and every draw rule. Promotion, castling and en
+                    passant all handled. You cannot send an illegal move and neither can your
+                    opponent.</p>
+            </div>
+            <div class="card">
+                <div class="ico">📬</div>
+                <h3>One-click import</h3>
+                <p>Every outbound email carries a link that opens the app with the move prefilled, with
+                    the same validation as a paste. The move data travels in the link itself and is
+                    never uploaded anywhere.</p>
+            </div>
+            <div class="card">
+                <div class="ico">🗂️</div>
+                <h3>Any number of games</h3>
+                <p>The list shows whose move it is in each game, with full move history and a short
+                    game code matching the email subject, so a game and its thread line up at a
+                    glance. Multi-select for bulk resign, draw acceptance, delete, take back or
+                    send, each confirmed before anything destructive happens.</p>
+            </div>
+            <div class="card">
+                <div class="ico">↩️</div>
+                <h3>Play now, send when ready</h3>
+                <p>Playing a move sends nothing, so the board is yours to look at afterwards. Send
+                    move writes the email when you are happy with it; until then the move can be
+                    taken back. Both grey out the moment the email leaves for your mail client
+                    or your clipboard, because from that point your opponent may already be
+                    replying to it.</p>
+            </div>
+            <div class="card">
+                <div class="ico">🤝</div>
+                <h3>Invitations, draws, resignation</h3>
+                <p>Starting a game, offering a draw, accepting one and resigning all travel over the
+                    same email format, so the whole game happens in one thread. Accepting an
+                    invitation fills your opponent's reply address automatically from the
+                    message.</p>
+            </div>
+            <div class="card">
+                <div class="ico">🌗</div>
+                <h3>Dark and light themes</h3>
+                <p>A calm dark theme and a classic light board, toggled from the View menu and
+                    remembered between runs.</p>
+            </div>
+            <div class="card">
+                <div class="ico">⌨️</div>
+                <h3>Keyboard-first</h3>
+                <p>The whole app drives from the keyboard, dialogs included: arrow keys everywhere,
+                    Enter and Space both activate and the board plays with the cursor keys. Where
+                    focus is always shows on the thing you can act on, so a control rings while a
+                    list marks the row you are on.</p>
+            </div>
+            <div class="card">
+                <div class="ico">🔒</div>
+                <h3>Private by construction</h3>
+                <p>No accounts, no server and no telemetry. The test suite structurally forbids
+                    network imports everywhere except the one disclosed update-check module, so
+                    your games are plain JSON files in your home directory and nothing about you
+                    ever leaves it.</p>
+            </div>
+            <div class="card">
+                <div class="ico">🚫</div>
+                <h3>No machines</h3>
+                <p>No engine, no analysis, no hints, ever. The product is chess between people; "no
+                    machines" is scope, not a missing feature.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="email">
+        <h2>The email is the protocol</h2>
+        <p class="lead">Every message a game sends is readable by a human first and a program second.
+            This is roughly what your opponent receives.</p>
+        <div class="sample">
+            <pre>
+Postal Gambit: oliver (White) vs jane (Black)
+
+<b>Move 1 (White): e4</b>
+Your move.
+
+  a b c d e f g h
+8 r n b q k b n r 8
+7 p p p p p p p p 7
+  ...
+
+-----BEGIN POSTAL GAMBIT v1-----
+Action: move
+From: oliver@example.org
+[the complete game record]
+-----END POSTAL GAMBIT-----
+
+Import this move with one click:
+<b>[Open this move in Postal Gambit]</b></pre>
+        </div>
+        <p class="shot-cap">The block carries the entire game state, so a lost email never corrupts a
+            game. The wire format is versioned and documented in the repo.</p>
+    </section>
+
+    <footer class="site">
+        <span>Postal Gambit by Oliver Ernster. Released under GPL-3.0; author attribution must be
+            retained in all copies and derivative works.</span>
+        <span>
+            <a href="./">Home</a>
+            &nbsp;·&nbsp;
+            <a href="features.html">Features</a>
+            &nbsp;·&nbsp;
+            <a href="why.html">Why</a>
+            &nbsp;·&nbsp;
+            <a href="download.html">Download</a>
+            &nbsp;·&nbsp;
+            <a href="https://github.com/oernster/postal-gambit">GitHub</a>
+            &nbsp;·&nbsp;
+            <a href="https://github.com/oernster/postal-gambit/releases">Releases</a>
+        </span>
+    </footer>
+</div>
+</body>
+</html>
