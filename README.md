@@ -40,7 +40,7 @@ Website: https://ernster.dev/postal-gambit/
   carries moves, invitations, draw offers and resignations.
 - [TESTING.md](TESTING.md): the coverage gate, the no-mocks policy and the
   structural test suite.
-- [DEVELOPMENT-README.md](DEVELOPMENT-README.md): building the installer
+- [DEVELOPMENT.md](DEVELOPMENT.md): building the installer
   and packages on Windows, Linux and macOS.
 - [TECH_DEBT.md](TECH_DEBT.md): what is still open, what is deliberately left
   and what only looks like debt.
@@ -157,7 +157,7 @@ python builddmg.py         # macOS
 ```
 
 Each platform's prerequisites and the release checklist are in
-[DEVELOPMENT-README.md](DEVELOPMENT-README.md).
+[DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## Supporting the project
 

@@ -549,4 +549,4 @@ both source and compiled runs;
 `uk.codecrafter.PostalGambit`. All three register the `postalgambit:` URI
 scheme. The icon set and the donation mark are generated from their
 repo-root masters by `generate_icons.py`. The version lives in `VERSION` only. Build steps per
-platform are in `DEVELOPMENT-README.md`.
+platform are in `DEVELOPMENT.md`.
