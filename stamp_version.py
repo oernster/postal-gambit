@@ -12,6 +12,11 @@ in a delimited marker:
 and this script rewrites whatever sits between the markers with the current
 contents of VERSION. Run it after bumping VERSION and before building.
 
+The same run versions every site page's local stylesheet and script links by
+content, as ?v=<hash> of the file each one names. GitHub Pages lets a browser
+keep a cached stylesheet for minutes after a deploy; with the hash, any change
+to the file is a new address, so a new page never renders against old CSS.
+
 Scope is the site tree only. Root documentation carries no version data by
 policy; rewriting it here would quietly reintroduce some.
 
@@ -19,15 +24,18 @@ Files are read and written as bytes so that line endings and encoding survive
 untouched: only the text between a pair of markers ever changes. The script is
 idempotent, so a second run finds every marker already correct, changes
 nothing and says so. It prints every file it touches. It fails only when it
-cannot do its job, meaning a missing or empty VERSION file or no site tree at
-all, never merely because there was nothing to change.
+cannot do its job, meaning a missing or empty VERSION file, no site tree at
+all or a page linking an asset that does not exist, never merely because there
+was nothing to change.
 """
 
 from __future__ import annotations
 
+import hashlib
 import re
 import sys
 from pathlib import Path
+from urllib.parse import unquote
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 VERSION_FILE = PROJECT_ROOT / "VERSION"
@@ -42,6 +50,15 @@ CLOSE_MARKER = "<!--/VERSION-->"
 MARKER_PATTERN = re.compile(
     re.escape(OPEN_MARKER) + r"(.*?)" + re.escape(CLOSE_MARKER),
     re.DOTALL,
+)
+
+# A local stylesheet or script link plus any query it already carries. A colon
+# in the path means a scheme, so absolute URLs never match; root-absolute and
+# protocol-relative paths are left alone by version_assets.
+PAGE_SUFFIX = ".html"
+ASSET_HASH_LENGTH = 10
+ASSET_LINK_PATTERN = re.compile(
+    r'\b(?P<attribute>href|src)="(?P<path>[^"?#:]+\.(?:css|js))(?:\?[^"#]*)?"'
 )
 
 EXIT_OK = 0
@@ -92,6 +109,40 @@ def stamp_file(path: Path, version: str) -> tuple[int, int]:
     return found, changed
 
 
+def asset_hash(path: Path) -> str:
+    """Return the short content hash of one asset, reading CRLF as LF.
+
+    A Windows checkout and the LF blob GitHub serves then agree, so a run on
+    another machine does not rewrite every page.
+    """
+    content = path.read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(content).hexdigest()[:ASSET_HASH_LENGTH]
+
+
+def version_assets(page: Path) -> int:
+    """Set ?v=<hash> on one page's local asset links. Return how many moved."""
+    text = page.read_bytes().decode(ENCODING)
+    changed = 0
+
+    def replace(match: re.Match[str]) -> str:
+        nonlocal changed
+        link = match.group("path")
+        if link.startswith("/"):
+            return match.group(0)
+        asset = page.parent / unquote(link)
+        if not asset.is_file():
+            sys.exit(f"[stamp] {page} links {link}; {asset} does not exist")
+        versioned = f'{match.group("attribute")}="{link}?v={asset_hash(asset)}"'
+        if versioned != match.group(0):
+            changed += 1
+        return versioned
+
+    stamped = ASSET_LINK_PATTERN.sub(replace, text)
+    if changed:
+        page.write_bytes(stamped.encode(ENCODING))
+    return changed
+
+
 def main() -> int:
     version = read_version()
     if not SITE_DIR.is_dir():
@@ -112,12 +163,29 @@ def main() -> int:
         print(f"[stamp] no {OPEN_MARKER} markers found under {SITE_DIR.name}/")
     elif not touched:
         print(f"[stamp] {_markers(marked)} already at {version}; nothing to do")
+
+    versioned = 0
+    for path in site_files():
+        if path.suffix.lower() != PAGE_SUFFIX:
+            continue
+        moved = version_assets(path)
+        if moved:
+            versioned += 1
+            relative = path.relative_to(PROJECT_ROOT).as_posix()
+            print(f"[stamp] versioned {relative} ({_links(moved)})")
+    if not versioned:
+        print("[stamp] asset links already carry their current hashes")
     return EXIT_OK
 
 
 def _markers(count: int) -> str:
     """Return a count of markers, pluralised."""
     return f"{count} marker" if count == 1 else f"{count} markers"
+
+
+def _links(count: int) -> str:
+    """Return a count of asset links, pluralised."""
+    return f"{count} asset link" if count == 1 else f"{count} asset links"
 
 
 if __name__ == "__main__":

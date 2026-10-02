@@ -145,7 +145,10 @@ branch, `main` and `/docs`.
 Two site rules: the pages carry no dates or years of any kind; any
 version number they show sits inside `<!--VERSION-->` markers that
 `python stamp_version.py` refreshes from `VERSION`. Run that script after
-bumping `VERSION`; it is idempotent and prints what it changed.
+bumping `VERSION`; it is idempotent and prints what it changed. It also
+versions the site's stylesheet and script links by content
+(`site.css?v=<hash>`), so a browser never pairs a new page with a cached old
+stylesheet.
 
 ## Release checklist
 
