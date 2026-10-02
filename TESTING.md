@@ -101,6 +101,7 @@ needs no double. Storage tests use real files in pytest tmp directories.
 | application | unit, hand-written fakes for ports, real python-chess | none |
 | infrastructure | integration, real files in tmp dirs | tmp only |
 | installer ops and state | integration, redirected profile, scratch registry keys, fake command runner | tmp and scratch HKCU |
+| ui | behaviour over a real QApplication, offscreen, stand-in ports | none |
 | structural | AST and source scans over what ships, plus the test tree for size; the focus-chain suite also builds real widgets offscreen | file reads |
 
 ## Structural suite
@@ -152,6 +153,17 @@ needs no double. Storage tests use real files in pytest tmp directories.
   slipping in. It also pins the wiring the UI gate cannot see: the button
   is connected, it is in the focus ring, the tray is not itself a stop, the
   tooltip says a browser opens and a desktop that declines is reported.
+
+## UI behaviour
+
+`tests/ui/` holds behaviour the structural scans cannot see, over a real
+`QApplication` on the offscreen platform with nothing in Qt mocked. These
+tests sit outside the line gate with the rest of `postalgambit/ui`.
+
+- `test_update_check_after_close.py`: an update check still out when the
+  window goes. The release source is held open on an event, the window is
+  deleted (taking the controller with it), the answer is released and the
+  worker joined; nothing may reach `threading.excepthook`.
 
 ## Wire-format conformance
 

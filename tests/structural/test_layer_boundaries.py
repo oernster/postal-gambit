@@ -55,7 +55,9 @@ class TestLayering:
             "postalgambit.ui",
             "postalgambit.version",
         )
-        assert _violations("ui", allowed, ("PySide6",)) == []
+        # shiboken6 is PySide6's own binding runtime, installed with it; the
+        # ui asks it whether a Qt object still exists.
+        assert _violations("ui", allowed, ("PySide6", "shiboken6")) == []
 
     def test_package_root_modules_are_stdlib_only(self) -> None:
         problems = []
