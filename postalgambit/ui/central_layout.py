@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 from postalgambit.ui.board_widget import BoardWidget, TargetsProvider
 from postalgambit.ui.bottom_tray import BottomTray
 from postalgambit.ui.icons import get_donate_png_path
+from postalgambit.ui.plain_text import plain_label
 from postalgambit.ui.side_panel import SidePanel
 
 _LIST_MIN_WIDTH = 260
@@ -64,7 +65,7 @@ def build_central(targets_provider: TargetsProvider) -> CentralWidgets:
     delete_button.setObjectName("Danger")
     for button in (new_button, import_button, delete_button):
         left.addWidget(button)
-    heading = QLabel("Games")
+    heading = plain_label("Games")
     heading.setObjectName("Heading")
     left.addWidget(heading)
     game_list = QListWidget()
@@ -80,7 +81,7 @@ def build_central(targets_provider: TargetsProvider) -> CentralWidgets:
     # the column's headline and explains why actions are enabled),
     # then the in-game actions, then the board. This mirrors the left
     # column, which opens with its pills and the Games heading.
-    turn_label = QLabel("")
+    turn_label = plain_label("")
     turn_label.setObjectName("Heading")
     right.addWidget(turn_label)
     actions = QHBoxLayout()

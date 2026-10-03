@@ -20,6 +20,7 @@ from PySide6.QtCore import QObject, QTimer, QUrl, Signal
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QMessageBox
 
+from postalgambit.ui.plain_text import inform, message_box
 from postalgambit.version import APP_NAME
 
 if TYPE_CHECKING:
@@ -107,20 +108,21 @@ class UpdateCheckController(QObject):
     def _present_result(self, status: UpdateStatus | None, manual: bool) -> None:
         if status is None:
             if manual:
-                QMessageBox.information(self._window, PROMPT_TITLE, CHECK_FAILED_TEXT)
+                inform(self._window, PROMPT_TITLE, CHECK_FAILED_TEXT)
             return
         if status.update_available:
             self._prompt(status)
             return
         if manual:
-            QMessageBox.information(self._window, PROMPT_TITLE, UP_TO_DATE_TEXT)
+            inform(self._window, PROMPT_TITLE, UP_TO_DATE_TEXT)
 
     def _prompt(self, status: UpdateStatus) -> None:
-        box = QMessageBox(self._window)
-        box.setWindowTitle(PROMPT_TITLE)
-        box.setText(
+        # The version comes from the release feed, so it is shown as text.
+        box = message_box(
+            self._window,
+            PROMPT_TITLE,
             f"{APP_NAME} {status.latest} is available. "
-            f"You are running {status.current}."
+            f"You are running {status.current}.",
         )
         download = box.addButton(DOWNLOAD_TEXT, QMessageBox.AcceptRole)
         skip = box.addButton(SKIP_TEXT, QMessageBox.DestructiveRole)

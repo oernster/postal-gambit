@@ -117,7 +117,9 @@ form, for example `5f3a9c2e`.
 3. Read headers until the first blank line; everything from there to the
    END line is the PGN.
 4. Replay the PGN with a real rules engine. Every move MUST be legal from
-   the initial position. A PGN that fails replay is rejected.
+   the initial position. A PGN that fails replay is rejected, as is one
+   carrying a `FEN`, `SetUp` or `Variant` tag (it would start elsewhere)
+   or a null move (`--`, a pass).
 5. Validation against local state, when the GameID is known:
    - the local move list MUST be a strict prefix of (or equal to, for
      `draw-accept` and `resign`) the inbound move list, compared move by
@@ -128,14 +130,22 @@ form, for example `5f3a9c2e`.
    movetext lines wrapped at or below 72 characters so mail clients do not
    re-wrap them. Receivers SHOULD be liberal within the rules above, for
    example accepting a multi-move extension after a missed email, provided
-   every added move replays legally.
+   every added move replays legally and every move for the recipient's
+   side matches, ply for ply, a move the recipient has stored.
+7. The `GameID` MUST be a canonical lowercase uuid, exactly as section 5
+   generates it; receivers use it as a file name and refuse any other
+   spelling.
 
 ## 7. Fallback for app-less opponents
 
 An opponent without the application sees the preamble and replies in plain
 text, for example `Nf6` or `14... Nf6`. This is outside the wire format:
 the application accepts a bare SAN move on import as a convenience, applied
-to a game the user selects, validated by the same rules engine.
+to a game the user selects, validated by the same rules engine. A reply
+that quotes the original email (most mail clients do) carries that email's
+block in quoted form; when the quoted block is the recipient's own last
+message, the move typed above the quote is taken and the quoted block's
+GameID says which game it belongs to.
 
 ## 8. The import link (non-normative)
 

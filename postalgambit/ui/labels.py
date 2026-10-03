@@ -33,6 +33,17 @@ def game_labels(records: tuple[GameRecord, ...]) -> dict[str, str]:
     return {record.meta.game_id.value: game_label(record) for record in records}
 
 
+def unreadable_games_text(paths: tuple[str, ...]) -> str:
+    """Why games are missing from the list; it also says nothing was touched."""
+    count = len(paths)
+    noun = "file" if count == 1 else "files"
+    listing = "\n".join(paths)
+    return (
+        f"{count} game {noun} could not be read, so the list leaves them out. "
+        f"They have been left exactly as they are:\n\n{listing}"
+    )
+
+
 def state_text(status: GameStatus, my_turn: bool, unsent_move: bool = False) -> str:
     """The short state under a game row: outcome, your move or waiting.
 

@@ -168,4 +168,4 @@ class TestTheButtonIsWiredToTheSlot:
         assert "def open_donation" in source
         slot = source.split("def open_donation")[1].split("\n    def ")[0]
         assert "if not open_externally(DONATE_URL)" in slot
-        assert "QMessageBox.warning" in slot
+        assert "warn(" in slot

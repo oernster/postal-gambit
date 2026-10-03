@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QLabel, QListWidget, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QListWidget, QVBoxLayout, QWidget
 
 from postalgambit.ui.icons import get_badge_png_path
+from postalgambit.ui.plain_text import plain_label
 
 _MOVES_MIN_WIDTH = 190
 _BADGE_PX = 160
@@ -22,7 +23,7 @@ class SidePanel(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         badge_path = get_badge_png_path()
         if badge_path is not None:
-            badge = QLabel()
+            badge = plain_label()
             badge.setPixmap(
                 QPixmap(str(badge_path)).scaled(
                     _BADGE_PX,
@@ -33,7 +34,7 @@ class SidePanel(QWidget):
             )
             badge.setAlignment(Qt.AlignmentFlag.AlignHCenter)
             layout.addWidget(badge)
-        heading = QLabel("Moves")
+        heading = plain_label("Moves")
         heading.setObjectName("Heading")
         layout.addWidget(heading)
         self.move_list = QListWidget()

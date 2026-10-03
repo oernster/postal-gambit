@@ -65,13 +65,19 @@ Website: https://ernster.dev/postal-gambit/
 ## What it does
 
 - Manages any number of ongoing games: whose move, full history, archive.
-- Full rules enforcement including all draw rules, via python-chess.
+- Full rules enforcement via python-chess. Checkmate, stalemate,
+  insufficient material, fivefold repetition and the seventy-five-move rule
+  end a game by themselves; a threefold repetition or fifty-move draw is
+  reached by offering a draw, since there is no claim button.
 - Export your move as a pre-filled email draft (`mailto:`) or to the
   clipboard: readable preamble, ASCII board, then a delimited PGN block
   that carries the entire game state (see
   [WIRE_FORMAT.md](WIRE_FORMAT.md)).
-- Import the opponent's reply by pasting the email text or a `.pgn` file.
-  Divergence is detected and reported, never silently resolved.
+- Import the opponent's reply by pasting the email text. Divergence is
+  detected and reported, never silently resolved. A reply that tries to end
+  the game through its tags, accept a draw nobody offered, pass, start from
+  a set-up position or play a move for your side that you did not play is
+  refused. A reply that catches up after a missed email is accepted.
 - One-click import: every outbound email carries an https link that works
   in any mail client; a static page bounces it to the installed app with
   the move prefilled, routed to the running instance when there is one.

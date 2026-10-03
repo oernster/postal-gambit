@@ -7,10 +7,11 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QLabel, QTextBrowser, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QTextBrowser, QVBoxLayout, QWidget
 
 from postalgambit.ui.dialogs.neutral_dialog import NeutralDialog, close_row
 from postalgambit.ui.icons import get_badge_png_path
+from postalgambit.ui.plain_text import plain_label
 from postalgambit.ui.scroll_focus import OverflowFocus
 from postalgambit.version import APP_AUTHOR, APP_NAME, APP_TAGLINE, __version__
 
@@ -51,7 +52,7 @@ class AboutDialog(NeutralDialog):
         layout = QVBoxLayout(self)
         badge_path = get_badge_png_path()
         if badge_path is not None:
-            badge = QLabel()
+            badge = plain_label()
             badge.setPixmap(
                 QPixmap(str(badge_path)).scaled(
                     _ICON_PX,

@@ -67,6 +67,14 @@ class RulesEngine(Protocol):
         """Set the Result and Termination tags, ending the game."""
         ...
 
+    def with_board_result(self, pgn: str) -> str:
+        """Set the Result tag to what the board says and drop Termination.
+
+        A move message's tags are the sender's words; only a resignation or
+        an accepted draw ends a game the board has not ended.
+        """
+        ...
+
 
 class GameStore(Protocol):
     def save(self, record: GameRecord) -> None: ...
@@ -77,7 +85,14 @@ class GameStore(Protocol):
 
     def exists(self, game_id: GameId) -> bool: ...
 
-    def list_all(self) -> tuple[GameRecord, ...]: ...
+    def list_all(self) -> tuple[GameRecord, ...]:
+        """Every readable game; an unreadable one is left out, not raised."""
+        ...
+
+    def unreadable(self) -> tuple[str, ...]:
+        """Where each stored game that cannot be read lies, for telling the
+        user. Never written, renamed or deleted by the store."""
+        ...
 
     def delete(self, game_id: GameId) -> None: ...
 

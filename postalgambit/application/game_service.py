@@ -8,6 +8,8 @@ from postalgambit.application.dto import (
     RESULT_BLACK_WINS,
     RESULT_DRAW,
     RESULT_WHITE_WINS,
+    TERMINATION_AGREED_DRAW,
+    TERMINATION_RESIGNATION,
 )
 from postalgambit.application.ports import (
     Clock,
@@ -20,9 +22,6 @@ from postalgambit.domain.errors import DivergenceError, DomainError
 from postalgambit.domain.game import Colour, GameId, GameMeta, GameRecord, Player
 from postalgambit.domain.pgn_tags import GAME_ID_TAG, new_game_pgn
 from postalgambit.domain.wire import WireAction, WireMessage
-
-TERMINATION_RESIGNATION = "resignation"
-TERMINATION_AGREED_DRAW = "agreed draw"
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,7 +59,9 @@ class GameService:
                 f"a {message.action.value} message cannot start a game"
             )
         self.rules.validate(message.pgn)
-        pgn = self.rules.normalize(message.pgn)
+        # An invitation or first move cannot have ended the game unless the
+        # board says so; whatever Result tag the sender wrote is not kept.
+        pgn = self.rules.with_board_result(message.pgn)
         headers = self.rules.headers(pgn)
         game_id = GameId(headers.get(GAME_ID_TAG, ""))
         if self.store.exists(game_id):
@@ -93,6 +94,10 @@ class GameService:
     def list_games(self) -> tuple[GameRecord, ...]:
         records = self.store.list_all()
         return tuple(sorted(records, key=lambda r: r.meta.updated_at, reverse=True))
+
+    def unreadable_games(self) -> tuple[str, ...]:
+        """Stored games left out of the list because they cannot be read."""
+        return self.store.unreadable()
 
     def get(self, game_id: GameId) -> GameRecord:
         return self.store.load(game_id)

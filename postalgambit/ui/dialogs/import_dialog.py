@@ -8,8 +8,6 @@ from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QInputDialog,
-    QLabel,
-    QMessageBox,
     QPlainTextEdit,
     QPushButton,
     QVBoxLayout,
@@ -21,6 +19,7 @@ from postalgambit.domain.errors import PostalGambitError
 from postalgambit.domain.game import GameId, GameRecord
 from postalgambit.ui.dialogs.neutral_dialog import NeutralDialog, close_row
 from postalgambit.ui.labels import game_label, game_labels
+from postalgambit.ui.plain_text import ask, plain_label, warn
 
 _DIALOG_MIN_WIDTH = 640
 _BODY_MIN_HEIGHT = 300
@@ -45,7 +44,7 @@ class ImportDialog(NeutralDialog):
         self.setWindowTitle("Import a move")
         self.setMinimumWidth(_DIALOG_MIN_WIDTH)
         layout = QVBoxLayout(self)
-        layout.addWidget(QLabel(_PROMPT))
+        layout.addWidget(plain_label(_PROMPT))
         self.text = QPlainTextEdit()
         # Tab leaves the paste box for the next stop (a pasted email never
         # needs a literal tab typed); the arrows stay with the caret.
@@ -55,7 +54,7 @@ class ImportDialog(NeutralDialog):
             self.text.setPlainText(initial_text)
         layout.addWidget(self.text)
         chooser_row = QHBoxLayout()
-        chooser_row.addWidget(QLabel("Game (for bare moves):"))
+        chooser_row.addWidget(plain_label("Game (for bare moves):"))
         self.game_choice = QComboBox()
         self.game_choice.addItem("Detect from the pasted text", None)
         labels = game_labels(candidate_games)
@@ -64,7 +63,7 @@ class ImportDialog(NeutralDialog):
             self.game_choice.addItem(labels[meta.game_id.value], meta.game_id)
         chooser_row.addWidget(self.game_choice, stretch=1)
         layout.addLayout(chooser_row)
-        self.result_label = QLabel("")
+        self.result_label = plain_label("")
         layout.addWidget(self.result_label)
         import_button = QPushButton("Import")
         import_button.setObjectName("Primary")
@@ -81,7 +80,7 @@ class ImportDialog(NeutralDialog):
         try:
             outcome = self._run_import(text, chosen)
         except PostalGambitError as error:
-            QMessageBox.warning(self, "Import failed", str(error))
+            warn(self, "Import failed", str(error))
             return
         if outcome.kind is ImportKind.NEEDS_GAME_CHOICE:
             self.result_label.setText(
@@ -103,8 +102,7 @@ class ImportDialog(NeutralDialog):
         question = "This message belongs to a game that is not on file yet. Create it?"
         if sender_email:
             question += f"\n\nReplies will go to {sender_email}."
-        confirmed = QMessageBox.question(self, "New game", question)
-        if confirmed != QMessageBox.StandardButton.Yes:
+        if not ask(self, "New game", question):
             return
         email = sender_email or self._ask_opponent_email()
         if email is None:
@@ -112,7 +110,7 @@ class ImportDialog(NeutralDialog):
         try:
             record = self._create_new_game(outcome, email)
         except PostalGambitError as error:
-            QMessageBox.warning(self, "Import failed", str(error))
+            warn(self, "Import failed", str(error))
             return
         self.result_label.setText(f"Created from the message: {game_label(record)}.")
         self.accept()

@@ -32,6 +32,7 @@ _BEGIN_PATTERN = re.compile(r"^-----BEGIN POSTAL GAMBIT v(\S+)-----\s*$")
 _END_PATTERN = re.compile(r"^-----END POSTAL GAMBIT-----\s*$")
 _HEADER_PATTERN = re.compile(r"^([A-Za-z][A-Za-z-]*):\s*(.*?)\s*$")
 _QUOTE_PREFIX_PATTERN = re.compile(r"^\s*(?:>\s*)+")
+_PGN_TAG_PATTERN = re.compile(r'^\s*\[[A-Za-z0-9_]+\s+"')
 
 _SAN_PATTERN = re.compile(
     r"^(?:\d+\.(?:\.\.)?)?"
@@ -55,7 +56,7 @@ class WireMessage:
     # The sender's email address, so the recipient's application can create
     # a game from an invite or first move without asking the user to type
     # the opponent's address. Optional: blank when the sender has not
-    # configured one, and absent from blocks sent by older versions.
+    # configured one; absent from blocks sent by older versions.
     from_email: str = ""
 
 
@@ -139,6 +140,25 @@ def _build_message(headers: dict[str, str], pgn: str) -> WireMessage:
         offer_draw=offer_draw,
         from_email=headers.get(FROM_HEADER.lower(), ""),
     )
+
+
+def quoted_reply_text(text: str) -> str | None:
+    """The lines a correspondent wrote above a quoted email; None if none.
+
+    Only a reply whose block appears solely in quoted form counts: there the
+    block is the original email being replied to and the unquoted lines are
+    the reply itself, which is where an app-less opponent types a move.
+    """
+    lines = text.splitlines()
+    if _find_begin(lines) is not None:
+        return None
+    return "\n".join(line for line in lines if not _QUOTE_PREFIX_PATTERN.match(line))
+
+
+def looks_like_pgn(text: str) -> bool:
+    """True when the text carries PGN tag pairs, i.e. it is a game rather
+    than a bare move."""
+    return any(_PGN_TAG_PATTERN.match(line) for line in text.splitlines())
 
 
 def extract_san(text: str) -> str | None:

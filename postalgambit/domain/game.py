@@ -19,6 +19,7 @@ move sent a second time carries the same offer it did the first time.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, replace
 from datetime import datetime
 from enum import Enum
@@ -26,7 +27,13 @@ from enum import Enum
 from postalgambit.domain.errors import DomainError
 
 SHORT_ID_LENGTH = 8
-_UUID_CANONICAL_LENGTH = 36
+# The one spelling a uuid has as `str(uuid.uuid4())` writes it. A GameID
+# arrives in a stranger's email and becomes a file name, so nothing looser
+# passes: no path separators, no dots and no case variants that reach the
+# same file on a case-insensitive disk.
+_UUID_CANONICAL = re.compile(
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+)
 
 
 class Colour(Enum):
@@ -37,13 +44,19 @@ class Colour(Enum):
     def other(self) -> Colour:
         return Colour.BLACK if self is Colour.WHITE else Colour.WHITE
 
+    @staticmethod
+    def of_ply(ply_index: int) -> Colour:
+        """Who made the ply at this zero-based index. Every game here starts
+        from the initial position, so White makes the even plies."""
+        return Colour.WHITE if ply_index % 2 == 0 else Colour.BLACK
+
 
 @dataclass(frozen=True, slots=True)
 class GameId:
     value: str
 
     def __post_init__(self) -> None:
-        if len(self.value) != _UUID_CANONICAL_LENGTH or self.value.count("-") != 4:
+        if not _UUID_CANONICAL.fullmatch(self.value):
             raise DomainError(f"not a canonical uuid: {self.value!r}")
 
     @property

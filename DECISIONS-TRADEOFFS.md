@@ -183,11 +183,16 @@ the header is missing the player is asked.
 
 An import is accepted when the local moves are a strict prefix of the
 inbound ones and every added move is legal, so a missed email is recovered
-by the next one. Anything else is reported as divergence and the local game
-is left as it was.
+by the next one. My moves in the inbound game must match, ply for ply, the
+ones stored here: they are always played here before they are sent, so a
+new or differing move for my side was written by someone else. A move
+message cannot end the game by its tags and a draw accept counts only
+against a draw I offered. Anything else is reported as divergence and the
+local game is left as it was.
 
 - **Rather than:** accepting exactly one new move; resolving a conflict
-  automatically.
+  automatically; accepting any legal extension, which let a sender play
+  moves for me and end the game with a tag (round 3 measured both).
 - **Gains:** a lost email costs nothing; a disagreement is never settled
   behind the player's back.
 - **Costs:** a real divergence is the players' to sort out by hand.

@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from PySide6.QtCore import QTimer
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox
+from PySide6.QtWidgets import QApplication, QMainWindow
 
 from postalgambit.application.export_service import ExportService
 from postalgambit.application.game_service import GameService
@@ -27,8 +28,10 @@ from postalgambit.ui.dialogs.forms import (
 from postalgambit.ui.dialogs.import_dialog import ImportDialog
 from postalgambit.ui.icons import find_assets_dir, get_app_icon_path
 from postalgambit.ui.keyboard_nav import KeyboardNavigator, NeutralStartWidget
+from postalgambit.ui.labels import unreadable_games_text
 from postalgambit.ui.links import open_externally
 from postalgambit.ui.menus import build_menus
+from postalgambit.ui.plain_text import warn
 from postalgambit.ui.theme import DEFAULT_THEME, THEMES, build_qss
 from postalgambit.ui.update_check import UpdateCheckController
 from postalgambit.version import APP_NAME, DONATE_URL
@@ -133,6 +136,15 @@ class MainWindow(QMainWindow):
         if not self._started:
             self._started = True
             self._neutral_start.setFocus()
+            # After the window has painted, so the report sits over the app
+            # it is about rather than standing in for a window that is not
+            # there yet.
+            QTimer.singleShot(0, self._report_unreadable_games)
+
+    def _report_unreadable_games(self) -> None:
+        paths = self._games.unreadable_games()
+        if paths:
+            warn(self, "Some games are not listed", unreadable_games_text(paths))
 
     # State --------------------------------------------------------------
 
@@ -170,7 +182,7 @@ class MainWindow(QMainWindow):
                 offer_draw=self.offer_draw_box.isChecked(),
             )
         except PostalGambitError as error:
-            QMessageBox.warning(self, "Move rejected", str(error))
+            warn(self, "Move rejected", str(error))
             return
         # The email is not offered here. A dialog opening over the board hides
         # the move that was just played, which is the one thing worth looking
@@ -185,12 +197,12 @@ class MainWindow(QMainWindow):
         name = dialog.opponent_name.text().strip()
         email = dialog.opponent_email.text().strip()
         if not name:
-            QMessageBox.warning(self, "New game", "An opponent name is needed.")
+            warn(self, "New game", "An opponent name is needed.")
             return
         try:
             record = self._games.create_game(name, email, dialog.my_colour)
         except PostalGambitError as error:
-            QMessageBox.warning(self, "New game", str(error))
+            warn(self, "New game", str(error))
             return
         self.refresh_games(keep=record.meta.game_id)
         if record.meta.my_colour is Colour.BLACK:
@@ -224,7 +236,7 @@ class MainWindow(QMainWindow):
         try:
             block = decode_import_link(uri)
         except PostalGambitError as error:
-            QMessageBox.warning(self, "Import link", str(error))
+            warn(self, "Import link", str(error))
             return
         self._import_move(initial_text=block)
 
@@ -280,7 +292,7 @@ class MainWindow(QMainWindow):
         browser does the asking, so the no-network invariant stands.
         """
         if not open_externally(DONATE_URL):
-            QMessageBox.warning(
+            warn(
                 self,
                 "Donate",
                 "Could not open a browser for the donation page.",

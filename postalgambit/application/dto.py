@@ -22,6 +22,12 @@ RESULT_WHITE_WINS = "1-0"
 RESULT_BLACK_WINS = "0-1"
 RESULT_DRAW = "1/2-1/2"
 
+# How the two agreed endings are described in a stored game, whichever side
+# brought them about. An inbound ending is restated in these words rather
+# than keeping the sender's, which may be anything at all.
+TERMINATION_RESIGNATION = "resignation"
+TERMINATION_AGREED_DRAW = "agreed draw"
+
 
 @dataclass(frozen=True, slots=True)
 class GameStatus:

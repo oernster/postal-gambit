@@ -11,7 +11,6 @@ from PySide6.QtCore import QUrl
 from PySide6.QtGui import QDesktopServices, QGuiApplication
 from PySide6.QtWidgets import (
     QHBoxLayout,
-    QLabel,
     QLineEdit,
     QPlainTextEdit,
     QPushButton,
@@ -21,6 +20,7 @@ from PySide6.QtWidgets import (
 
 from postalgambit.application.dto import EmailDraft
 from postalgambit.ui.dialogs.neutral_dialog import NeutralDialog, close_row
+from postalgambit.ui.plain_text import plain_label
 from postalgambit.ui.scroll_focus import OverflowFocus
 
 _DIALOG_MIN_WIDTH = 640
@@ -50,7 +50,9 @@ class ExportDialog(NeutralDialog):
         self.setWindowTitle("Send your move")
         self.setMinimumWidth(_DIALOG_MIN_WIDTH)
         layout = QVBoxLayout(self)
-        layout.addWidget(QLabel(f"To: {draft.to or '(no opponent email on file)'}"))
+        layout.addWidget(
+            plain_label(f"To: {draft.to or '(no opponent email on file)'}")
+        )
         subject = QLineEdit(draft.subject)
         subject.setReadOnly(True)
         layout.addWidget(subject)
@@ -64,7 +66,7 @@ class ExportDialog(NeutralDialog):
         # box; a preview that fits scrolls nowhere and leaves the ring.
         OverflowFocus(body)
         layout.addWidget(body)
-        self.note = QLabel("")
+        self.note = plain_label("")
         layout.addWidget(self.note)
         buttons = QHBoxLayout()
         open_button = QPushButton("Open in mail client")

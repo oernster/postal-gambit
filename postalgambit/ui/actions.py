@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Callable
 
-from PySide6.QtWidgets import QMessageBox, QWidget
+from PySide6.QtWidgets import QWidget
 
 from postalgambit.application.dto import EmailDraft
 from postalgambit.application.export_service import ExportService
@@ -21,6 +21,7 @@ from postalgambit.domain.game import GameRecord
 from postalgambit.domain.wire import WireAction, WireMessage
 from postalgambit.ui.dialogs.export_dialog import ExportDialog
 from postalgambit.ui.labels import game_labels
+from postalgambit.ui.plain_text import ask, inform
 
 _MAX_NAMED_GAMES = 6
 
@@ -156,7 +157,7 @@ class GameActions:
         exists in the world already, so this is one press per move."""
         records = self.unsent()
         if not records:
-            QMessageBox.information(
+            inform(
                 self._parent,
                 "Send move",
                 "No selected game has a move waiting to be sent.",
@@ -201,14 +202,13 @@ class GameActions:
         empty: str,
     ) -> bool:
         if not records:
-            QMessageBox.information(self._parent, title, empty)
+            inform(self._parent, title, empty)
             return False
-        answer = QMessageBox.question(
+        return ask(
             self._parent,
             title,
             build_text(len(records), describe_games(records)),
         )
-        return answer == QMessageBox.StandardButton.Yes
 
     def _finish_with_exports(
         self, endings: list[tuple[GameRecord, WireMessage]]

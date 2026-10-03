@@ -33,7 +33,18 @@ and state.
    `urllib.request`, `smtplib`, `imaplib`, `poplib` and any third-party
    HTTP client are forbidden across the package, both composition roots
    and the whole setup program, because the claim is made about the
-   product a user installs rather than about one directory inside it. The
+   product a user installs rather than about one directory inside it. So
+   are the routes round a plain import list: Qt's networking (only the
+   `QLocalServer` and `QLocalSocket` names of `PySide6.QtNetwork` are
+   granted, for the single-instance channel), `asyncio`, `importlib` and
+   `__import__`, `webbrowser`, `multiprocessing` and `subprocess`, which
+   two modules hold by name (the Linux mailto hand-off and the setup
+   program's `CommandRunner`). Each route is planted in a scratch module
+   by the suite and must be flagged. One route is not an import at all: a
+   correspondent's text shown as Qt rich text loads whatever an `<img>` in
+   it names, so every label and message box is built plain-text in
+   `ui/plain_text.py`, held there by `tests/structural/test_plain_text.py`.
+   The
    single shipped exception is `postalgambit/infrastructure/update_github.py`,
    the update check's GitHub adapter: one anonymous, best-effort GET
    behind the `ReleaseSource` port asking whether a newer published
@@ -49,7 +60,8 @@ and state.
    desktop and the browser does the asking, so no connection is opened
    here. `tests/structural/test_donate.py` holds that half, pinning the
    address, its single home and the one seam it leaves through.
-   Enforced by `tests/structural/test_no_network.py`.
+   Enforced by `tests/structural/test_no_network.py` and
+   `tests/structural/test_plain_text.py`.
 5. **PGN is the canonical game state.** Whose turn it is, game status and
    outcome are always derived from the PGN by replay, never stored beside
    it. `GameRecord` has no turn or status field by construction. Enforced
@@ -125,7 +137,7 @@ postal-gambit/
                               acceptable, unsent, awaiting the opponent) and
                               promotion detection
       export_service.py       WireMessage -> email body, subject, mailto URI
-      import_service.py       pasted text / .pgn file -> validated game update
+      import_service.py       pasted text -> validated game update
       update_service.py       version comparison, platform asset selection
                               and the skip rule for the update check
     infrastructure/
@@ -151,6 +163,8 @@ postal-gambit/
       side_panel.py           app badge above the numbered move history
       labels.py               game title with the bracketed short id, start
                               date, row state and the status headline
+      plain_text.py           the one place labels and message boxes are
+                              built, always plain text (invariant 4)
       launch.py               single-instance server plus app-link forwarding
       update_check.py         update-check triggers, worker thread and the
                               Download / Skip / Later prompt
@@ -231,12 +245,17 @@ prove it right.
 ### Infrastructure
 
 - `rules_pychess.py`: the only file that imports python-chess (GPL-3.0,
-  matching the project licence). Covers legality, SAN, FEN, PGN round-trip
-  and all draw and mate outcomes.
+  matching the project licence). Covers legality, SAN, PGN round-trip and
+  the outcomes the board declares by itself (mate, stalemate, insufficient
+  material, fivefold repetition, seventy-five moves). Every PGN it reads
+  must start from the initial position and contain no null move.
 - `store_json.py`: one versioned JSON document per game
   (`{"version": 1, "meta": {...}, "pgn": "..."}`) in
   `~/.postal-gambit/games/<game-id>.json`. Atomic writes via temp file and
-  `os.replace()`. Single writer, the app itself.
+  `os.replace()`. Single writer, the app itself. A file it cannot read is
+  left out of the list and named by `unreadable()`, never written, renamed
+  or deleted; the window reports it once it has opened, so one damaged
+  game neither hides the others nor stops the app starting.
 - `settings_json.py`: `~/.postal-gambit/settings.json` for the user's own
   name and email (stamped into PGN tags) and UI preferences, including the
   release version the user chose to skip in the update prompt.
@@ -472,17 +491,27 @@ percent-encoded UTF-8 with CRLF line breaks; if the encoded URI exceeds `MAILTO_
 around 6000 characters) the dialog steers to the clipboard path, since some
 client and shell combinations truncate long URIs.
 
-**Inbound move**: the user pastes email text into the import dialog (or
-opens a `.pgn` file). The codec finds and parses the block per
-`WIRE_FORMAT.md`; the import service routes by GameID, replays the PGN,
-verifies the strict-prefix rule and turn consistency, persists and updates
-the board. Unknown GameID offers game creation (that is the invite path):
+**Inbound move**: the user pastes email text into the import dialog. The
+codec finds and parses the block per `WIRE_FORMAT.md`; the import service
+routes by GameID, replays the PGN from the initial position (a FEN, SetUp
+or Variant tag or a null move is refused), verifies the strict-prefix rule
+(a multi-move catch-up is accepted) and that no move beyond the stored game
+is mine, persists and updates the board. A move message never ends a game by its tags: its Result and
+Termination are replaced by what the board says. A resignation or an
+accepted draw ends it (the latter only against a draw I offered); its
+ending is stored in the application's own words rather than the sender's.
+A GameID must be a lowercase canonical uuid, since it becomes a file name.
+A PGN pasted without its block is refused as one rather than mined for a
+move. Unknown GameID offers game creation (that is the invite path):
 the opponent's address comes from the block's optional `From` header,
 shown in the confirmation before the game is created; the app asks
 for it only when the header is absent (an older sender or hand-typed
 text). The header is a convenience default, never an authenticated
 identity. No block found falls back to bare-SAN parsing against a
-user-chosen game. Divergence is reported and never auto-resolved.
+user-chosen game. A reply whose only block is my own quoted email (the
+mail-client default for an app-less opponent) takes the move typed above
+the quote, routed by the quoted block's GameID. Divergence is reported and
+never auto-resolved.
 
 **Import link**: every outbound email also carries an https link (the
 block compressed with zlib and encoded base64url in the URL fragment,
@@ -504,12 +533,12 @@ manifest and the macOS bundle.
 |---|---|---|---|
 | Transport | User's own mail client via `mailto:` and clipboard | Removes the entire mail-infrastructure class (IMAP, SMTP, OAuth, credentials, polling); the mail client is the compatibility interface | Built-in IMAP/SMTP client; a central server |
 | UI stack | PySide6 widgets | Established delivery lineage (Nuitka, installer, Flatpak, DMG, keyboard nav); no mail plumbing left to favour Go | Go + Wails (its advantage died with the transport decision); web app |
-| Rules | python-chess behind a port | Best rules library in any language; full draw rules, SAN, PGN; quarantined so the domain stays stdlib-pure | Reusing console-chess C++ (Win32-locked, I/O-coupled, incomplete rules); hand-rolling rules |
+| Rules | python-chess behind a port | Best rules library in any language; legality, mate, the automatic draws, SAN, PGN; quarantined so the domain stays stdlib-pure (threefold and fifty-move are detectable there but no claim is offered yet) | Reusing console-chess C++ (Win32-locked, I/O-coupled, incomplete rules); hand-rolling rules |
 | Canonical state | PGN text, everything else derived | One source of truth, no drift; every email carries full state so lost mail never corrupts | Storing turn/status fields; move-list-plus-position storage |
 | Storage | One JSON file per game | Document-shaped, low volume, trivially portable and inspectable; atomic replace writes | SQLite (relational shape not needed); one big JSON file (write amplification, single hot file) |
 | Wire framing | PEM-style BEGIN/END block | Instantly recognisable, robust to paste, quote-stripping is easy, versioned in the delimiter | Attachments (mailto cannot attach); JSON payload (hostile to app-less opponents); bare PGN (no action semantics) |
 | Board diagram in email | ASCII letters, informational only | Survives proportional fonts and every client; Unicode chess glyphs render unevenly | Unicode glyph diagram; HTML mail |
-| Import posture | Liberal accept: any legal strict extension | Postel's law; recovers cleanly from a missed email | Exactly-one-ply rule (brittle) |
+| Import posture | Liberal accept: any legal strict extension whose moves for my side match, ply for ply, the ones stored here | Postel's law; recovers cleanly from a missed email; my own moves are always played here first, so a new one arriving by mail was written by someone else | Exactly-one-ply rule (brittle); any legal extension (it let a sender play for me) |
 | Draw and resign | Wire `Action` header plus PGN `Result`/`Termination` | Correspondence play genuinely needs both; maps cleanly onto standard PGN | Deferring them (would force out-of-band agreement) |
 | Game identity | uuid4 in a `GameID` PGN tag | The `.pgn` file alone stays a complete routable record; the short form appears in every game label AND the email subject so threads and rows correlate | ID in block header only; deriving identity from players plus date |
 | Opponent address on import | Optional `From` wire header | A game created from a one-click link or paste needs no typed address; receivers ignore unknown headers so it is forward compatible within v1; shown before creation, a convenience default, never an authenticated identity | Asking the user to type the address every time; an address in the URL |
@@ -531,12 +560,17 @@ manifest and the macOS bundle.
   `TESTING.md`.
 - Structural tests as listed under Invariants: layering by AST scan, domain
   purity, no-network, module size, composition-root whitelist, style, the
-  donate button's address, its single home and its one seam, plus the two
-  halves of the focus-ring invariant: no stylesheet rule rings a pane; no
-  pane is reachable by Tab.
+  donate button's address, its single home and its one seam, plain-text
+  labels and message boxes, plus the two halves of the focus-ring
+  invariant: no stylesheet rule rings a pane; no pane is reachable by Tab.
 - Wire-format conformance tests mirror `WIRE_FORMAT.md` section by section,
   including quoted-reply stripping, unknown versions, unknown actions,
-  divergence and multi-move catch-up.
+  divergence, multi-move catch-up and refusal of hostile messages (a
+  claimed ending, an unoffered draw accept, a null move, a set-up
+  position, a new or altered move for the receiver's side, a
+  non-canonical GameID) in
+  `tests/application/test_import_hostile.py` and
+  `tests/infrastructure/test_store_hostile.py`.
 
 ## Delivery
 

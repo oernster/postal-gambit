@@ -122,6 +122,8 @@ class PythonChessRulesEngine:
             move = board.parse_san(san)
         except ValueError:
             raise IllegalMoveError(f"illegal move {san!r}") from None
+        if not move:
+            raise IllegalMoveError(f"a null move is not a move: {san!r}")
         return self._push(game, board, move)
 
     def undo_last_ply(self, pgn: str) -> str:
@@ -147,12 +149,26 @@ class PythonChessRulesEngine:
         game.headers["Termination"] = termination
         return self._export(game)
 
+    def with_board_result(self, pgn: str) -> str:
+        game = self._read(pgn)
+        outcome = self._final_board(game).outcome()
+        game.headers["Result"] = outcome.result() if outcome else RESULT_ONGOING
+        game.headers.pop("Termination", None)
+        return self._export(game)
+
     def _read(self, pgn: str) -> chess.pgn.Game:
         game = chess.pgn.read_game(io.StringIO(pgn))
         if game is None:
             raise IllegalPgnError("no PGN game found")
         if game.errors:
             raise IllegalPgnError(f"PGN failed to replay: {game.errors[0]}")
+        # A FEN, SetUp or Variant tag makes python-chess start somewhere
+        # other than the initial position; the wire format allows only that.
+        start = game.board()
+        if type(start) is not chess.Board or start.chess960 or start != chess.Board():
+            raise IllegalPgnError("the game must start from the initial position")
+        if not all(game.mainline_moves()):
+            raise IllegalPgnError("the game contains a null move (a pass)")
         return game
 
     def _final_board(self, game: chess.pgn.Game) -> chess.Board:

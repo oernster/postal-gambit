@@ -230,7 +230,10 @@ class TestEndingImports:
         move_service: MoveService,
         import_service: ImportService,
     ) -> None:
-        record = sent_e4(game_service, move_service)
+        record = new_game(game_service, Colour.WHITE)
+        record, _, _ = move_service.my_move(
+            record.meta.game_id, "e2", "e4", offer_draw=True
+        )
         pgn = RULES.with_result(record.pgn, "1/2-1/2", "agreed draw")
         block = render_block(WireMessage(action=WireAction.DRAW_ACCEPT, pgn=pgn))
         outcome = import_service.import_text(block)

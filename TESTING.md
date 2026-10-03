@@ -120,7 +120,16 @@ needs no double. Storage tests use real files in pytest tmp directories.
   `installer/` tree. It asserts its own reach too, so narrowing it back
   to the package fails rather than passing quietly. It also asserts the
   exemption whole: the exempt module must ship, must import
-  `urllib.request` and may import nothing forbidden beyond it.
+  `urllib.request` and may import nothing forbidden beyond it. Beyond the
+  network modules it flags the indirect routes (Qt networking other than
+  the two local-socket classes, `asyncio`, `importlib`, `__import__`,
+  `webbrowser`, `multiprocessing`, `subprocess` outside its two named
+  holders); each route is planted in a scratch module as a positive
+  control and must be flagged.
+- `test_plain_text.py`: no `QLabel(...)` or `QMessageBox` box is built
+  anywhere in `ui/` except `ui/plain_text.py`, which fixes the format to
+  plain text, so a correspondent's words are never rendered as markup that
+  loads what it names. A planted label is a positive control.
 - `test_module_size.py`: every module at or below 400 lines, plus the 5%
   danger band as a second assertion so a file at 399 is caught before the
   next edit breaks the cap for an unrelated reason. The band is derived
@@ -166,6 +175,13 @@ tests sit outside the line gate with the rest of `postalgambit/ui`.
   answer is released and the worker joined; nothing may reach
   `threading.excepthook`. Closing or quitting the app was measured not to
   delete the controller, so the test forces the deletion directly.
+- `test_plain_text_widgets.py`: an `<img>` naming a real picture is put in
+  the status headline and the export "To:" line; every label must be plain
+  text and the headline's size hint must not grow to hold the picture.
+- `test_damaged_store.py`: the real window is built (never shown, no update
+  check wired) over a games folder holding one damaged file beside a good
+  game; it must build, list the good game and leave the damaged file
+  byte-identical.
 
 ## The Nuitka gate
 
@@ -182,7 +198,15 @@ without that line stops the build with a reason. No test runs a build.
 
 `tests/domain/test_wire.py` mirrors [WIRE_FORMAT.md](WIRE_FORMAT.md)
 section by section: framing, quoted-reply stripping, unknown versions,
-unknown actions, divergence detection and multi-move catch-up. The
+unknown actions and divergence detection. What a receiver refuses is
+covered against the real rules engine in
+`tests/application/test_import_hostile.py` (a claimed ending on a move, an
+unoffered draw accept, a null move, a set-up position, a new or altered
+move for the receiver's side, a bare PGN, an app-less reply above a quoted
+email; a multi-move catch-up replaying the receiver's stored moves is
+accepted) and
+against real files in `tests/infrastructure/test_store_hostile.py` (a
+traversing or case-variant GameID, a damaged file beside good ones). The
 `postalgambit:` link codec is covered the same way in
 `tests/domain/test_applink.py`.
 

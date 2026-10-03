@@ -30,6 +30,9 @@ class InMemoryGameStore:
     def list_all(self) -> tuple[GameRecord, ...]:
         return tuple(self.records.values())
 
+    def unreadable(self) -> tuple[str, ...]:
+        return ()
+
     def delete(self, game_id: GameId) -> None:
         if game_id.value not in self.records:
             raise StorageError(f"no stored game {game_id.short}")

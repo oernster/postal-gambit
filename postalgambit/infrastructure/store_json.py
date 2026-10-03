@@ -7,7 +7,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-from postalgambit.domain.errors import StorageError
+from postalgambit.domain.errors import DomainError, StorageError
 from postalgambit.domain.game import Colour, GameId, GameMeta, GameRecord, Player
 
 STORE_VERSION = 1
@@ -37,9 +37,26 @@ class JsonGameStore:
         return self._path_for(game_id).exists()
 
     def list_all(self) -> tuple[GameRecord, ...]:
-        return tuple(
-            self._read(path) for path in sorted(self._games_dir.glob("*.json"))
-        )
+        """Every game the store can read. A file it cannot read is left out
+        rather than raised, so one damaged game never hides the others;
+        `unreadable` names it so the user can be told."""
+        return self._scan()[0]
+
+    def unreadable(self) -> tuple[str, ...]:
+        """The full paths of game files present but unreadable. They are
+        never written to, renamed or deleted here: the folder is the user's
+        and the file may be the only copy of a game."""
+        return self._scan()[1]
+
+    def _scan(self) -> tuple[tuple[GameRecord, ...], tuple[str, ...]]:
+        records: list[GameRecord] = []
+        unreadable: list[str] = []
+        for path in sorted(self._games_dir.glob("*.json")):
+            try:
+                records.append(self._read(path))
+            except StorageError:
+                unreadable.append(str(path))
+        return tuple(records), tuple(unreadable)
 
     def delete(self, game_id: GameId) -> None:
         path = self._path_for(game_id)
@@ -55,13 +72,15 @@ class JsonGameStore:
             document = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as error:
             raise StorageError(f"unreadable game file {path.name}: {error}") from error
+        if not isinstance(document, dict):
+            raise StorageError(f"malformed game file {path.name}: not an object")
         if document.get("version") != STORE_VERSION:
             raise StorageError(
                 f"unknown store version in {path.name}: {document.get('version')!r}"
             )
         try:
             return _from_document(document)
-        except (KeyError, TypeError, ValueError) as error:
+        except (KeyError, TypeError, ValueError, AttributeError, DomainError) as error:
             raise StorageError(f"malformed game file {path.name}: {error}") from error
 
 
