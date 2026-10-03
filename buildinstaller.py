@@ -326,7 +326,7 @@ def build_installer() -> int:
 
 
 def main() -> int:
-    require_nuitka()
+    require_nuitka(resolve_python())
     return build_installer()
 
 

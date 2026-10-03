@@ -37,11 +37,14 @@ rebuild.
 
 ## Nuitka
 
-`requirements-dev.txt` carries Nuitka with a minimum release. `buildexe.py`,
-`buildinstaller.py` and `builddmg.py` each stop before compiling when the
-interpreter running them has no Nuitka or one older than that minimum,
-naming both versions and the install command; the check lives once, in
-`build_utils.py`, which holds the same floor as its own constant.
+`requirements-dev.txt` carries Nuitka with a minimum release. That line is
+the floor's only home: `build_utils.py` reads it and stops if the line is
+gone. `buildexe.py`, `buildinstaller.py` and `builddmg.py` each stop before
+compiling when the interpreter that will compile has no Nuitka or one older
+than that minimum, naming both versions and the install command for that
+interpreter. The Windows scripts compile with `venv\Scripts\python.exe`
+whenever it exists, so that is the interpreter they ask, whichever Python
+runs the script; the check lives once, in `build_utils.py`.
 
 ## Icons and the donation mark
 

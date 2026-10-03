@@ -3,20 +3,59 @@
 from __future__ import annotations
 
 import itertools
-from importlib import metadata
+import re
+import subprocess
+import sys
+from pathlib import Path
 
-# The Nuitka the packaged build is written against: the release Stellody moved
-# to on 2026-09-13. An older one left in the environment stops the build here,
-# rather than a release nobody chose compiling what ships.
-NUITKA_MINIMUM = (4, 2, 1)
+PROJECT_ROOT = Path(__file__).resolve().parent
+
+# The Nuitka floor has one home: the nuitka line of the development
+# requirements. The build reads it from there, so the pin and the check cannot
+# drift apart.
+REQUIREMENTS_DEV = PROJECT_ROOT / "requirements-dev.txt"
+_NUITKA_FLOOR_LINE = re.compile(
+    r"^\s*nuitka\s*>=\s*([0-9][0-9A-Za-z.]*)", re.IGNORECASE
+)
+
+# Run inside the interpreter that will compile, so the version checked is the
+# version that builds. It prints nothing when that interpreter has no Nuitka.
+_VERSION_PROBE = (
+    "from importlib import metadata\n"
+    "try:\n"
+    "    print(metadata.version('nuitka'))\n"
+    "except metadata.PackageNotFoundError:\n"
+    "    pass\n"
+)
 
 
-def require_nuitka() -> None:
-    """Stop where Nuitka is missing or older than the build is written against."""
-    try:
-        installed = metadata.version("nuitka")
-    except metadata.PackageNotFoundError:
-        installed = None
+def nuitka_floor(requirements: Path = REQUIREMENTS_DEV) -> tuple[int, ...]:
+    """The minimum Nuitka release, read from the nuitka>= line of requirements."""
+    for line in requirements.read_text(encoding="utf-8").splitlines():
+        match = _NUITKA_FLOOR_LINE.match(line)
+        if match:
+            return _release(match.group(1))
+    raise SystemExit(
+        f"{requirements} has no 'nuitka>=' line; the build reads its Nuitka "
+        "floor from there."
+    )
+
+
+def installed_nuitka(python: str) -> str | None:
+    """The Nuitka version the given interpreter would compile with, if any."""
+    result = subprocess.run(
+        [python, "-c", _VERSION_PROBE],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    version = result.stdout.strip()
+    return version if result.returncode == 0 and version else None
+
+
+def require_nuitka(python: str = sys.executable) -> None:
+    """Stop where the compiling interpreter's Nuitka is missing or too old."""
+    installed = installed_nuitka(python)
     if installed is not None and _release(installed) >= NUITKA_MINIMUM:
         return
     wanted = ".".join(str(number) for number in NUITKA_MINIMUM)
@@ -25,7 +64,7 @@ def require_nuitka() -> None:
     )
     raise SystemExit(
         f"{found}; this build needs {wanted} or later:\n"
-        "    python -m pip install -r requirements-dev.txt"
+        f"    {python} -m pip install -r requirements-dev.txt"
     )
 
 
@@ -35,3 +74,8 @@ def _release(version: str) -> tuple[int, ...]:
         int("".join(itertools.takewhile(str.isdigit, part)) or 0)
         for part in version.split(".")
     )
+
+
+# Read at import, so a requirements file that has lost the line stops every
+# build script before it does any work.
+NUITKA_MINIMUM = nuitka_floor()

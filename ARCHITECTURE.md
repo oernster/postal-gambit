@@ -551,7 +551,8 @@ both source and compiled runs;
 `uk.codecrafter.PostalGambit`. All three register the `postalgambit:` URI
 scheme. The icon set and the donation mark are generated from their
 repo-root masters by `generate_icons.py`. The three Nuitka scripts share
-one check in `build_utils.py`: each stops before compiling when Nuitka is
-missing or older than the release the build is written against. The
+one check in `build_utils.py`: each stops before compiling when the
+interpreter that will compile has no Nuitka or one older than the floor
+pinned in `requirements-dev.txt`. The
 version lives in `VERSION` only. Build steps per platform are in
 `DEVELOPMENT.md`.

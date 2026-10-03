@@ -449,8 +449,9 @@ builds only.
 
 ### Packages are compiled with a chosen Nuitka or not at all
 
-Every build that compiles with Nuitka first checks the installed release and
-stops when it is missing or older than the one the build is written against.
+Every build that compiles with Nuitka first asks the interpreter that will
+compile which release it has; it stops when there is none or it is older than
+the floor pinned in `requirements-dev.txt`.
 
 - **Rather than:** compiling with whatever Nuitka happens to be installed.
 - **Gains:** a release is never built by a compiler nobody chose.

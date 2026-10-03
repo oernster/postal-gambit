@@ -167,6 +167,17 @@ tests sit outside the line gate with the rest of `postalgambit/ui`.
   `threading.excepthook`. Closing or quitting the app was measured not to
   delete the controller, so the test forces the deletion directly.
 
+## The Nuitka gate
+
+`tests/delivery/test_build_utils.py` covers the check the build scripts run
+before compiling; it sits outside the line gate with the rest of the delivery
+scripts. It builds a scratch venv without pip (an interpreter with no
+Nuitka) and asserts the check reads that interpreter rather than the one
+running the test, then refuses with the install command for it. It asserts the
+two Windows scripts pass the interpreter they compile with, that the floor is
+the `nuitka>=` line of `requirements-dev.txt` and that a requirements file
+without that line stops the build with a reason. No test runs a build.
+
 ## Wire-format conformance
 
 `tests/domain/test_wire.py` mirrors [WIRE_FORMAT.md](WIRE_FORMAT.md)

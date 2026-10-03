@@ -259,7 +259,7 @@ def build_exe() -> int:
 
 
 def main() -> int:
-    require_nuitka()
+    require_nuitka(resolve_python())
     return build_exe()
 
 
