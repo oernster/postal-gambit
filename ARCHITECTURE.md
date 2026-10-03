@@ -86,8 +86,10 @@ and state.
    shaved to sit just under the cap, because shaving is undone by the next
    edit. Enforced by `tests/structural/test_module_size.py`.
 9. **The version lives in `VERSION` only.** Runtime reads it through
-   `postalgambit/version.py`; build scripts read it through a shared
-   helper; the setup program reads the copy bundled beside the payload.
+   `postalgambit/version.py`; each build script reads the file itself (the
+   Python scripts through a small `read_version` of their own, the Flatpak
+   script through the shell); the setup program reads the copy bundled
+   beside the payload.
    Nothing else hardcodes a version. The GitHub Pages site cannot read a
    file at render time, so the one place it names a version is delimited
    by `<!--VERSION-->` markers that `stamp_version.py` refreshes from
@@ -548,5 +550,8 @@ both source and compiled runs;
 `build_flatpak.sh` and `builddmg.py` cover Linux and macOS. App id
 `uk.codecrafter.PostalGambit`. All three register the `postalgambit:` URI
 scheme. The icon set and the donation mark are generated from their
-repo-root masters by `generate_icons.py`. The version lives in `VERSION` only. Build steps per
-platform are in `DEVELOPMENT.md`.
+repo-root masters by `generate_icons.py`. The three Nuitka scripts share
+one check in `build_utils.py`: each stops before compiling when Nuitka is
+missing or older than the release the build is written against. The
+version lives in `VERSION` only. Build steps per platform are in
+`DEVELOPMENT.md`.

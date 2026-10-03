@@ -447,6 +447,15 @@ builds only.
 - **Gains:** a published disk image opens on every Mac.
 - **Costs:** an Apple developer account and a stored credential.
 
+### Packages are compiled with a chosen Nuitka or not at all
+
+Every build that compiles with Nuitka first checks the installed release and
+stops when it is missing or older than the one the build is written against.
+
+- **Rather than:** compiling with whatever Nuitka happens to be installed.
+- **Gains:** a release is never built by a compiler nobody chose.
+- **Costs:** a build machine has to upgrade before it can build at all.
+
 ### A website with no dates
 
 The website carries no dates. Its one version number is stamped from the

@@ -32,8 +32,16 @@ green run also means the tree is formatted and lint-clean.
 
 The version lives in the `VERSION` file at the repo root and nowhere
 else. Runtime reads it through `postalgambit/version.py`; every build
-script reads it through a shared helper. To cut a release, bump `VERSION`
-and rebuild.
+script reads the file itself. To cut a release, bump `VERSION` and
+rebuild.
+
+## Nuitka
+
+`requirements-dev.txt` carries Nuitka with a minimum release. `buildexe.py`,
+`buildinstaller.py` and `builddmg.py` each stop before compiling when the
+interpreter running them has no Nuitka or one older than that minimum,
+naming both versions and the install command; the check lives once, in
+`build_utils.py`, which holds the same floor as its own constant.
 
 ## Icons and the donation mark
 
@@ -63,8 +71,9 @@ has it.
 ## Windows: exe and installer
 
 Nuitka needs a working C compiler (MSVC or MinGW via Nuitka's prompts).
-The repo venv carries Nuitka; any interpreter with the two requirements
-files plus Nuitka works.
+Both scripts compile with `venv\Scripts\python.exe` when that exists and
+with the interpreter running them otherwise, so install the two
+requirements files into the venv.
 
 ```
 python buildexe.py
