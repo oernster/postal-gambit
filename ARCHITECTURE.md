@@ -362,10 +362,16 @@ and could otherwise not be read without a mouse. The exception is bounded by
 what justifies it: `scroll_focus.OverflowFocus` keeps the policy equal to
 whether the region can actually scroll, recomputed from the scrollbars rather
 than chosen once at construction. It sets the viewport `NoFocus` alongside,
-since that is a separate focusable child. Such a region rings on focus only;
-never on hover, because the pointer rests inside it for as long as the window
-is open, so a hover ring would report where the mouse is rather than what is
-about to be pressed.
+since that is a separate focusable child; it re-decides on every resize. The
+stop is `TabFocus`, never `StrongFocus`, so a click into the text never focuses
+it. A TEXT view rings in no state, Tab included: it is a pane holding words, so
+a ring round the whole page would tell the reader nothing. The one text view
+that is a control is the editable paste box in the Import dialog, which rings
+on focus by its object name (`theme.IMPORT_TEXT`), never by its class. Dialogs
+open on their neutral start, never on a text. The setup program's licence
+dialog carries a standalone copy of the overflow rule
+(`installer/ui/reading_pane.py`, since the installer imports nothing from the
+package) and opens on Close.
 
 Two themes (dark and light) share one semantic token set in `theme.py`.
 The View menu toggles them; the choice persists through the settings
@@ -562,7 +568,9 @@ manifest and the macOS bundle.
   purity, no-network, module size, composition-root whitelist, style, the
   donate button's address, its single home and its one seam, plain-text
   labels and message boxes, plus the two halves of the focus-ring
-  invariant: no stylesheet rule rings a pane; no pane is reachable by Tab.
+  invariant: no stylesheet rule rings a pane or a text view; no pane is
+  reachable by Tab; no reading pane is focused by a click, stopped on while
+  it fits or opened on (app and setup program alike).
 - Wire-format conformance tests mirror `WIRE_FORMAT.md` section by section,
   including quoted-reply stripping, unknown versions, unknown actions,
   divergence, multi-move catch-up and refusal of hostile messages (a

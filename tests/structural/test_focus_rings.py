@@ -18,16 +18,81 @@ from __future__ import annotations
 
 import pytest
 
+from installer.ui.themes import STYLESHEET as INSTALLER_SHEET
 from postalgambit.ui.theme import DARK, LIGHT, build_qss
 from tests.structural.focus_scan import (
     CONTAINER_SELECTORS,
+    EDITABLE_FIELD_RING_EXEMPTIONS,
     ITEM_VIEW_SELECTORS,
     REGION_SELECTORS,
+    TEXT_VIEW_SELECTORS,
     ring_selectors,
+    text_view_rings,
 )
 
 _THEMES = [DARK, LIGHT]
 _THEME_IDS = ["dark", "light"]
+_SHEETS = [build_qss(DARK), build_qss(LIGHT), INSTALLER_SHEET]
+_SHEET_IDS = ["dark", "light", "installer"]
+
+
+class TestNoTextViewRingsInAnyState:
+    """About, a licence and the email preview keep their resting border.
+
+    Tab reaching one of them rang the whole page; so would a click, a hover or
+    a disabled state, so every pseudo-state counts. The editable paste box is
+    the documented exemption: it is typed into, so it is a control.
+    """
+
+    @pytest.mark.parametrize("sheet", _SHEETS, ids=_SHEET_IDS)
+    def test_no_text_view_border_is_tied_to_a_state(self, sheet) -> None:
+        offences = text_view_rings(sheet)
+        assert offences == [], (
+            "A text view is a pane holding words; it rings in no state, Tab "
+            "included. Only an editable field named by object name may ring, "
+            "listed in EDITABLE_FIELD_RING_EXEMPTIONS.\n"
+            f"{offences}"
+        )
+
+    @pytest.mark.parametrize("sheet", _SHEETS, ids=_SHEET_IDS)
+    def test_no_pane_or_item_view_rings_in_the_sheet(self, sheet) -> None:
+        offences = [
+            selector
+            for head, _state, selector in ring_selectors(sheet)
+            if head in CONTAINER_SELECTORS | ITEM_VIEW_SELECTORS
+        ]
+        assert offences == []
+
+    def test_the_exemption_is_narrow_and_in_use(self) -> None:
+        """Each exemption names one editable field, on focus, by object name."""
+        sheet = build_qss(DARK)
+        for selector in EDITABLE_FIELD_RING_EXEMPTIONS:
+            head, _, rest = selector.partition("#")
+            assert head in TEXT_VIEW_SELECTORS and rest, selector
+            assert selector.endswith(":enabled:focus"), selector
+            assert ":hover" not in selector, selector
+            assert ("focus", selector) in {
+                (state, found) for _h, state, found in ring_selectors(sheet)
+            }, f"{selector} is exempted but no longer in the sheet"
+
+    def test_the_scan_catches_each_text_view_ring(self) -> None:
+        """The guard bites: each planted shape is named; the exemption is not."""
+        sheet = (
+            "QPlainTextEdit:enabled:focus, QTextBrowser:enabled:focus "
+            "{ border: 2px solid #f0b944; }\n"
+            "QTextEdit#LicenceView:focus { border-color: #f0b944; }\n"
+            "QTextBrowser:disabled { border: 2px solid #d9534f; }\n"
+            "QTextBrowser, QPlainTextEdit { border: 1px solid #39404f; }\n"
+            f"{min(EDITABLE_FIELD_RING_EXEMPTIONS)} "
+            "{ border: 2px solid #f0b944; }\n"
+            "QTextBrowser:focus { border-radius: 6px; }\n"
+        )
+        assert text_view_rings(sheet) == [
+            "QPlainTextEdit:enabled:focus",
+            "QTextBrowser:enabled:focus",
+            "QTextEdit#LicenceView:focus",
+            "QTextBrowser:disabled",
+        ]
 
 
 class TestTheStylesheetNeverRingsAPane:

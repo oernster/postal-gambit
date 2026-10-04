@@ -12,6 +12,7 @@ comments. No em dashes appear anywhere.
 
 from __future__ import annotations
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
@@ -22,6 +23,7 @@ from PySide6.QtWidgets import (
 )
 
 from installer.ui.icons import app_icon
+from installer.ui.reading_pane import OverflowFocus
 from installer.ui.themes import (
     BORDER_PX,
     BUTTON_GAP,
@@ -50,15 +52,15 @@ def licence_view_width(view: QTextEdit, text: str) -> int:
     return widest + scrollbar + chrome + WIDTH_SAFETY_PX
 
 
-def close_row(dialog: QDialog) -> QHBoxLayout:
-    """Return the shared trailing row holding a single Close button."""
+def close_row(dialog: QDialog) -> tuple[QHBoxLayout, QPushButton]:
+    """Return the shared trailing row and the single Close button it holds."""
     close = QPushButton(CLOSE_LABEL)
     close.setObjectName(SECONDARY_ACTION)
     close.clicked.connect(dialog.accept)
     row = QHBoxLayout()
     row.addStretch()
     row.addWidget(close)
-    return row
+    return row, close
 
 
 class LicenceDialog(QDialog):
@@ -87,9 +89,24 @@ class LicenceDialog(QDialog):
         view.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
         view.setPlainText(licence_text)
         layout.addWidget(view)
+        OverflowFocus(view)
 
         width = licence_view_width(view, licence_text)
         view.setMinimumWidth(width)
         self.resize(width + SIDES * DIALOG_MARGIN, LICENCE_DIALOG_HEIGHT)
 
-        layout.addLayout(close_row(self))
+        row, self._close = close_row(self)
+        layout.addLayout(row)
+        self._started = False
+
+    def showEvent(self, event) -> None:
+        """Open on Close, never on the text.
+
+        A dialog opened to read a licence has one thing to act on, so it opens
+        there. The text is a reading pane: a stop only by Tab and only while it
+        overflows, never focused on open (ported from latencylab's installer).
+        """
+        super().showEvent(event)
+        if not self._started:
+            self._started = True
+            self._close.setFocus(Qt.FocusReason.TabFocusReason)

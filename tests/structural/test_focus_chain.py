@@ -114,7 +114,7 @@ def _offending_stops(root) -> list[str]:
     ]
 
 
-def _draft(line_count: int) -> EmailDraft:
+def draft(line_count: int) -> EmailDraft:
     return EmailDraft(
         to="opponent@example.com",
         subject="[abc123] Postal Gambit",
@@ -124,7 +124,7 @@ def _draft(line_count: int) -> EmailDraft:
     )
 
 
-def _dialogs():
+def app_dialogs():
     from pathlib import Path
 
     from postalgambit.ui.dialogs.about import AboutDialog, LicenceDialog
@@ -140,7 +140,7 @@ def _dialogs():
     return [
         ("AboutDialog", AboutDialog()),
         ("LicenceDialog", LicenceDialog("Licence (GPL-3.0)", licence)),
-        ("ExportDialog", ExportDialog(_draft(_LONG_ENOUGH_TO_OVERFLOW))),
+        ("ExportDialog", ExportDialog(draft(_LONG_ENOUGH_TO_OVERFLOW))),
         ("NewGameDialog", NewGameDialog()),
         ("IdentityDialog", IdentityDialog(Identity(name="A", email="a@b.c"))),
         ("PromotionDialog", PromotionDialog()),
@@ -158,7 +158,7 @@ def _dialogs():
 class TestNoPaneIsReachableByTab:
     def test_every_dialog_offers_only_controls(self, app) -> None:
         offences = {}
-        for name, dialog in _dialogs():
+        for name, dialog in app_dialogs():
             dialog.show()
             app.processEvents()
             found = _offending_stops(dialog)
@@ -208,7 +208,7 @@ class TestAReadOnlyRegionIsAStopOnlyWhileItOverflows:
     def _preview(self, app, line_count: int):
         from postalgambit.ui.dialogs.export_dialog import ExportDialog
 
-        dialog = ExportDialog(_draft(line_count))
+        dialog = ExportDialog(draft(line_count))
         dialog.resize(640, 480)
         dialog.show()
         app.processEvents()

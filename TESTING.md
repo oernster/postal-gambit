@@ -144,10 +144,13 @@ needs no double. Storage tests use real files in pytest tmp directories.
   class selector matches every subclass, so a ring named against a
   container would reach every scroll area, list and label in the app; an
   item view gets no ring in any state, its current row being the
-  indicator; no region rings on hover. It reads the sheet `build_qss`
-  actually returns rather than its source. It carries a positive control
-  asserting the scanner can see a ring at all, because the other three
-  checks pass trivially if it cannot.
+  indicator; no region rings on hover; no text view ties a border to any
+  state (focus, hover, disabled), the editable paste box being the one
+  exemption, named by object name and proved editable at runtime. It reads
+  the sheet `build_qss` actually returns rather than its source, plus the
+  setup program's sheet. It carries positive controls asserting the scanner
+  can see a ring at all and names each planted text-view ring, because the
+  other checks pass trivially if it cannot.
 - `test_focus_chain.py`: no pane is reachable by Tab. It walks the
   toolkit's own focus chain for the main window and every dialog, which
   is what makes the answer equal to what a real Tab press reaches, then
@@ -182,6 +185,14 @@ tests sit outside the line gate with the rest of `postalgambit/ui`.
   check wired) over a games folder holding one damaged file beside a good
   game; it must build, list the good game and leave the damaged file
   byte-identical.
+- `test_panes_are_not_stops.py`: every app dialog and every setup-program
+  surface (window, both licences, a short notice, close-app, uninstall) is
+  shown offscreen; a reading pane (a scroll area that is read, not an item
+  view and not editable text) fails in three cases: a click could focus it;
+  it is a Tab stop while it fits; its dialog opens on it. The chain is walked
+  from the window, never from `focusWidget()`; offscreen never activates a
+  window, so a dialog with no focus of its own is taken to open on its first
+  stop, as measured on Windows. A planted dialog shows each failure named.
 
 ## The Nuitka gate
 

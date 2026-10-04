@@ -50,6 +50,10 @@ LIGHT = {
 THEMES = {"dark": DARK, "light": LIGHT}
 DEFAULT_THEME = "dark"
 
+# The editable paste box: the one text view that is a control, so the one
+# text view the stylesheet may ring, by this name rather than by its class.
+IMPORT_TEXT = "ImportText"
+
 _CONTROL_RADIUS_PX = 10
 _BUTTON_RADIUS_PX = 12
 _ITEM_RADIUS_PX = 6
@@ -112,11 +116,13 @@ QListWidget, QPlainTextEdit, QTextBrowser, QLineEdit, QComboBox {{
    all, so the current item already says where the user is and a rectangle
    round the whole list adds nothing. Worse, it fires on a click into the
    empty space below the last row, outlining everything while selecting
-   nothing. A read-only scrolling region keeps the focus half, because it
-   has nothing else to show focus with; never the hover half, since the
-   pointer rests inside it for as long as the window is open. */
-QLineEdit:enabled:focus, QPlainTextEdit:enabled:focus,
-QTextBrowser:enabled:focus, QComboBox:enabled:focus {{
+   nothing. A TEXT view (About, a licence, the email preview) rings in no
+   state either, Tab included: it is a pane holding words rather than a
+   control, so a ring round the whole page tells the reader nothing. The
+   one text view that IS a control is the editable paste box, so it alone
+   rings, named by its object name and never by its class. */
+QLineEdit:enabled:focus, QComboBox:enabled:focus,
+QPlainTextEdit#{IMPORT_TEXT}:enabled:focus {{
     border: 2px solid {tokens["focus"]};
 }}
 QListWidget::item {{

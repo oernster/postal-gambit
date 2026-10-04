@@ -6,11 +6,17 @@ licence text, the About body, the email preview. Those carry no controls of
 their own, so if they were not stops their content could not be scrolled
 without a mouse.
 
+The stop is TabFocus, never StrongFocus, so a CLICK never focuses the region;
+and even Tab reaching it paints nothing, since the theme rings no text view in
+any state (ported from Stellody's ReadingPane by way of latencylab).
+
 The exception is bounded by the thing that justifies it. A region that fits
 its viewport scrolls nowhere, so it is not actionable and drops off the ring;
 one that overflows earns its place back. That makes the policy a function of
 the window size at this moment rather than a setting chosen once at
-construction, which is why it is recomputed rather than assigned.
+construction, which is why it is recomputed rather than assigned: whenever
+either scrollbar's range changes (content loaded) and on every resize (the
+same page overflows or not according to how the window is sized).
 
 The viewport is set NoFocus alongside, because it is a separate focusable
 child: setting only the outer widget leaves it reachable.
@@ -18,7 +24,7 @@ child: setting only the outer widget leaves it reachable.
 
 from __future__ import annotations
 
-from PySide6.QtCore import QObject, Qt, Slot
+from PySide6.QtCore import QEvent, QObject, Qt, Slot
 from PySide6.QtWidgets import QAbstractScrollArea
 
 
@@ -30,13 +36,17 @@ class OverflowFocus(QObject):
         super().__init__(region)
         self._region = region
         region.viewport().setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # rangeChanged is the signal that answers the question directly: it
-        # fires whenever the scrollable extent moves, which covers a resize
-        # and a change of content without needing an event filter for each.
+        region.installEventFilter(self)
         # Both bars are watched because either can be the one that overflows.
         region.verticalScrollBar().rangeChanged.connect(self.sync)
         region.horizontalScrollBar().rangeChanged.connect(self.sync)
         self.sync()
+
+    def eventFilter(self, watched, event) -> bool:
+        """Resizing changes whether the content still fits, so re-decide."""
+        if event.type() == QEvent.Type.Resize:
+            self.sync()
+        return False
 
     @Slot()
     def sync(self, *_range: int) -> None:

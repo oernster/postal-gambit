@@ -20,6 +20,7 @@ from postalgambit.domain.game import GameId, GameRecord
 from postalgambit.ui.dialogs.neutral_dialog import NeutralDialog, close_row
 from postalgambit.ui.labels import game_label, game_labels
 from postalgambit.ui.plain_text import ask, plain_label, warn
+from postalgambit.ui.theme import IMPORT_TEXT
 
 _DIALOG_MIN_WIDTH = 640
 _BODY_MIN_HEIGHT = 300
@@ -46,6 +47,8 @@ class ImportDialog(NeutralDialog):
         layout = QVBoxLayout(self)
         layout.addWidget(plain_label(_PROMPT))
         self.text = QPlainTextEdit()
+        # Editable, so a control: the one text view the theme rings.
+        self.text.setObjectName(IMPORT_TEXT)
         # Tab leaves the paste box for the next stop (a pasted email never
         # needs a literal tab typed); the arrows stay with the caret.
         self.text.setTabChangesFocus(True)
