@@ -105,6 +105,11 @@ Website: https://ernster.dev/postal-gambit/
   of vanishing. Where focus is shows on the thing you can act on: a
   control rings, while a list marks the row you are on rather than
   outlining the whole box.
+- Help and licence text reads itself: About and the licences (in the app
+  and the installer) hold still as they open, then scroll down slowly,
+  pause at the end and return to the top. Touching the text pauses it and
+  it carries on from where you left it; the email preview and the paste
+  box never move by themselves.
 - Dark and light themes (View menu), persisted between runs.
 
 ## Stack

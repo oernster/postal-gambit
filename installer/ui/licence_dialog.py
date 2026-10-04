@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from installer.ui.auto_scroller import AutoScroller
 from installer.ui.icons import app_icon
 from installer.ui.reading_pane import OverflowFocus
 from installer.ui.themes import (
@@ -90,6 +91,8 @@ class LicenceDialog(QDialog):
         view.setPlainText(licence_text)
         layout.addWidget(view)
         OverflowFocus(view)
+        # The licence reads itself; focus stays the reading pane's business.
+        AutoScroller(view)
 
         width = licence_view_width(view, licence_text)
         view.setMinimumWidth(width)

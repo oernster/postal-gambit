@@ -193,6 +193,20 @@ tests sit outside the line gate with the rest of `postalgambit/ui`.
   from the window, never from `focusWidget()`; offscreen never activates a
   window, so a dialog with no focus of its own is taken to open on its first
   stop, as measured on Windows. A planted dialog shows each failure named.
+- `test_auto_scroller.py`: the reading cycle over BOTH copies of the
+  scroller (application and setup program), so they cannot drift. Each
+  scroller's timer is asserted running and then stopped; the tick is called
+  by hand, never waited on. Covers the canon constants, the start hold
+  (surviving the dialog's own opening focus), the half-pace descent, the
+  holds and the fast rewind at both ends, suspension by wheel, click, key,
+  scrollbar and focus with resumption in place, the rewind after a pause at
+  the bottom, a surface that fits costing nothing, a modal above freezing
+  time and input alike, a modal's own surface still reading, no focus policy
+  changed and the refusal of a `QPlainTextEdit`.
+- `test_reading_surfaces_scroll.py`: About and the licence carry a scroller,
+  as do both setup-program licences; the Export body and the Import paste
+  box do not; and a source scan proves only those two dialog modules attach
+  one, so no item view or working text gains it unnoticed.
 
 ## The Nuitka gate
 

@@ -176,6 +176,7 @@ postal-gambit/
                               an address
       scroll_focus.py         a read-only region is a stop only while it
                               overflows
+      auto_scroller.py        the reading cycle for help and licence text
       dialogs/                new game, import, export preview, about,
                               licence; all derive NeutralDialog (neutral
                               start plus the shared dialog ring)
@@ -372,6 +373,23 @@ open on their neutral start, never on a text. The setup program's licence
 dialog carries a standalone copy of the overflow rule
 (`installer/ui/reading_pane.py`, since the installer imports nothing from the
 package) and opens on Close.
+
+Text that is read through rather than worked on reads itself.
+`auto_scroller.AutoScroller` (ported from latencylab, itself from Fulcrum)
+drives the About body and the licence: still for 5000ms on open, then down 1px
+every second 40ms tick, a 5000ms hold at the end, a 15px-per-tick rewind and a
+2000ms hold at the top before the next pass. The pace is one set of module
+constants for every surface. Wheel, click, key, the scrollbar and focus
+arriving inside (the application's `focusChanged` with an ancestry test)
+suspend it for 2500ms, after which it resumes from where the reader left it.
+Focus arriving during the start hold is the dialog opening, not a reader, so
+it is ignored. A modal above a surface freezes it: neither time nor input
+reaches it until the modal closes. It refuses a `QPlainTextEdit`, whose
+scrollbar counts lines rather than pixels. It changes no focus policy:
+whether the surface is a stop stays `OverflowFocus`'s decision. The Export
+body and the Import paste box are working text and do not wear it; neither do
+the games and moves lists. The setup program's licence dialog carries a
+standalone copy beside its reading pane (`installer/ui/auto_scroller.py`).
 
 Two themes (dark and light) share one semantic token set in `theme.py`.
 The View menu toggles them; the choice persists through the settings

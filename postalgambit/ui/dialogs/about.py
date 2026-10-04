@@ -9,6 +9,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QTextBrowser, QVBoxLayout, QWidget
 
+from postalgambit.ui.auto_scroller import AutoScroller
 from postalgambit.ui.dialogs.neutral_dialog import NeutralDialog, close_row
 from postalgambit.ui.icons import get_badge_png_path
 from postalgambit.ui.plain_text import plain_label
@@ -44,6 +45,15 @@ communities.</p>
 """
 
 
+def _reading_pane(body: QTextBrowser) -> None:
+    """A stop only while there is more text than fits; text that reads itself.
+
+    Focus belongs to `OverflowFocus` alone; the scroller changes no policy.
+    """
+    OverflowFocus(body)
+    AutoScroller(body)
+
+
 class AboutDialog(NeutralDialog):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -67,8 +77,7 @@ class AboutDialog(NeutralDialog):
         body.setOpenExternalLinks(True)
         body.setMinimumHeight(_BODY_MIN_HEIGHT)
         body.setHtml(_ABOUT_HTML)
-        # A stop only while there is more text than fits.
-        OverflowFocus(body)
+        _reading_pane(body)
         layout.addWidget(body)
         layout.addLayout(close_row(self))
 
@@ -89,7 +98,7 @@ class LicenceDialog(NeutralDialog):
             body.setPlainText(path.read_text(encoding="utf-8"))
         else:
             body.setPlainText(_LICENCE_FALLBACK)
-        OverflowFocus(body)
+        _reading_pane(body)
         layout.addWidget(body)
         layout.addLayout(close_row(self))
         self.resize(self._fitted_width(body, layout), _LICENCE_HEIGHT)
