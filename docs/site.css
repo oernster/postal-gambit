@@ -351,6 +351,36 @@ header.site {
     background: var(--bg-elev);
 }
 
+/* What's new: one card per release, newest first, each led by its version in a pill. */
+.releases {
+    display: grid;
+    gap: 16px;
+}
+
+.ver-tag {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--brand);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 2px 12px;
+    background: var(--bg-elev-2);
+}
+
+.release h3 { margin: 12px 0 8px; }
+
+.release ul {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--text-dim);
+    font-size: 14px;
+}
+
+.release li + li { margin-top: 6px; }
+
+.releases-more { margin-top: 32px; }
+
 /* Download */
 .dl-version {
     display: inline-block;

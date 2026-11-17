@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>What's new in Postal Gambit: release history</title>
+    <meta name="description"
+          content="Postal Gambit's release history: help and licence text that reads itself, safer imports, a website with a page for each part, taking a move back before you send it, an update check disclosed in full and an email format that is settled."/>
+    <link rel="canonical" href="https://ernster.dev/postal-gambit/whats-new.html"/>
+    <meta name="robots" content="index, follow"/>
+    <meta name="author" content="Oliver Ernster"/>
+    <meta name="theme-color" content="#0e1a23"/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:site_name" content="Postal Gambit"/>
+    <meta property="og:url" content="https://ernster.dev/postal-gambit/whats-new.html"/>
+    <meta property="og:title" content="What's new in Postal Gambit: release history"/>
+    <meta property="og:description"
+          content="Postal Gambit's release history: help and licence text that reads itself, safer imports, a website with a page for each part, taking a move back before you send it, an update check disclosed in full and an email format that is settled."/>
+    <meta property="og:image" content="https://ernster.dev/postal-gambit/icon.png"/>
+    <meta property="og:image:alt" content="Postal Gambit app icon"/>
+    <meta property="og:locale" content="en_GB"/>
+    <meta name="twitter:card" content="summary"/>
+    <meta name="twitter:title" content="What's new in Postal Gambit: release history"/>
+    <meta name="twitter:description" content="Postal Gambit's release history: safer imports, taking a move back before you send it, an update check disclosed in full and an email format that is settled."/>
+    <meta name="twitter:image" content="https://ernster.dev/postal-gambit/icon.png"/>
+    <link rel="icon" type="image/png" href="icon.png"/>
+    <link rel="stylesheet" href="site.css?v=8a8b7ff334"/>
+<script>window.goatcounter = {path: function (p) { return location.host + p }}</script>
+<script data-goatcounter="https://oernster.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</head>
+<body>
+<div class="wrap">
+    <header class="site">
+        <div class="logo">
+            <img src="icon.png" alt="Postal Gambit"/>
+            <span>Postal Gambit</span>
+        </div>
+        <nav class="nav">
+            <a href="features.html">Features</a>
+            <a href="why.html">Why</a>
+            <a href="https://github.com/oernster/postal-gambit">GitHub</a>
+            <a href="whats-new.html" aria-current="page">What's New</a>
+            <a href="download.html">Download</a>
+        </nav>
+    </header>
+
+    <section class="section" id="whats-new">
+        <span class="eyebrow">Changelog</span>
+        <h2>What's new</h2>
+        <p class="lead">Recent releases have been about trust: imports that refuse a crafted reply, text
+            from your correspondents shown exactly as written and reading panes that behave, then read
+            themselves. Before that came a website with a page for each part, a move you can look at and
+            take back before you send it, a donate button and an update check disclosed in full. The
+            first full release settled the email format, so a long game outlives any one version of the
+            app.</p>
+
+        <div class="releases">
+
+            <div class="card release">
+                <span class="ver-tag">v<!--VERSION-->1.6.0<!--/VERSION--></span>
+                <h3>Help and licence text reads itself</h3>
+                <ul>
+                    <li>The About page and the licence windows, in the app and in the installer, now scroll gently by themselves: a few seconds' pause on opening, a slow descent, a pause at the end, then back to the top</li>
+                    <li>Touching the text with the wheel, the scrollbar, a click or the keys stops it where you left it; after a moment of stillness it carries on from there rather than jumping back to the top</li>
+                    <li>Text that already fits stays still; a window open on top of another stops the one underneath until it closes</li>
+                    <li>The email you are about to send and the box you paste a reply into never move by themselves</li>
+                </ul>
+            </div>
+
+            <div class="card release">
+                <span class="ver-tag">v1.5.1</span>
+                <h3>Reading panes no longer light up</h3>
+                <ul>
+                    <li>Tabbing into the About text, a licence or the preview of the email you are sending no longer draws a highlight round the whole page; once the text fits its box, Tab passes straight over it</li>
+                    <li>The box you paste a reply into still lights up as you Tab to it, since that is where you type</li>
+                    <li>The installer's licence windows open with Close ready; a click into the text no longer takes the keyboard away from the buttons</li>
+                </ul>
+            </div>
+
+            <div class="card release">
+                <span class="ver-tag">v1.5.0</span>
+                <h3>Safer imports</h3>
+                <ul>
+                    <li>A crafted reply can no longer end the game by writing a result into its tags, accept a draw nobody offered, pass instead of moving, start from a different position or play a move for your side; each is refused and your game is left as it was</li>
+                    <li>A reply that catches up after a missed email is still accepted, as long as your own moves in it match the ones you played</li>
+                    <li>A game identifier not in the form the app writes is refused, so a message can no longer reach a file outside your games folder or stand in for another game</li>
+                    <li>A move typed by an opponent without the app above your quoted email is now picked up and routed to the right game; a pasted game record with no move block around it is refused with a clear reason rather than guessed at</li>
+                    <li>Names, addresses and other words from an email are always shown exactly as written, never drawn as formatting</li>
+                    <li>A damaged saved game no longer stops the app opening: the rest are listed, the damaged file is left untouched and you are told once the window appears</li>
+                    <li>The documentation and the site now say plainly that a threefold repetition or fifty-move draw is reached by offering a draw, since there is no claim button</li>
+                </ul>
+            </div>
+
+            <div class="card release">
+                <span class="ver-tag">v1.4.0</span>
+                <h3>A website with a page for each part</h3>
+                <ul>
+                    <li>The site was one long page; it now has a short home page with Features, Why and Download each on a page of their own, reached from the same navigation everywhere</li>
+                    <li>The stylesheet link carries a fingerprint of the stylesheet, so a browser never shows a new page with an old cached look</li>
+                    <li>The update check now quietly drops its answer if the window has already gone, rather than raising an error on its background thread</li>
+                    <li>Building from source on Windows and macOS needs Nuitka 4.2.1 or later; each build script checks before compiling and stops with both versions and the install command</li>
+                    <li>DECISIONS-TRADEOFFS.md records the decisions Postal Gambit rests on with what each one gains and costs; the developer documents were read against the code and corrected where they had drifted</li>
+                </ul>
+            </div>
+
+            <div class="card release">
+                <span class="ver-tag">v1.3.1</span>
+                <h3>A new donation page</h3>
+                <ul>
+                    <li>The Donate button now opens a new PayPal page that suggests £5 and lets you give any amount you choose; nothing else has changed</li>
+                </ul>
+            </div>
+
+            <div class="card release">
+                <span class="ver-tag">v1.3.0</span>
+                <h3>Playing a move and sending it are two separate acts</h3>
+                <ul>
+                    <li>Playing a move no longer throws the email up over the board: the board updates and the move waits until you press Send move</li>
+                    <li>Send move greys out once the email leaves for your mail client or clipboard, so each move goes out once; it replaces Re-send last email</li>
+                    <li>A move you have played but not yet sent can be taken back with Take back move. Once the email is handed off it counts as gone, since your opponent may already be replying</li>
+                    <li>A game with an unsent move reads "move not sent" rather than "waiting" in its row and on the status line</li>
+                    <li>A draw offered with a move travels with the game, so it is still on the move whenever you send it</li>
+                    <li>File letters and rank numbers run round all four edges of the board and turn with it when you play Black</li>
+                </ul>
+            </div>
+
+            <div class="card release">
+                <span class="ver-tag">v1.2.0</span>
+                <h3>Focus rings on controls; a way to say thanks</h3>
+                <ul>
+                    <li>The game list and the move history no longer draw a border round themselves when focused; the highlighted row shows where you are and keeps its place when the board refreshes</li>
+                    <li>The About text, the licence text and the email preview now show a ring when focused and are reached by Tab only while they hold more than fits</li>
+                    <li>A donate button sits on a strip of its own at the foot of the window; nothing is held back behind it, there is no paid tier and no licence key</li>
+                    <li>The button hands the address to your browser, so Postal Gambit still opens no connection of its own</li>
+                    <li>The site gained a matching section at the foot of the home page</li>
+                </ul>
+            </div>
+
+            <div class="card release">
+                <span class="ver-tag">v1.1.1</span>
+                <h3>A setup program that stays to the end</h3>
+                <ul>
+                    <li>Asking the setup program to close a running Postal Gambit before an upgrade could make the setup window vanish with nothing installed; it now ends the application alone</li>
+                    <li>When the setup program cannot start Postal Gambit after installing, its window stays open, says the install itself succeeded and points at the program so you can start it yourself</li>
+                </ul>
+            </div>
+
+            <div class="card release">
+                <span class="ver-tag">v1.1.0</span>
+                <h3>An update check that respects you, disclosed in full</h3>
+                <ul>
+                    <li>Shortly after launch and once a day, the app asks GitHub anonymously whether a newer published release exists; Help &gt; Check for updates asks on demand</li>
+                    <li>When one is found you choose Download, Skip this version or Later; a skipped version never prompts again and a failed check stays silent</li>
+                    <li>Your games and moves still never touch the network: your mail client remains the only transport and nothing about you or your games leaves your machine</li>
+                    <li>The structural tests now forbid network code everywhere except that one named module and assert that the exemption cannot widen</li>
+                    <li>On Linux the Flatpak gains network access for this one call; an existing install keeps its old permissions until reinstalled from a rebuilt bundle</li>
+                </ul>
+            </div>
+
+            <div class="card release">
+                <span class="ver-tag">v1.0.0</span>
+                <h3>The email format is settled</h3>
+                <ul>
+                    <li>The format of the block inside every Postal Gambit email is frozen, so two copies on different releases can keep playing one long game; anything that would break it takes a new version marker of its own</li>
+                    <li>The no-network check now covers everything that reaches your machine, the setup program included; it also fails the build if anyone narrows it</li>
+                    <li>The setup program closes when it has finished instead of sitting frozen after launching Postal Gambit</li>
+                    <li>Postal Gambit and its setup program show their own names in Task Manager</li>
+                    <li>The setup program offers to close a running Postal Gambit for you, shows each phase with its progress and keeps the sign-in tick box as you had it</li>
+                    <li>Extraction checks every file in the bundle, so a malformed archive cannot place a file outside the install folder</li>
+                    <li>The site presents Postal Gambit for Windows, macOS and Linux with a card for each platform and download buttons that follow the newest release; a new Why page sets out the reasoning behind it</li>
+                    <li>For anyone reading the source: the part of the setup program that touches your machine is tested at 100% coverage and a standing technical-debt document records what is open</li>
+                </ul>
+            </div>
+
+        </div>
+
+        <div class="cta releases-more">
+            <a class="btn" href="https://github.com/oernster/postal-gambit/releases">View all releases on GitHub</a>
+        </div>
+    </section>
+
+    <footer class="site">
+        <span>Postal Gambit by Oliver Ernster. Released under GPL-3.0; author attribution must be
+            retained in all copies and derivative works.</span>
+        <span>
+            <a href="./">Home</a>
+            &nbsp;·&nbsp;
+            <a href="features.html">Features</a>
+            &nbsp;·&nbsp;
+            <a href="why.html">Why</a>
+            &nbsp;·&nbsp;
+            <a href="whats-new.html">What's New</a>
+            &nbsp;·&nbsp;
+            <a href="download.html">Download</a>
+            &nbsp;·&nbsp;
+            <a href="https://github.com/oernster/postal-gambit">GitHub</a>
+            &nbsp;·&nbsp;
+            <a href="https://github.com/oernster/postal-gambit/releases">Releases</a>
+            &nbsp;·&nbsp;
+            <a href="https://ernster.dev">More of my work</a>
+        </span>
+    </footer>
+</div>
+</body>
+</html>
